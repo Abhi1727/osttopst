@@ -1,0 +1,184 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using PstConverter.Services;
+using PstConverter.Models;
+
+namespace PstConverter.Endpoints;
+
+public static class MessageEndpoints
+{
+    public static void MapMessageEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/api/file-details");
+
+        group.MapGet("/{sessionId}/messages", async (
+            string sessionId,
+            [FromQuery] string folderId,
+            [FromQuery] int? year,
+            [FromQuery] int? month,
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate,
+            PstService pstService,
+            ClaimsPrincipal user,
+            ILogger<Program> logger) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var filter = new MessageDateFilter
+            {
+                Year = year,
+                Month = month,
+                StartDate = startDate,
+                EndDate = endDate
+            };
+
+            try
+            {
+                return Results.Ok(await pstService.GetMessagesAsync(sessionId, userId, folderId, filter));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "GetMessages failed for session {SessionId}, folder {FolderId}", sessionId, folderId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("GetMessages")
+        .WithTags("Message Operations")
+        .RequireAuthorization();
+
+        group.MapGet("/{sessionId}/contacts", async (string sessionId, [FromQuery] string folderId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            try
+            {
+                return Results.Ok(await pstService.GetContactsAsync(sessionId, userId, folderId));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "GetContacts failed for folder {FolderId}", folderId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("GetContacts")
+        .WithTags("Folder Operations")
+        .RequireAuthorization();
+
+        group.MapGet("/{sessionId}/calendar", async (string sessionId, [FromQuery] string folderId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            try
+            {
+                return Results.Ok(await pstService.GetCalendarItemsAsync(sessionId, userId, folderId));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "GetCalendarItems failed for folder {FolderId}", folderId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("GetCalendarItems")
+        .WithTags("Folder Operations")
+        .RequireAuthorization();
+
+        group.MapGet("/{sessionId}/messages/{entryId}", async (string sessionId, string entryId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            try
+            {
+                var detail = await pstService.GetMessageDetailAsync(sessionId, userId, entryId);
+                return detail is null ? Results.NotFound(new { error = "Message not found" }) : Results.Ok(detail);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "GetMessageDetail failed for session {SessionId}, entry {EntryId}", sessionId, entryId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("GetMessageDetail")
+        .WithTags("Message Operations")
+        .RequireAuthorization();
+
+        group.MapGet("/{sessionId}/messages/{entryId}/export", (string sessionId, string entryId, [FromQuery] string? format, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("ExportMessage request: session={SessionId}, entry={EntryId}, format={Format}, user={UserId}", sessionId, entryId, format, userId);
+            }
+            try
+            {
+                var exportFormat = ExportFormatHelpers.Parse(format);
+                var contentType = exportFormat.GetContentType();
+                var ext = exportFormat.GetExtension();
+                return Results.Stream(async outputStream =>
+                {
+                    await pstService.ExportMessageAsync(outputStream, sessionId, userId, entryId, exportFormat);
+                }, contentType, $"message{ext}");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                logger.LogWarning("ExportMessage: Unauthorized for session {SessionId}", sessionId);
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "ExportMessage failed for session {SessionId}, entry {EntryId}", sessionId, entryId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("ExportMessage")
+        .WithTags("Message Operations")
+        .RequireAuthorization();
+
+        group.MapPost("/{sessionId}/messages/export-batch", (
+            string sessionId,
+            [FromQuery] string? format,
+            [FromBody] BatchExportRequest request,
+            PstService pstService,
+            ClaimsPrincipal user,
+            ILogger<Program> logger) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("BatchExportMessages request: session={SessionId}, format={Format}, count={Count}", sessionId, format, request.EntryIds?.Count ?? 0);
+            }
+
+            if (request.EntryIds == null || request.EntryIds.Count == 0)
+            {
+                return Results.BadRequest(new { error = "No messages selected for export" });
+            }
+
+            try
+            {
+                var exportFormat = ExportFormatHelpers.Parse(format);
+                return Results.Stream(async outputStream =>
+                {
+                    await pstService.ExportSelectedMessagesAsync(outputStream, sessionId, userId, request.EntryIds, exportFormat);
+                }, "application/zip", "selected_messages_export.zip");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                logger.LogWarning("BatchExportMessages: Unauthorized for session {SessionId}", sessionId);
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "BatchExportMessages failed for session {SessionId}", sessionId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("BatchExportMessages")
+        .WithTags("Message Operations")
+        .RequireAuthorization();
+    }
+}
+
+public record BatchExportRequest(List<string> EntryIds);

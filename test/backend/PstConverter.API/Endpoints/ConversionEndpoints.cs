@@ -1,0 +1,114 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using PstConverter.Services;
+using PstConverter.Models;
+
+namespace PstConverter.Endpoints;
+
+public static class ConversionEndpoints
+{
+    public static void MapConversionEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/api/file-details");
+
+        group.MapGet("/{sessionId}/export", (
+            string sessionId,
+            [FromQuery] string? format,
+            [FromQuery] int? year,
+            [FromQuery] int? month,
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate,
+            [FromQuery] bool? excludeEmptyFolders,
+            PstService pstService,
+            ClaimsPrincipal user,
+            ILogger<Program> logger) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("ExportAll request: session={SessionId}, format={Format}, excludeEmpty={ExcludeEmpty}", sessionId, format, excludeEmptyFolders);
+            }
+            var filter = new MessageDateFilter
+            {
+                Year = year,
+                Month = month,
+                StartDate = startDate,
+                EndDate = endDate
+            };
+
+            try
+            {
+                var exportFormat = ExportFormatHelpers.Parse(format);
+                return Results.Stream(async outputStream =>
+                {
+                    await pstService.ExportAllAsync(outputStream, sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? false);
+                }, "application/zip", "pst_export.zip");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                logger.LogWarning("ExportAll: Unauthorized for session {SessionId}", sessionId);
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "ExportAll failed for session {SessionId}", sessionId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("ExportAll")
+        .WithTags("Conversion Operations")
+        .RequireAuthorization();
+
+        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            try
+            {
+                var filePath = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+                return Results.File(filePath, "application/vnd.ms-outlook", "converted_export.pst");
+            }
+            catch (FileNotFoundException)
+            {
+                return Results.NotFound(new { error = "Session not found" });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "ConvertToPst failed for session {SessionId}", sessionId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("ConvertToPst")
+        .WithTags("Conversion Operations")
+        .RequireAuthorization();
+
+        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            try
+            {
+                var filePath = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+                return Results.File(filePath, "application/vnd.ms-outlook", "converted_export.ost");
+            }
+            catch (FileNotFoundException)
+            {
+                return Results.NotFound(new { error = "Session not found" });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "ConvertToOst failed for session {SessionId}", sessionId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("ConvertToOst")
+        .WithTags("Conversion Operations")
+        .RequireAuthorization();
+    }
+}
