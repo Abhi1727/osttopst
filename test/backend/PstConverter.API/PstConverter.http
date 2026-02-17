@@ -1,0 +1,39 @@
+@PstConverter_HostAddress = http://localhost:5012
+@sessionId = dummy_session_id
+@folderId = your_folder_id
+@entryId = your_message_entry_id
+
+### 1. Upload File (PST or OST)
+POST {{PstConverter_HostAddress}}/api/pst/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="sample.pst"
+Content-Type: application/octet-stream
+
+< ./sample.pst
+--boundary--
+
+### 2. Get Folder Tree
+GET {{PstConverter_HostAddress}}/api/pst/{{sessionId}}/folders
+
+### 3. Get Messages in Folder
+GET {{PstConverter_HostAddress}}/api/pst/{{sessionId}}/folders/{{folderId}}/messages
+
+### 4. Get Message Detail
+GET {{PstConverter_HostAddress}}/api/pst/{{sessionId}}/messages/{{entryId}}
+
+### 5. Export Message (EML, MSG, HTML, MBOX)
+GET {{PstConverter_HostAddress}}/api/pst/{{sessionId}}/messages/{{entryId}}/export?format=eml
+
+### 6. Export Folder (ZIP)
+GET {{PstConverter_HostAddress}}/api/pst/{{sessionId}}/folders/{{folderId}}/export?format=msg
+
+### 7. Export Entire File (ZIP)
+GET {{PstConverter_HostAddress}}/api/pst/{{sessionId}}/export?format=eml
+
+### 8. Convert OST to PST
+GET {{PstConverter_HostAddress}}/api/pst/{{sessionId}}/convert-to-pst
+
+### 9. Delete Session (Cleanup)
+DELETE {{PstConverter_HostAddress}}/api/pst/{{sessionId}}
