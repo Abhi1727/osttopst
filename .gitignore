@@ -20,6 +20,9 @@ logs/
 *.env.*
 *.sql
 
+# Documentation / notes (avoid committing local .md files)
+*.md
+
 # Frontend build artifacts (if accidentally generated here)
 test/frontend/.vite/deps/
 
