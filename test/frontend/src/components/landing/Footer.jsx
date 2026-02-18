@@ -8,7 +8,9 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-2 text-slate-600">
           <img src={logo} alt="Logo" className="w-4 h-4 object-contain" />
-          <span className="text-sm font-semibold">© 2026 OSTPST Converter</span>
+          <span className="text-sm font-semibold">
+            © 2026 OST TO PST Converter
+          </span>
         </div>
 
         <div className="flex gap-8 text-sm text-slate-500 font-medium">

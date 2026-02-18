@@ -157,7 +157,7 @@ app.Use(async (context, next) =>
 });
 
 // Minimal API Test Root
-app.MapGet("/api/status", () => Results.Ok(new { status = "API is running", timestamp = DateTime.UtcNow }));
+app.MapGet("/api/status", () => Results.Ok(new { status = "API is running", timestamp = DateTime.Now }));
 
 app.MapFileEndpoints();
 app.MapFolderEndpoints();

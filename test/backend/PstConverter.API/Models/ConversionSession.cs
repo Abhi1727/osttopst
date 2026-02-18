@@ -15,7 +15,7 @@ public class ConversionSession
     [MaxLength(255)]
     public string OriginalFileName { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     [MaxLength(20)]
     public string Status { get; set; } = "Uploaded";

@@ -36,7 +36,7 @@ const UnifiedHeader = () => {
           />
         </div>
         <span className="text-xl font-bold tracking-tight text-slate-800">
-          OSTPST Converter
+          OST TO PST Converter
         </span>
       </div>
 

@@ -51,7 +51,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 UserId = userId,
                 Size = size,
                 FileType = ext.TrimStart('.'),
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 Status = "Uploaded",
                 Password = password
             };
@@ -82,7 +82,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             TotalChunks = totalChunks,
             TotalSize = totalSize,
             ReceivedChunks = [],
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         var metaPath = Path.Combine(chunkDir, "_metadata.json");
@@ -155,7 +155,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             UserId = metadata.UserId,
             Size = metadata.TotalSize,
             FileType = ext.TrimStart('.'),
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.Now,
             Status = "Assembling",
             Password = null // Password not supported in basic chunked flow yet
         };

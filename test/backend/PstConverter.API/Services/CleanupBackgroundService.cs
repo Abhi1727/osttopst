@@ -46,13 +46,13 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
 
         if (Directory.Exists(_uploadDir))
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var directoryInfo = new DirectoryInfo(_uploadDir);
 
             // Clean up files
             foreach (var file in directoryInfo.GetFiles())
             {
-                if (now - file.LastWriteTimeUtc > _maxFileAge)
+                if (now - file.LastWriteTime > _maxFileAge)
                 {
                     try
                     {
@@ -72,7 +72,7 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
             // Clean up chunk directories
             foreach (var dir in directoryInfo.GetDirectories("chunks_*"))
             {
-                if (now - dir.LastWriteTimeUtc > _maxFileAge)
+                if (now - dir.LastWriteTime > _maxFileAge)
                 {
                     try
                     {
@@ -96,7 +96,7 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
         var pool = scope.ServiceProvider.GetRequiredService<IPstStoragePool>();
 
         var oldSessions = await db.ConversionSessions
-            .Where(s => s.CreatedAt < DateTime.UtcNow.AddDays(-1))
+            .Where(s => s.CreatedAt < DateTime.Now.AddDays(-1))
             .ToListAsync();
 
         if (oldSessions.Count > 0)

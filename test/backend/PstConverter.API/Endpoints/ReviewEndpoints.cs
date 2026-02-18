@@ -22,7 +22,7 @@ public static class ReviewEndpoints
 
         group.MapPost("/", async (AppDbContext db, [FromBody] Review review) =>
         {
-            review.CreatedAt = DateTime.UtcNow;
+            review.CreatedAt = DateTime.Now;
             db.Reviews.Add(review);
             await db.SaveChangesAsync();
             return Results.Created($"/api/reviews/{review.Id}", review);
