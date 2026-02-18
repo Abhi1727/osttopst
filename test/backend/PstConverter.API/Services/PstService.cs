@@ -245,7 +245,21 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 if (totalMessages == 0) continue;
             }
 
-            var newFolder = destParent.AddSubFolder(srcFolder.DisplayName);
+        FolderInfo newFolder;
+        try
+        {
+            // Create matching folder in destination; if it already exists, reuse it.
+            newFolder = destParent.AddSubFolder(srcFolder.DisplayName);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("same name already exists", StringComparison.OrdinalIgnoreCase))
+        {
+            // Aspose throws when a folder with the same name already exists under destParent.
+            // Reuse the existing folder instead of failing the whole conversion.
+            newFolder = destParent
+                .GetSubFolders()
+                .FirstOrDefault(f => f.DisplayName == srcFolder.DisplayName)
+                ?? destParent.AddSubFolder(srcFolder.DisplayName + " (Copy)");
+        }
             foreach (var msgInfo in srcFolder.GetContents())
             {
                 using var msg = srcPst.ExtractMessage(msgInfo.EntryIdString);
