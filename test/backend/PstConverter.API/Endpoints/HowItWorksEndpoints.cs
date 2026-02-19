@@ -13,22 +13,22 @@ public static class HowItWorksEndpoints
                 new
                 {
                     StepNumber = 1,
-                    Title = "Upload OST File",
-                    Description = "Drag and drop your .ost file into our secure online converter. We support massive files up to 50GB, ensuring no data is left behind.",
+                    Title = "Upload the OST File",
+                    Description = "You can use drag and drop to upload your .ost file to online converter. We support files up to 50GB.",
                     IconName = "UploadCloud"
                 },
                 new
                 {
                     StepNumber = 2,
                     Title = "Automatic Conversion",
-                    Description = "Our cloud-based engine processes your file instantly. We maintain your original folder structure, metadata, and data integrity throughout the entire process.",
+                    Description = "Your file is instantly converted by our cloud engine. We keep your original folder structure, metadata, and data integrity safe the whole time.",
                     IconName = "Cpu"
                 },
                 new
                 {
                     StepNumber = 3,
-                    Title = "Download PST",
-                    Description = "Once finished, download your converted PST file instantly. For your peace of mind, files are automatically deleted after 24 hours to ensure your privacy.",
+                    Title = "Get PST",
+                    Description = "You can download your converted PST file right after. For your peace of mind, files are deleted automatically after 24 hours as we respect your privacy.",
                     IconName = "Download"
                 }
             };
