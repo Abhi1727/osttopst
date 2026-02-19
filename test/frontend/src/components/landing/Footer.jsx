@@ -18,7 +18,7 @@ const Footer = () => {
             Privacy Policy
           </a>
           <a href="#" className="hover:text-emerald-600 transition-colors">
-            Terms of Service
+            Terms & Conditions
           </a>
           <a href="#" className="hover:text-emerald-600 transition-colors">
             Contact

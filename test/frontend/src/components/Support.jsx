@@ -216,7 +216,7 @@ const Support = () => {
 
               <p className="text-[10px] text-center text-slate-400 leading-relaxed px-4">
                 By submitting this form, you agree to our Privacy Policy and
-                Terms of Service. We process your data to respond to your
+                Terms & Service. We process your data to respond to your
                 request.
               </p>
             </form>
