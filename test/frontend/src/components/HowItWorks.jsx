@@ -136,7 +136,7 @@ const HowItWorks = () => {
           How It Works
         </h1>
         <p className="text-slate-500 max-w-xl mx-auto text-sm md:text-base">
-         A three-step process to move and restore your Outlook data with Zero-Trust Security Framework.
+         A three-steps process to move and restore your Outlook data with Zero-Trust Security Framework.
         </p>
       </div>
 
