@@ -61,6 +61,11 @@ function App() {
   const { getToken } = useAuth();
   const location = useLocation();
 
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // Reactive navigation to preview if session exists and we are on home
   useEffect(() => {
     if (session && location.pathname === "/") {

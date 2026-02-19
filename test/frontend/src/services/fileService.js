@@ -42,6 +42,16 @@ function uploadChunkWithRetry(
           } catch {
             resolve({ success: true, chunkIndex });
           }
+        } else if (xhr.status >= 400 && xhr.status < 500) {
+          // Do not retry client errors (e.g. invalid file, unauthorized)
+          try {
+            const resp = JSON.parse(xhr.responseText);
+            reject(
+              new Error(resp.error || `Upload rejected (status ${xhr.status})`),
+            );
+          } catch {
+            reject(new Error(`Upload rejected (status ${xhr.status})`));
+          }
         } else if (attemptsLeft > 1) {
           console.warn(
             `Chunk ${chunkIndex} failed (status ${xhr.status}), retrying... (${attemptsLeft - 1} left)`,

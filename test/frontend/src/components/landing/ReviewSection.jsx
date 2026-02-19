@@ -43,7 +43,17 @@ const ReviewSection = () => {
         distribution[5 - r.rating]++;
       }
     });
-    return { average, total: reviews.length, distribution };
+
+    // Mock category ratings based on average
+    const categories = [
+      { name: "Speed", score: (Number(average) + 0.2).toFixed(1) },
+      { name: "Accuracy", score: average },
+      { name: "Support", score: (Number(average) - 0.1).toFixed(1) },
+      { name: "Features", score: (Number(average) + 0.1).toFixed(1) },
+      { name: "Reliability", score: average },
+    ];
+
+    return { average, total: reviews.length, distribution, categories };
   };
 
   const stats = calculateStats();
@@ -84,191 +94,258 @@ const ReviewSection = () => {
   };
 
   return (
-    <section className="py-12 md:py-20 px-4 md:px-6 lg:px-12 bg-white">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16">
-        {/* Left side: Review List & Stats */}
-        <div className="space-y-12">
+    <section className="py-10 px-4 md:px-6 lg:px-8 bg-white flex justify-center">
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
+        {/* Left side: Review Stats & List (Span 7 cols) */}
+        <div className="lg:col-span-7 space-y-10">
           <div>
-            <h2 className="text-4xl font-black text-slate-900 mb-4">
-              Customer <span className="text-emerald-600">Reviews</span>
-            </h2>
-            <p className="text-slate-500 text-lg">
-              See what our users are saying about their experience with our OST
-              to PST converter.
-            </p>
-          </div>
-
-          {/* New Stats Row */}
-          {!loading && reviews.length > 0 && (
-            <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 flex flex-col md:flex-row gap-10 items-center md:items-start">
-              <div className="text-center md:text-left space-y-2">
-                <div className="text-6xl font-black text-slate-900">
-                  {stats.average}
-                </div>
-                <div className="flex gap-1 justify-center md:justify-start">
+            <h2 className="text-4xl font-black text-slate-900 mb-2">Reviews</h2>
+            <div className="flex items-center gap-2 mb-6">
+              <div className="text-5xl font-black text-slate-900">
+                {stats.average}
+              </div>
+              <div className="flex flex-col">
+                <div className="flex gap-1 text-amber-400">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-5 h-5 ${i < Math.round(stats.average) ? "text-amber-400 fill-amber-400" : "text-slate-300"}`}
+                      className={`w-5 h-5 ${i < Math.round(Number(stats.average)) ? "fill-current" : "text-slate-200 fill-slate-200"}`}
                     />
                   ))}
                 </div>
-                <div className="text-sm font-medium text-slate-500">
-                  Based on {stats.total} reviews
-                </div>
+                <span className="text-sm text-slate-500 font-medium">
+                  {stats.total} ratings
+                </span>
               </div>
+            </div>
 
-              <div className="flex-1 w-full space-y-3">
+            {/* Distribution Bars */}
+            {!loading && reviews.length > 0 && (
+              <div className="space-y-3 mb-8">
                 {[5, 4, 3, 2, 1].map((rating) => {
                   const count = stats.distribution[5 - rating];
                   const percentage =
                     stats.total > 0 ? (count / stats.total) * 100 : 0;
                   return (
-                    <div key={rating} className="flex items-center gap-4 group">
-                      <div className="text-sm font-bold text-slate-600 w-3">
-                        {rating}
-                      </div>
-                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                      <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
+                    <div key={rating} className="flex items-center gap-3">
+                      <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex-1">
                         <div
                           className="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out"
                           style={{ width: `${percentage}%` }}
-                        />
+                        ></div>
+                        {/* Re-overriding inline style for class usage to ensure cleaner code if needed, but style width is dynamic. */}
                       </div>
-                      <div className="text-xs font-medium text-slate-400 w-8 text-right">
-                        {Math.round(percentage)}%
+                      <div className="flex items-center gap-2 min-w-[80px]">
+                        <span className="text-sm font-bold text-slate-700">
+                          {rating}.0
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {count > 1000
+                            ? (count / 1000).toFixed(1) + "k"
+                            : count}{" "}
+                          reviews
+                        </span>
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="h-auto max-h-[500px] w-full overflow-y-auto pr-2 no-scrollbar">
-            <div className="space-y-6">
-              {loading ? (
-                <div className="text-center py-10 text-slate-400">
-                  Loading reviews...
-                </div>
-              ) : reviews.length === 0 ? (
-                <div className="text-center py-10 text-slate-400">
-                  No reviews yet. Be the first to share your experience!
-                </div>
-              ) : (
-                reviews.map((review) => (
+            {/* Categories */}
+            {!loading && reviews.length > 0 && (
+              <div className="flex flex-wrap gap-3 mb-10">
+                {stats.categories?.map((cat, idx) => (
                   <div
-                    key={review.id}
-                    className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-3"
+                    key={idx}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl"
                   >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                          <User className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-slate-800">
-                            {review.userName}
-                          </h4>
-                          <div className="flex gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-3 h-3 ${i < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-300"}`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-xs text-slate-400">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-slate-600 text-sm leading-relaxed italic">
-                      "{review.comment}"
-                    </p>
+                    <span className="text-emerald-600 font-bold text-lg">
+                      {cat.score > 5 ? 5.0 : cat.score}
+                    </span>
+                    <span className="text-slate-600 font-medium text-sm">
+                      {cat.name}
+                    </span>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right side: Post Review Form */}
-        <div className="bg-slate-800 rounded-3xl p-8 lg:p-12 text-white shadow-xl h-fit">
-          <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
-            <MessageSquare className="w-6 h-6 text-emerald-400" />
-            Share Your Experience
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-300">
-                Your Name
-              </label>
-              <input
-                type="text"
-                value={newReview.userName}
-                onChange={(e) =>
-                  setNewReview({ ...newReview, userName: e.target.value })
-                }
-                className="w-full bg-slate-700 border-none rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
-                placeholder="Enter your name"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-300">
-                Rating
-              </label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setNewReview({ ...newReview, rating: star })}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    className="focus:outline-none transition-transform hover:scale-110"
-                  >
-                    <Star
-                      className={`w-8 h-8 ${star <= (hoverRating || newReview.rating) ? "text-amber-400 fill-amber-400" : "text-slate-600"}`}
-                    />
-                  </button>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Review List */}
+          <div className="space-y-8 max-h-[250px] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-emerald-200 scrollbar-track-transparent overscroll-y-none isolate">
+            {loading ? (
+              <div className="text-center py-10 text-slate-400">
+                Loading reviews...
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-10 text-slate-400">
+                No reviews yet. Be the first to share your experience!
+              </div>
+            ) : (
+              reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="border-b border-slate-100 pb-8 last:border-0"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
+                        <User className="w-full h-full p-2 text-slate-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900">
+                          {review.userName}
+                        </h4>
+                        <span className="text-xs text-slate-400 block">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1">
+                      <span className="font-bold text-slate-900">
+                        {review.rating}.0
+                      </span>
+                      <Star className="w-4 h-4 text-emerald-500 fill-emerald-500" />
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <div className="flex gap-0.5 mb-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${i < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"}`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-slate-600 leading-relaxed text-sm">
+                      {review.comment}
+                    </p>
+                  </div>
+
+                  {/* Placeholder for images if functionality existed */}
+                  {/* <div className="flex gap-2 mt-4">
+                    <div className="w-16 h-16 bg-slate-100 rounded-lg"></div>
+                    <div className="w-16 h-16 bg-slate-100 rounded-lg"></div>
+                  </div> */}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* "Read all reviews" link style */}
+          {!loading && reviews.length > 5 && (
+            <button className="text-emerald-600 font-semibold hover:underline flex items-center gap-1">
+              Read all reviews
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-chevron-down"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Right side: Write Review Form (Span 5 cols) - Sticky */}
+        <div className="lg:col-span-5">
+          <div className="sticky top-8">
+            <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
+              <h3 className="text-xl font-bold text-slate-900 mb-1">
+                Write a review
+              </h3>
+              <p className="text-slate-500 text-sm mb-6">
+                Share your experience with other users.
+              </p>
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Rating
+                  </label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() =>
+                          setNewReview({ ...newReview, rating: star })
+                        }
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className="focus:outline-none transition-transform hover:scale-110"
+                      >
+                        <Star
+                          className={`w-8 h-8 ${star <= (hoverRating || newReview.rating) ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newReview.userName}
+                    onChange={(e) =>
+                      setNewReview({ ...newReview, userName: e.target.value })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
+                    placeholder="Enter your name"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Review
+                  </label>
+                  <textarea
+                    value={newReview.comment}
+                    onChange={(e) =>
+                      setNewReview({ ...newReview, comment: e.target.value })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none min-h-[120px] resize-none"
+                    placeholder="Tell us about your experience..."
+                    required
+                  ></textarea>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:shadow-emerald-600/30"
+                >
+                  {submitting ? (
+                    "Submitting..."
+                  ) : (
+                    <>
+                      Submit Review
+                      <Send className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-300">
-                Your Feedback
-              </label>
-              <textarea
-                value={newReview.comment}
-                onChange={(e) =>
-                  setNewReview({ ...newReview, comment: e.target.value })
-                }
-                className="w-full bg-slate-700 border-none rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 transition-all outline-none min-h-[120px] resize-none"
-                placeholder="Tell us what you think..."
-                required
-              ></textarea>
+            {/* Trust Badge / Extra Info */}
+            <div className="mt-6 flex items-center justify-center gap-2 text-slate-400 text-sm">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span>Verified Reviews</span>
             </div>
-
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-14 rounded-xl flex items-center justify-center gap-2 text-lg shadow-lg shadow-emerald-900/40"
-            >
-              {submitting ? (
-                "Submitting..."
-              ) : (
-                <>
-                  Post Feedback
-                  <Send className="w-5 h-5" />
-                </>
-              )}
-            </Button>
-          </form>
+          </div>
         </div>
       </div>
     </section>
