@@ -163,6 +163,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         await _db.SaveChangesAsync();
 
         // Start background assembly task
+        var connectionString = _db.Database.GetConnectionString();
         _ = Task.Run(async () =>
         {
             try
@@ -172,19 +173,24 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     _logger.LogInformation("Merging {Count} chunks for upload {UploadId} in background", metadata.TotalChunks, uploadId);
                 }
 
-                using (var finalStream = new FileStream(finalPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920))
+                // Optimized buffer size (1MB) for faster large file merging
+                const int bufferSize = 1024 * 1024;
+                using (var finalStream = new FileStream(finalPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize))
                 {
+                    // Pre-allocate file size if possible to reduce fragmentation (optional but good for speed)
+                    finalStream.SetLength(metadata.TotalSize);
+
                     for (int i = 0; i < metadata.TotalChunks; i++)
                     {
                         var chunkPath = Path.Combine(chunkDir, $"chunk_{i:D5}");
-                        using var chunkFs = new FileStream(chunkPath, FileMode.Open, FileAccess.Read);
-                        await chunkFs.CopyToAsync(finalStream);
+                        using var chunkFs = new FileStream(chunkPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize);
+                        await chunkFs.CopyToAsync(finalStream, bufferSize);
                     }
                 }
 
                 // Update session status to Uploaded
                 using var scope = _logger.BeginScope(new Dictionary<string, object> { ["SessionId"] = sessionId });
-                using var updateDb = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseMySql(_db.Database.GetConnectionString(), ServerVersion.AutoDetect(_db.Database.GetConnectionString())).Options);
+                using var updateDb = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)).Options);
 
                 var s = await updateDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
                 if (s != null)
@@ -199,7 +205,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             {
                 _logger.LogError(ex, "Background assembly failed for session {SessionId}", sessionId);
                 // Update status to Failed
-                using var updateDb = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseMySql(_db.Database.GetConnectionString(), ServerVersion.AutoDetect(_db.Database.GetConnectionString())).Options);
+                using var updateDb = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)).Options);
                 var s = await updateDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
                 if (s != null)
                 {

@@ -1,9 +1,9 @@
 import { API_BASE_URL, getHeaders } from "./api";
 
 // ======== CONFIGURATION ========
-const CHUNK_SIZE = 50 * 1024 * 1024; // 50 MB per chunk (Optimized for performance)
-const MAX_RETRIES = 3; // Retry each chunk up to 3 times
-const RETRY_DELAY_MS = 2000; // Wait 2 seconds between retries
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB per chunk (Reduced for reliability on slow connections)
+const MAX_RETRIES = 5; // Retry each chunk up to 5 times
+const RETRY_DELAY_MS = 3000; // Wait 3 seconds between retries
 const SMALL_FILE_THRESHOLD = 20 * 1024 * 1024; // Files under 20MB use single upload
 
 /**
@@ -27,7 +27,7 @@ function uploadChunkWithRetry(
   return new Promise((resolve, reject) => {
     const attempt = (attemptsLeft) => {
       const xhr = new XMLHttpRequest();
-      xhr.timeout = 120000; // 2 minutes per chunk
+      xhr.timeout = 300000; // 5 minutes per chunk to handle slow speeds
 
       xhr.open(
         "POST",
@@ -131,7 +131,7 @@ async function chunkedUpload(file, token, onProgress, password = null) {
   const { uploadId } = await initRes.json();
 
   // Step 2: Upload chunks with parallel concurrency
-  const MAX_CONCURRENT_UPLOADS = 3;
+  const MAX_CONCURRENT_UPLOADS = 2; // Reduced concurrency to avoid bandwidth saturation
   const chunkIndices = Array.from({ length: totalChunks }, (_, i) => i);
   const results = [];
 
