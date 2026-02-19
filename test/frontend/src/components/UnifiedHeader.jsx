@@ -16,17 +16,37 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
-import logo from "@/assets/logo.png";
 
-const UnifiedHeader = () => {
+import SessionGuardModal from "./SessionGuardModal";
+import logo from "@/assets/logo.png";
+import { useState } from "react";
+
+const UnifiedHeader = ({ session, onReset }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isGuardOpen, setIsGuardOpen] = useState(false);
+  const [pendingPath, setPendingPath] = useState("/");
+
+  const handleNavigation = (path) => {
+    if (session && location.pathname === "/preview" && path !== "/preview") {
+      setPendingPath(path);
+      setIsGuardOpen(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const confirmLeave = () => {
+    setIsGuardOpen(false);
+    if (onReset) onReset();
+    navigate(pendingPath);
+  };
 
   return (
     <header className="flex h-20 items-center justify-between px-6 lg:px-12 border-b border-border/10 bg-white/80 backdrop-blur-md sticky top-0 z-50 transition-colors duration-300">
       <div
         className="flex items-center gap-3 cursor-pointer"
-        onClick={() => navigate("/")}
+        onClick={() => handleNavigation("/")}
       >
         <div className="p-2 rounded-lg bg-emerald-100/50">
           <img
@@ -55,7 +75,7 @@ const UnifiedHeader = () => {
             return (
               <span
                 key={item}
-                onClick={() => navigate(path)}
+                onClick={() => handleNavigation(path)}
                 className={`cursor-pointer text-sm font-medium transition-colors ${
                   isActive
                     ? "text-emerald-600 font-bold"
@@ -107,7 +127,10 @@ const UnifiedHeader = () => {
                   return (
                     <span
                       key={item}
-                      onClick={() => navigate(path)}
+                      onClick={() => {
+                        handleNavigation(path);
+                        // Close sheet if needed, though simpler just to navigate since sheet unmounts or navigate pushes new page
+                      }}
                       className={`text-lg font-semibold cursor-pointer ${
                         location.pathname === path
                           ? "text-emerald-600"
@@ -149,6 +172,19 @@ const UnifiedHeader = () => {
           />
         </SignedIn>
       </div>
+      <SessionGuardModal
+        isOpen={isGuardOpen}
+        onClose={() => setIsGuardOpen(false)}
+        onHome={confirmLeave}
+        onExport={() => {
+          setIsGuardOpen(false);
+          // Ideally trigger export dialog which is in FilePreview...
+          // But Header doesn't control FilePreview state.
+          // Maybe navigate to preview with strict "open export" param?
+          // Or just close intended modal and let user export manually.
+          // For now, close modal. User stays on preview.
+        }}
+      />
     </header>
   );
 };

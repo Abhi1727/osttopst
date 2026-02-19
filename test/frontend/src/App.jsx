@@ -22,7 +22,7 @@ import React from "react";
 
 function App() {
   const [session, setSession] = useState(() => {
-    const saved = localStorage.getItem("pst_session");
+    const saved = sessionStorage.getItem("pst_session");
     return saved ? JSON.parse(saved) : null;
   });
 
@@ -39,9 +39,9 @@ function App() {
   // Persist session
   useEffect(() => {
     if (session) {
-      localStorage.setItem("pst_session", JSON.stringify(session));
+      sessionStorage.setItem("pst_session", JSON.stringify(session));
     } else {
-      localStorage.removeItem("pst_session");
+      sessionStorage.removeItem("pst_session");
     }
   }, [session]);
 
@@ -84,7 +84,7 @@ function App() {
             : "min-h-screen bg-white"
         }`}
       >
-        <UnifiedHeader session={session} />
+        <UnifiedHeader session={session} onReset={handleReset} />
 
         <main
           className={`flex-1 flex flex-col ${

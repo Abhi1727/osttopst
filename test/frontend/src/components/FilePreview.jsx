@@ -19,7 +19,9 @@ import ExportDialog from "./ExportDialog";
 import { useAuth } from "@clerk/clerk-react";
 import { fileService } from "../services/fileService";
 import { toast } from "sonner";
+import SessionGuardModal from "./SessionGuardModal";
 import logo from "@/assets/logo.png";
+import { useCallback, useRef } from "react";
 
 const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
   const [isOpen, setIsOpen] = useState(node.isOpen || node.level < 2);
@@ -116,6 +118,46 @@ const FilePreview = ({ session, onReset }) => {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [hideEmpty, setHideEmpty] = useState(false);
+  const [isGuardOpen, setIsGuardOpen] = useState(false);
+  const timerRef = useRef(null);
+
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(
+      () => {
+        if (!isExportDialogOpen) {
+          setIsGuardOpen(true);
+        }
+      },
+      10 * 60 * 1000,
+    ); // 10 minutes
+  }, [isExportDialogOpen]);
+
+  useEffect(() => {
+    const events = ["mousemove", "keydown", "click", "scroll"];
+    const handleActivity = () => resetTimer();
+
+    events.forEach((e) => window.addEventListener(e, handleActivity));
+    resetTimer();
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, handleActivity));
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [resetTimer]);
+
+  useEffect(() => {
+    // Push state to intercept back button
+    window.history.pushState(null, null, window.location.pathname);
+
+    const handlePopState = () => {
+      window.history.pushState(null, null, window.location.pathname);
+      setIsGuardOpen(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const totalMessageCount = useMemo(() => {
     const sumMessages = (folderList) => {
@@ -634,6 +676,19 @@ const FilePreview = ({ session, onReset }) => {
         open={isExportDialogOpen}
         session={session}
         onClose={() => setIsExportDialogOpen(false)}
+      />
+
+      <SessionGuardModal
+        isOpen={isGuardOpen}
+        onClose={() => {
+          setIsGuardOpen(false);
+          resetTimer();
+        }}
+        onHome={onReset}
+        onExport={() => {
+          setIsGuardOpen(false);
+          setIsExportDialogOpen(true);
+        }}
       />
     </div>
   );
