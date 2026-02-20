@@ -33,9 +33,14 @@ const Hero = ({ onUploadComplete }) => {
 
   // Initial file drop handler - just sets the file, doesn't upload yet
   const onDrop = useCallback(
-    (acceptedFiles) => {
+    (acceptedFiles, fileRejections) => {
       if (!isSignedIn) {
         clerk.openSignIn();
+        return;
+      }
+
+      if (fileRejections.length > 0) {
+        toast.error("Only .pst and .ost files are supported.");
         return;
       }
 

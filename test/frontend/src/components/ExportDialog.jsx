@@ -216,7 +216,7 @@ const ExportDialog = ({ open, session, onClose }) => {
                 ) : (
                   <>
                     <Download className="w-6 h-6" />
-                    Download Messages Zip
+                    Download Zip File
                   </>
                 )}
               </Button>
