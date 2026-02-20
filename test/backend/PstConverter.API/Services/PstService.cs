@@ -7,6 +7,8 @@ using System.Text.Json;
 using PstConverter.Data;
 using Microsoft.EntityFrameworkCore;
 using Aspose.Email;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace PstConverter.Services;
 
@@ -17,6 +19,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private readonly IDistributedCache _cache = cache;
     private readonly AppDbContext _db = db;
     private readonly ILogger<PstService> _logger = logger;
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _uploadLocks = new();
 
     private async Task<(string filePath, string? password)> GetSessionDataAsync(string sessionId, string userId)
     {
@@ -115,21 +118,50 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         if (!Directory.Exists(chunkDir)) throw new FileNotFoundException("Upload session not found");
 
         var metaPath = Path.Combine(chunkDir, "_metadata.json");
-        var metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(await File.ReadAllTextAsync(metaPath))
-            ?? throw new InvalidOperationException("Corrupted metadata");
+        var uploadLock = _uploadLocks.GetOrAdd(uploadId, _ => new SemaphoreSlim(1, 1));
+
+        // 1. Validate User (Read metadata safely)
+        ChunkedUploadMetadata metadata;
+        await uploadLock.WaitAsync();
+        try
+        {
+            var json = await File.ReadAllTextAsync(metaPath);
+            metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(json)
+                ?? throw new InvalidOperationException("Corrupted metadata");
+        }
+        finally
+        {
+            uploadLock.Release();
+        }
 
         if (metadata.UserId != userId) throw new UnauthorizedAccessException("You do not have access to this upload session.");
 
+        // 2. Write Chunk File (No lock needed, unique filename per chunk)
         var chunkPath = Path.Combine(chunkDir, $"chunk_{chunkIndex:D5}");
         using (var fs = new FileStream(chunkPath, FileMode.Create, FileAccess.Write))
         {
             await chunkStream.CopyToAsync(fs);
         }
 
-        if (!metadata.ReceivedChunks.Contains(chunkIndex)) metadata.ReceivedChunks.Add(chunkIndex);
-        await File.WriteAllTextAsync(metaPath, JsonSerializer.Serialize(metadata));
+        // 3. Update Metadata (Read-Modify-Write safely)
+        await uploadLock.WaitAsync();
+        try
+        {
+            // Re-read to get latest state from other threads
+            var json = await File.ReadAllTextAsync(metaPath);
+            metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(json) ?? metadata;
 
-        return (true, metadata.ReceivedChunks.Count);
+            if (!metadata.ReceivedChunks.Contains(chunkIndex))
+            {
+                metadata.ReceivedChunks.Add(chunkIndex);
+                await File.WriteAllTextAsync(metaPath, JsonSerializer.Serialize(metadata));
+            }
+            return (true, metadata.ReceivedChunks.Count);
+        }
+        finally
+        {
+            uploadLock.Release();
+        }
     }
 
     public async Task<FinalizationResult> FinalizeChunkedUploadAsync(string uploadId, string userId)
@@ -137,8 +169,25 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
         if (!Directory.Exists(chunkDir)) throw new FileNotFoundException("Upload session not found");
 
-        var metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(await File.ReadAllTextAsync(Path.Combine(chunkDir, "_metadata.json")))
-            ?? throw new InvalidOperationException("Corrupted metadata");
+        // Lock to ensure we don't finalize while a chunk is still writing metadata (though rare in sequential flows, good practice)
+        var uploadLock = _uploadLocks.GetOrAdd(uploadId, _ => new SemaphoreSlim(1, 1));
+        await uploadLock.WaitAsync();
+        ChunkedUploadMetadata metadata;
+        try
+        {
+            var json = await File.ReadAllTextAsync(Path.Combine(chunkDir, "_metadata.json"));
+            metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(json)
+                ?? throw new InvalidOperationException("Corrupted metadata");
+        }
+        finally
+        {
+            uploadLock.Release();
+            // We can remove the lock now as keeping it for the duration of Merge is unnecessary?
+            // Merge is read-only on chunks. Metadata is not touched anymore until delete.
+            // But we should probably keep it if there's any chance of late chunks coming in.
+            // Actually, we should probably remove it after we are done.
+            _uploadLocks.TryRemove(uploadId, out _);
+        }
 
         if (metadata.UserId != userId) throw new UnauthorizedAccessException("You do not have access to this upload session.");
 

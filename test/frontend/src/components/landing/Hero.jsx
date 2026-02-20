@@ -77,13 +77,14 @@ const Hero = ({ onUploadComplete }) => {
     uploadActive.current = true;
 
     try {
-      const token = await getToken();
-      if (!token) {
+      const initialToken = await getToken();
+      if (!initialToken) {
         console.warn("[Hero] No token found! Authentication might be missing.");
       }
 
-      // We reuse the existing fileService.uploadFile logic
-      const result = await fileService.uploadFile(file, token, (info) => {
+      // We reuse the existing fileService.uploadFile logic, passing the getToken function
+      // so it can refresh the token if it expires during a long upload
+      const result = await fileService.uploadFile(file, getToken, (info) => {
         if (!uploadActive.current) return;
 
         if (typeof info === "object") {

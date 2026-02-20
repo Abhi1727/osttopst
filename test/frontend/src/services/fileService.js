@@ -1,7 +1,7 @@
 import { API_BASE_URL, getHeaders } from "./api";
 
 // ======== CONFIGURATION ========
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB per chunk (Reduced for reliability on slow connections)
+const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB per chunk (Better for large files)
 const MAX_RETRIES = 5; // Retry each chunk up to 5 times
 const RETRY_DELAY_MS = 3000; // Wait 3 seconds between retries
 const SMALL_FILE_THRESHOLD = 20 * 1024 * 1024; // Files under 20MB use single upload
@@ -13,6 +13,14 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Helper to get a valid token whether a string or function is passed
+async function resolveToken(tokenOrProvider) {
+  if (typeof tokenOrProvider === "function") {
+    return await tokenOrProvider();
+  }
+  return tokenOrProvider;
+}
+
 /**
  * Upload a single chunk via XHR with progress + retry logic.
  * Returns a promise that resolves when the chunk is uploaded.
@@ -21,84 +29,97 @@ function uploadChunkWithRetry(
   uploadId,
   chunkIndex,
   chunkBlob,
-  token,
+  tokenOrProvider,
   retries = MAX_RETRIES,
 ) {
   return new Promise((resolve, reject) => {
-    const attempt = (attemptsLeft) => {
-      const xhr = new XMLHttpRequest();
-      xhr.timeout = 300000; // 5 minutes per chunk to handle slow speeds
+    const attempt = async (attemptsLeft) => {
+      try {
+        const token = await resolveToken(tokenOrProvider);
+        const xhr = new XMLHttpRequest();
+        xhr.timeout = 300000; // 5 minutes per chunk to handle slow speeds
 
-      xhr.open(
-        "POST",
-        `${API_BASE_URL}/file-details/upload/${uploadId}/chunk/${chunkIndex}`,
-      );
-      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        xhr.open(
+          "POST",
+          `${API_BASE_URL}/file-details/upload/${uploadId}/chunk/${chunkIndex}`,
+        );
+        if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
-      xhr.addEventListener("load", () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            resolve(JSON.parse(xhr.responseText));
-          } catch {
-            resolve({ success: true, chunkIndex });
-          }
-        } else if (xhr.status >= 400 && xhr.status < 500) {
-          // Do not retry client errors (e.g. invalid file, unauthorized)
-          try {
-            const resp = JSON.parse(xhr.responseText);
-            reject(
-              new Error(resp.error || `Upload rejected (status ${xhr.status})`),
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch {
+              resolve({ success: true, chunkIndex });
+            }
+          } else if (xhr.status >= 400 && xhr.status < 500) {
+            // Do not retry client errors (e.g. invalid file, unauthorized)
+            try {
+              const resp = JSON.parse(xhr.responseText);
+              reject(
+                new Error(
+                  resp.error || `Upload rejected (status ${xhr.status})`,
+                ),
+              );
+            } catch {
+              reject(new Error(`Upload rejected (status ${xhr.status})`));
+            }
+          } else if (attemptsLeft > 1) {
+            console.warn(
+              `Chunk ${chunkIndex} failed (status ${xhr.status}), retrying... (${attemptsLeft - 1} left)`,
             );
-          } catch {
-            reject(new Error(`Upload rejected (status ${xhr.status})`));
+            setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
+          } else {
+            reject(
+              new Error(
+                `Chunk ${chunkIndex} failed after ${retries} attempts (status: ${xhr.status})`,
+              ),
+            );
           }
-        } else if (attemptsLeft > 1) {
-          console.warn(
-            `Chunk ${chunkIndex} failed (status ${xhr.status}), retrying... (${attemptsLeft - 1} left)`,
-          );
-          setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
-        } else {
-          reject(
-            new Error(
-              `Chunk ${chunkIndex} failed after ${retries} attempts (status: ${xhr.status})`,
-            ),
-          );
-        }
-      });
+        });
 
-      xhr.addEventListener("error", () => {
+        xhr.addEventListener("error", () => {
+          if (attemptsLeft > 1) {
+            console.warn(
+              `Chunk ${chunkIndex} network error, retrying... (${attemptsLeft - 1} left)`,
+            );
+            setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
+          } else {
+            reject(
+              new Error(
+                `Chunk ${chunkIndex} failed after ${retries} attempts (network error)`,
+              ),
+            );
+          }
+        });
+
+        xhr.addEventListener("timeout", () => {
+          if (attemptsLeft > 1) {
+            console.warn(
+              `Chunk ${chunkIndex} timeout, retrying... (${attemptsLeft - 1} left)`,
+            );
+            setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
+          } else {
+            reject(
+              new Error(
+                `Chunk ${chunkIndex} timed out after ${retries} attempts`,
+              ),
+            );
+          }
+        });
+
+        const formData = new FormData();
+        formData.append("chunk", chunkBlob, `chunk_${chunkIndex}`);
+        xhr.send(formData);
+      } catch (err) {
+        // Handle token resolution errors
+        console.error(`Token resolution failed for chunk ${chunkIndex}:`, err);
         if (attemptsLeft > 1) {
-          console.warn(
-            `Chunk ${chunkIndex} network error, retrying... (${attemptsLeft - 1} left)`,
-          );
           setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
         } else {
-          reject(
-            new Error(
-              `Chunk ${chunkIndex} failed after ${retries} attempts (network error)`,
-            ),
-          );
+          reject(err);
         }
-      });
-
-      xhr.addEventListener("timeout", () => {
-        if (attemptsLeft > 1) {
-          console.warn(
-            `Chunk ${chunkIndex} timeout, retrying... (${attemptsLeft - 1} left)`,
-          );
-          setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
-        } else {
-          reject(
-            new Error(
-              `Chunk ${chunkIndex} timed out after ${retries} attempts`,
-            ),
-          );
-        }
-      });
-
-      const formData = new FormData();
-      formData.append("chunk", chunkBlob, `chunk_${chunkIndex}`);
-      xhr.send(formData);
+      }
     };
 
     attempt(retries);
@@ -109,7 +130,12 @@ function uploadChunkWithRetry(
  * Chunked upload: Split file → init → upload chunks sequentially → finalize.
  * onProgress receives { phase, percent, detail } for granular UI updates.
  */
-async function chunkedUpload(file, token, onProgress, password = null) {
+async function chunkedUpload(
+  file,
+  tokenOrProvider,
+  onProgress,
+  password = null,
+) {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
   onProgress({
@@ -119,6 +145,7 @@ async function chunkedUpload(file, token, onProgress, password = null) {
   });
 
   // Step 1: Initialize upload session
+  const token = await resolveToken(tokenOrProvider);
   const initRes = await fetch(`${API_BASE_URL}/file-details/upload/init`, {
     method: "POST",
     headers: {
@@ -141,7 +168,7 @@ async function chunkedUpload(file, token, onProgress, password = null) {
   const { uploadId } = await initRes.json();
 
   // Step 2: Upload chunks with parallel concurrency
-  const MAX_CONCURRENT_UPLOADS = 2; // Reduced concurrency to avoid bandwidth saturation
+  const MAX_CONCURRENT_UPLOADS = 4; // Increased concurrency for speed
   const chunkIndices = Array.from({ length: totalChunks }, (_, i) => i);
   const results = [];
 
@@ -161,7 +188,7 @@ async function chunkedUpload(file, token, onProgress, password = null) {
         totalChunks,
       });
 
-      await uploadChunkWithRetry(uploadId, i, chunkBlob, token);
+      await uploadChunkWithRetry(uploadId, i, chunkBlob, tokenOrProvider);
       results.push(i);
     }
   };
@@ -180,11 +207,12 @@ async function chunkedUpload(file, token, onProgress, password = null) {
   });
 
   // Step 3: Finalize - merge chunks
+  const finalToken = await resolveToken(tokenOrProvider);
   const finalRes = await fetch(
     `${API_BASE_URL}/file-details/upload/${uploadId}/finalize`,
     {
       method: "POST",
-      headers: getHeaders(token),
+      headers: getHeaders(finalToken),
     },
   );
 
@@ -211,10 +239,11 @@ async function chunkedUpload(file, token, onProgress, password = null) {
       await sleep(5000); // Wait 5 seconds between polls
       attempts++;
 
+      const checkToken = await resolveToken(tokenOrProvider);
       const checkRes = await fetch(
         `${API_BASE_URL}/sessions/${result.sessionId}/check`,
         {
-          headers: getHeaders(token),
+          headers: getHeaders(checkToken),
         },
       );
 
@@ -244,61 +273,76 @@ async function chunkedUpload(file, token, onProgress, password = null) {
 /**
  * Legacy single-file upload via XHR (for small files under threshold).
  */
-function singleUpload(file, token, onProgress, password = null) {
+function singleUpload(file, tokenOrProvider, onProgress, password = null) {
   return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.timeout = 300000; // 5 minutes
+    // Wrap in async function to handle token resolution
+    const startUpload = async () => {
+      try {
+        const token = await resolveToken(tokenOrProvider);
+        const xhr = new XMLHttpRequest();
+        xhr.timeout = 300000; // 5 minutes
 
-    xhr.open("POST", `${API_BASE_URL}/file-details/upload`);
-    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        xhr.open("POST", `${API_BASE_URL}/file-details/upload`);
+        if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
-    xhr.upload.addEventListener("progress", (e) => {
-      if (e.lengthComputable) {
-        const percent = Math.round((e.loaded / e.total) * 100);
-        onProgress({
-          phase: "uploading",
-          percent,
-          detail: `Uploading... ${percent}%`,
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            onProgress({
+              phase: "uploading",
+              percent,
+              detail: `Uploading... ${percent}%`,
+            });
+          }
         });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              onProgress({
+                phase: "complete",
+                percent: 100,
+                detail: "Complete!",
+              });
+              resolve(JSON.parse(xhr.responseText));
+            } catch {
+              reject(new Error("Invalid server response."));
+            }
+          } else {
+            try {
+              const err = JSON.parse(xhr.responseText);
+              reject(new Error(err.error || `Upload failed (${xhr.status})`));
+            } catch {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          }
+        });
+
+        xhr.addEventListener("error", () => {
+          reject(
+            new Error(
+              "Network error. Please check your connection and try again.",
+            ),
+          );
+        });
+
+        xhr.addEventListener("timeout", () => {
+          reject(new Error("Upload timed out. The file may be too large."));
+        });
+
+        xhr.addEventListener("abort", () => {
+          reject(new Error("Upload was cancelled."));
+        });
+
+        const formData = new FormData();
+        formData.append("file", file);
+        if (password) formData.append("password", password);
+        xhr.send(formData);
+      } catch (err) {
+        reject(err);
       }
-    });
-
-    xhr.addEventListener("load", () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          onProgress({ phase: "complete", percent: 100, detail: "Complete!" });
-          resolve(JSON.parse(xhr.responseText));
-        } catch {
-          reject(new Error("Invalid server response."));
-        }
-      } else {
-        try {
-          const err = JSON.parse(xhr.responseText);
-          reject(new Error(err.error || `Upload failed (${xhr.status})`));
-        } catch {
-          reject(new Error(`Upload failed with status ${xhr.status}`));
-        }
-      }
-    });
-
-    xhr.addEventListener("error", () => {
-      reject(
-        new Error("Network error. Please check your connection and try again."),
-      );
-    });
-
-    xhr.addEventListener("timeout", () => {
-      reject(new Error("Upload timed out. The file may be too large."));
-    });
-
-    xhr.addEventListener("abort", () => {
-      reject(new Error("Upload was cancelled."));
-    });
-
-    const formData = new FormData();
-    formData.append("file", file);
-    if (password) formData.append("password", password);
-    xhr.send(formData);
+    };
+    startUpload();
   });
 }
 
@@ -308,11 +352,11 @@ export const fileService = {
    * and chunked upload for large files.
    *
    * @param {File} file - The file to upload
-   * @param {string} token - Auth token
+   * @param {string|Function} tokenOrProvider - Auth token or async function returning token
    * @param {Function} onProgress - Progress callback receiving { phase, percent, detail }
    * @param {string} password - Optional PST password
    */
-  async uploadFile(file, token, onProgress, password = null) {
+  async uploadFile(file, tokenOrProvider, onProgress, password = null) {
     // Normalize onProgress to handle both old-style (percent) and new-style ({ phase, percent, detail })
     const progressHandler = (info) => {
       if (typeof info === "object") {
@@ -323,16 +367,27 @@ export const fileService = {
     };
 
     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+
     console.log(
       `[FileService] Uploading "${file.name}" (${fileSizeMB} MB), using ${file.size > SMALL_FILE_THRESHOLD ? "chunked" : "single"} mode`,
     );
 
     if (file.size > SMALL_FILE_THRESHOLD) {
       // Large file → chunked upload with retry
-      return await chunkedUpload(file, token, progressHandler, password);
+      return await chunkedUpload(
+        file,
+        tokenOrProvider,
+        progressHandler,
+        password,
+      );
     } else {
       // Small file → single request (faster for small files)
-      return await singleUpload(file, token, progressHandler, password);
+      return await singleUpload(
+        file,
+        tokenOrProvider,
+        progressHandler,
+        password,
+      );
     }
   },
 
