@@ -24,6 +24,7 @@ const Hero = ({ onUploadComplete }) => {
   const [uploadPhase, setUploadPhase] = useState(null); // 'uploading' | 'processing' | 'complete'
   const [uploadDetail, setUploadDetail] = useState("");
   const [completedSession, setCompletedSession] = useState(null);
+  const [abortController, setAbortController] = useState(null);
 
   const { getToken } = useAuth();
   const uploadActive = useRef(false);
@@ -72,6 +73,8 @@ const Hero = ({ onUploadComplete }) => {
   const handleConvert = async () => {
     if (!file) return;
 
+    const controller = new AbortController();
+    setAbortController(controller);
     setUploading(true);
     setUploadPhase("uploading");
     uploadActive.current = true;
@@ -84,26 +87,32 @@ const Hero = ({ onUploadComplete }) => {
 
       // We reuse the existing fileService.uploadFile logic, passing the getToken function
       // so it can refresh the token if it expires during a long upload
-      const result = await fileService.uploadFile(file, getToken, (info) => {
-        if (!uploadActive.current) return;
+      const result = await fileService.uploadFile(
+        file,
+        getToken,
+        (info) => {
+          if (!uploadActive.current) return;
 
-        if (typeof info === "object") {
-          // Map service phases to UI phases
-          // Service: init -> uploading -> finalizing -> complete
-          if (info.phase === "finalizing") {
-            setUploadPhase("processing");
-            setUploadDetail("Finalizing conversion...");
-          } else if (info.phase === "complete") {
-            setUploadPhase("complete");
+          if (typeof info === "object") {
+            // Map service phases to UI phases
+            // Service: init -> uploading -> finalizing -> complete
+            if (info.phase === "finalizing") {
+              setUploadPhase("processing");
+              setUploadDetail("Finalizing conversion...");
+            } else if (info.phase === "complete") {
+              setUploadPhase("complete");
+            } else {
+              setUploadPhase("uploading");
+              setUploadDetail(info.detail);
+            }
+            setProgress(info.percent || 0);
           } else {
-            setUploadPhase("uploading");
-            setUploadDetail(info.detail);
+            setProgress(info);
           }
-          setProgress(info.percent || 0);
-        } else {
-          setProgress(info);
-        }
-      });
+        },
+        null,
+        controller.signal,
+      );
 
       if (uploadActive.current) {
         console.log("[Hero] Upload/Conversion result received:", result);
@@ -124,10 +133,28 @@ const Hero = ({ onUploadComplete }) => {
         }, 1500);
       }
     } catch (err) {
+      if (err.message === "Upload cancelled") {
+        console.log("[Hero] Upload/Conversion cancelled by user");
+        return; // handleCancel already reset the state
+      }
       console.error("[Hero] Upload/Conversion failed:", err);
       toast.error(err.message || "Conversion failed");
       setUploading(false);
       setUploadPhase("idle"); // Reset to allow retry
+    } finally {
+      setAbortController(null);
+    }
+  };
+
+  const handleCancel = () => {
+    if (abortController) {
+      abortController.abort();
+      uploadActive.current = false;
+      setUploading(false);
+      setUploadPhase("idle");
+      setProgress(0);
+      setUploadDetail("");
+      toast.info("Upload cancelled");
     }
   };
 
@@ -272,6 +299,16 @@ const Hero = ({ onUploadComplete }) => {
                 {uploadDetail ||
                   "Converting mail items, attachments, and calendar entries..."}
               </p>
+              <div className="flex justify-center mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all rounded-xl px-6"
+                  onClick={handleCancel}
+                >
+                  Cancel Upload
+                </Button>
+              </div>
             </div>
           )}
 

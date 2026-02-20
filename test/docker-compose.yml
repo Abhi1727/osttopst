@@ -72,6 +72,7 @@ services:
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD}
       - Clerk__SecretKey=${CLERK_SECRET_KEY}
       - Clerk__Authority=${CLERK_AUTHORITY}
+      - UPLOAD_DIR=/app/uploads
     volumes:
       - backend_uploads:/app/uploads
       - backend_storage:/app/storage

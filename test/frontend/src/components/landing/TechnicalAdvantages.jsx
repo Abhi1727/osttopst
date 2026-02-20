@@ -113,8 +113,8 @@ const AdvantageCard = ({
 );
 
 const SmallFeature = ({ icon: Icon, label }) => (
-  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center gap-3 text-center group hover:bg-white hover:shadow-sm transition-all">
-    <Icon className="w-6 h-6 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+  <div className="bg-white p-6 rounded-2xl border border-slate-100 flex flex-col items-center gap-3 text-center group ">
+    <Icon className="w-6 h-6 text-slate-400" />
     <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
       {label}
     </span>

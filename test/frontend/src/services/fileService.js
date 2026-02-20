@@ -135,8 +135,16 @@ async function chunkedUpload(
   tokenOrProvider,
   onProgress,
   password = null,
+  signal = null,
 ) {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  let uploadId = null;
+
+  const checkAbort = () => {
+    if (signal?.aborted) {
+      throw new Error("Upload cancelled");
+    }
+  };
 
   onProgress({
     phase: "init",
@@ -165,97 +173,119 @@ async function chunkedUpload(
     throw new Error(err.error || "Failed to initialize upload");
   }
 
-  const { uploadId } = await initRes.json();
+  const initData = await initRes.json();
+  uploadId = initData.uploadId;
 
-  // Step 2: Upload chunks with parallel concurrency
-  const MAX_CONCURRENT_UPLOADS = 4; // Increased concurrency for speed
-  const chunkIndices = Array.from({ length: totalChunks }, (_, i) => i);
-  const results = [];
+  try {
+    checkAbort();
 
-  const uploadNext = async () => {
-    while (chunkIndices.length > 0) {
-      const i = chunkIndices.shift();
-      const start = i * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const chunkBlob = file.slice(start, end);
+    // Step 2: Upload chunks with parallel concurrency
+    const MAX_CONCURRENT_UPLOADS = 4; // Increased concurrency for speed
+    const chunkIndices = Array.from({ length: totalChunks }, (_, i) => i);
+    const results = [];
 
-      const percent = Math.round((results.length / totalChunks) * 100);
-      onProgress({
-        phase: "uploading",
-        percent,
-        detail: `Uploading chunk ${results.length + 1} of ${totalChunks}...`,
-        chunkIndex: i,
-        totalChunks,
-      });
+    const uploadNext = async () => {
+      while (chunkIndices.length > 0 && !signal?.aborted) {
+        const i = chunkIndices.shift();
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunkBlob = file.slice(start, end);
 
-      await uploadChunkWithRetry(uploadId, i, chunkBlob, tokenOrProvider);
-      results.push(i);
+        const percent = Math.round((results.length / totalChunks) * 100);
+        onProgress({
+          phase: "uploading",
+          percent,
+          detail: `Uploading chunk ${results.length + 1} of ${totalChunks}...`,
+          chunkIndex: i,
+          totalChunks,
+        });
+
+        await uploadChunkWithRetry(
+          uploadId,
+          i,
+          chunkBlob,
+          tokenOrProvider,
+          MAX_RETRIES,
+          signal,
+        );
+        results.push(i);
+      }
+    };
+
+    // Start concurrent workers
+    const workers = Array.from(
+      { length: Math.min(MAX_CONCURRENT_UPLOADS, totalChunks) },
+      () => uploadNext(),
+    );
+    await Promise.all(workers);
+    checkAbort();
+
+    onProgress({
+      phase: "finalizing",
+      percent: 95,
+      detail: "Assembling file on server...",
+    });
+
+    // Step 3: Finalize - merge chunks
+    const finalToken = await resolveToken(tokenOrProvider);
+    const finalRes = await fetch(
+      `${API_BASE_URL}/file-details/upload/${uploadId}/finalize`,
+      {
+        method: "POST",
+        headers: getHeaders(finalToken),
+      },
+    );
+
+    if (!finalRes.ok) {
+      const err = await finalRes.json().catch(() => ({}));
+      throw new Error(err.error || "Failed to finalize upload");
     }
-  };
 
-  // Start concurrent workers
-  const workers = Array.from(
-    { length: Math.min(MAX_CONCURRENT_UPLOADS, totalChunks) },
-    () => uploadNext(),
-  );
-  await Promise.all(workers);
+    const initialResult = await finalRes.json();
+    let result = initialResult;
 
-  onProgress({
-    phase: "finalizing",
-    percent: 95,
-    detail: "Assembling file on server...",
-  });
+    // Step 4: Poll for completion if status is "Assembling"
+    if (result.status === "Assembling") {
+      let attempts = 0;
+      const maxAttempts = 60; // 5 minutes max polling (5s intervals)
 
-  // Step 3: Finalize - merge chunks
-  const finalToken = await resolveToken(tokenOrProvider);
-  const finalRes = await fetch(
-    `${API_BASE_URL}/file-details/upload/${uploadId}/finalize`,
-    {
-      method: "POST",
-      headers: getHeaders(finalToken),
-    },
-  );
+      while (result.status === "Assembling" && attempts < maxAttempts) {
+        checkAbort();
+        onProgress({
+          phase: "finalizing",
+          percent: 95 + Math.min(attempts, 4), // Visual progress during assembly
+          detail: "Assembling file on server...",
+        });
 
-  if (!finalRes.ok) {
-    const err = await finalRes.json().catch(() => ({}));
-    throw new Error(err.error || "Failed to finalize upload");
-  }
+        await sleep(5000); // Wait 5 seconds between polls
+        checkAbort();
+        attempts++;
 
-  const initialResult = await finalRes.json();
-  let result = initialResult;
+        const checkToken = await resolveToken(tokenOrProvider);
+        const checkRes = await fetch(
+          `${API_BASE_URL}/sessions/${result.sessionId}/check`,
+          {
+            headers: getHeaders(checkToken),
+            signal: signal,
+          },
+        );
 
-  // Step 4: Poll for completion if status is "Assembling"
-  if (result.status === "Assembling") {
-    let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max polling (5s intervals)
+        if (checkRes.ok) {
+          result = await checkRes.json();
+          // If status is "Uploaded", we are done
+        }
+      }
 
-    while (result.status === "Assembling" && attempts < maxAttempts) {
-      onProgress({
-        phase: "finalizing",
-        percent: 95 + Math.min(attempts, 4), // Visual progress during assembly
-        detail: "Assembling file on server...",
-      });
-
-      await sleep(5000); // Wait 5 seconds between polls
-      attempts++;
-
-      const checkToken = await resolveToken(tokenOrProvider);
-      const checkRes = await fetch(
-        `${API_BASE_URL}/sessions/${result.sessionId}/check`,
-        {
-          headers: getHeaders(checkToken),
-        },
-      );
-
-      if (checkRes.ok) {
-        result = await checkRes.json();
-        // If status is "Uploaded", we are done
+      if (result.status === "AssemblyFailed") {
+        throw new Error("File assembly failed on server. Please try again.");
       }
     }
-
-    if (result.status === "AssemblyFailed") {
-      throw new Error("File assembly failed on server. Please try again.");
+  } catch (err) {
+    if (signal?.aborted && uploadId) {
+      // Cleanup on server
+      fileService.cancelChunkedUpload(uploadId, tokenOrProvider);
     }
+    throw err;
   }
 
   onProgress({
@@ -273,7 +303,13 @@ async function chunkedUpload(
 /**
  * Legacy single-file upload via XHR (for small files under threshold).
  */
-function singleUpload(file, tokenOrProvider, onProgress, password = null) {
+function singleUpload(
+  file,
+  tokenOrProvider,
+  onProgress,
+  password = null,
+  signal = null,
+) {
   return new Promise((resolve, reject) => {
     // Wrap in async function to handle token resolution
     const startUpload = async () => {
@@ -281,6 +317,18 @@ function singleUpload(file, tokenOrProvider, onProgress, password = null) {
         const token = await resolveToken(tokenOrProvider);
         const xhr = new XMLHttpRequest();
         xhr.timeout = 300000; // 5 minutes
+
+        if (signal) {
+          signal.addEventListener("abort", () => {
+            xhr.abort();
+            reject(new Error("Upload cancelled"));
+          });
+          if (signal.aborted) {
+            xhr.abort();
+            reject(new Error("Upload cancelled"));
+            return;
+          }
+        }
 
         xhr.open("POST", `${API_BASE_URL}/file-details/upload`);
         if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
@@ -355,8 +403,15 @@ export const fileService = {
    * @param {string|Function} tokenOrProvider - Auth token or async function returning token
    * @param {Function} onProgress - Progress callback receiving { phase, percent, detail }
    * @param {string} password - Optional PST password
+   * @param {AbortSignal} signal - Optional AbortSignal for cancellation
    */
-  async uploadFile(file, tokenOrProvider, onProgress, password = null) {
+  async uploadFile(
+    file,
+    tokenOrProvider,
+    onProgress,
+    password = null,
+    signal = null,
+  ) {
     // Normalize onProgress to handle both old-style (percent) and new-style ({ phase, percent, detail })
     const progressHandler = (info) => {
       if (typeof info === "object") {
@@ -379,6 +434,7 @@ export const fileService = {
         tokenOrProvider,
         progressHandler,
         password,
+        signal,
       );
     } else {
       // Small file → single request (faster for small files)
@@ -387,6 +443,7 @@ export const fileService = {
         tokenOrProvider,
         progressHandler,
         password,
+        signal,
       );
     }
   },
@@ -420,12 +477,33 @@ export const fileService = {
   },
 
   async deleteSession(sessionId, token) {
-    await fetch(`${API_BASE_URL}/file-details/${sessionId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      await fetch(`${API_BASE_URL}/file-details/${sessionId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        keepalive: true,
+      });
+    } catch (err) {
+      console.warn("[FileService] Background deletion failed:", err);
+    }
+  },
+
+  async cancelChunkedUpload(uploadId, getToken) {
+    try {
+      const token = await resolveToken(getToken);
+      await fetch(`${API_BASE_URL}/file-details/upload/${uploadId}`, {
+        method: "DELETE",
+        headers: getHeaders(token),
+      });
+      console.log(`[FileService] Cancelled chunked upload: ${uploadId}`);
+    } catch (err) {
+      console.warn(
+        `[FileService] Failed to cancel chunked upload ${uploadId}:`,
+        err,
+      );
+    }
   },
 
   async exportAll(sessionId, format, excludeEmpty, token) {

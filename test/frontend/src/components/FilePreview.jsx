@@ -159,6 +159,42 @@ const FilePreview = ({ session, onReset }) => {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  // Immediate Cleanup Logic (Beacon)
+  const sessionRef = useRef(session);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  const purgeSession = useCallback(async () => {
+    const activeSession = sessionRef.current;
+    if (!activeSession?.sessionId) return;
+
+    try {
+      const token = await getToken();
+      await fileService.deleteSession(activeSession.sessionId, token);
+      console.log(
+        "[FilePreview] Immediate cleanup triggered for:",
+        activeSession.sessionId,
+      );
+    } catch (err) {
+      console.error("[FilePreview] Purge handle failed:", err);
+    }
+  }, [getToken]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // We don't await here as the browser is closing
+      purgeSession();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // Unmount cleanup removed to prevent premature session deletion on remounts
+    };
+  }, [purgeSession]);
+
   const totalMessageCount = useMemo(() => {
     const sumMessages = (folderList) => {
       let total = 0;
@@ -639,7 +675,10 @@ const FilePreview = ({ session, onReset }) => {
       <footer className="h-28 px-12 border-t border-zinc-100 flex items-center justify-between bg-white shrink-0 z-20">
         <Button
           variant="outline"
-          onClick={onReset}
+          onClick={async () => {
+            await purgeSession();
+            onReset();
+          }}
           className="h-14 px-8 rounded-2xl border-2 border-zinc-100 text-zinc-500 font-black hover:bg-zinc-50 transition-all gap-3 group active:scale-95"
         >
           <ArrowLeft

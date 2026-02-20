@@ -22,7 +22,7 @@ public class PstStoragePool : IPstStoragePool
         _cache = cache;
         _logger = logger;
         _cacheOptions = new MemoryCacheEntryOptions()
-            .SetSlidingExpiration(TimeSpan.FromMinutes(10))
+            .SetSlidingExpiration(TimeSpan.FromMinutes(1))
             .RegisterPostEvictionCallback(EvictionCallback);
     }
 

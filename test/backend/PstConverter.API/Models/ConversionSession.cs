@@ -23,6 +23,8 @@ public class ConversionSession
     [Required]
     public string UserId { get; set; } = string.Empty;
 
+    public DateTime LastAccessedAt { get; set; } = DateTime.UtcNow;
+
     public long Size { get; set; }
 
     [MaxLength(10)]

@@ -160,6 +160,34 @@ public static class FileEndpoints
         .WithSummary("Upload a single chunk of a large file")
         .RequireAuthorization();
 
+        /// 2b. Abort chunked upload
+        group.MapDelete("/upload/{uploadId}", async (
+            string uploadId,
+            PstService pstService,
+            ClaimsPrincipal user,
+            ILogger<Program> logger) =>
+        {
+            try
+            {
+                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+                await pstService.AbortChunkedUploadAsync(uploadId, userId);
+                return Results.NoContent();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Abort chunked upload failed: {UploadId}", uploadId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("AbortChunkedUpload")
+        .WithTags("File Operations")
+        .WithSummary("Abort an ongoing chunked upload and clean up temporary files")
+        .RequireAuthorization();
+
         /// 3. Finalize - merge all chunks into the final file
         group.MapPost("/upload/{uploadId}/finalize", async (
             string uploadId,

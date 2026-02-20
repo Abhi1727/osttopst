@@ -43,9 +43,13 @@ public static class SessionEndpoints
             if (session == null) return Results.NotFound();
 
             // Check if file still exists on disk
-            var uploadDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data", "PstConverter_Uploads");
-            var pstExists = File.Exists(Path.Combine(uploadDir, $"{sessionId}.pst"));
-            var ostExists = File.Exists(Path.Combine(uploadDir, $"{sessionId}.ost"));
+            // Check if file still exists on disk using standardized path
+            var pstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{sessionId}.pst"));
+            var ostExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{sessionId}.ost"));
+
+            // Update LastAccessedAt
+            session.LastAccessedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
 
             return Results.Ok(new
             {

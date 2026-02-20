@@ -19,6 +19,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import React from "react";
+import { deleteSession } from "./services/api";
 
 function App() {
   const [session, setSession] = useState(() => {
@@ -51,10 +52,19 @@ function App() {
     toast.success("Session ready!");
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     console.log("[App] Resetting session...");
+    if (session?.sessionId) {
+      try {
+        const token = await getToken();
+        await deleteSession(session.sessionId, token);
+        console.log("[App] Backend session deleted:", session.sessionId);
+      } catch (err) {
+        console.error("[App] Failed to delete session on backend:", err);
+      }
+    }
     setSession(null);
-    localStorage.removeItem("pst_session");
+    sessionStorage.removeItem("pst_session");
     navigate("/");
   };
 
