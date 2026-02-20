@@ -1,9 +1,9 @@
-using PstConverter.Endpoints;
-using PstConverter.Services;
-using PstConverter.Data;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.RateLimiting;
-using Microsoft.Extensions.DependencyInjection;
+using PstConverter.Endpoints; // This is for endpoints
+using PstConverter.Services; // This is for services
+using PstConverter.Data; // This is for data
+using Microsoft.EntityFrameworkCore; // This is for database
+using System.Threading.RateLimiting; // This is for rate limiting
+using Microsoft.Extensions.DependencyInjection; // This is for dependency injection
 
 // Initialize Aspose.Email License
 try
@@ -22,12 +22,12 @@ catch (Exception ex)
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
-builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();
-builder.Services.AddScoped<PstService>();
-builder.Services.AddHostedService<CleanupBackgroundService>();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddMemoryCache();// This is for memory cache
+builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();// This is for storage pool
+builder.Services.AddScoped<PstService>();// This is for pst service
+builder.Services.AddHostedService<CleanupBackgroundService>();// This is for cleanup background service
+builder.Services.AddEndpointsApiExplorer();// This is for endpoints api explorer
+builder.Services.AddSwaggerGen();// This is for swagger gen
 builder.Services.AddOpenApi();
 
 // MySQL Database Configuration
@@ -68,7 +68,7 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
         };
     });
 
-// Add CORS
+// Add CORS 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
