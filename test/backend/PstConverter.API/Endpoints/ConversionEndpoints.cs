@@ -26,7 +26,7 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             if (logger.IsEnabled(LogLevel.Information))
             {
-                logger.LogInformation("ExportAll request: session={SessionId}, format={Format}, excludeEmpty={ExcludeEmpty}", sessionId, format, excludeEmptyFolders);
+                logger.LogInformation("ExportAll request: session={SessionId}, format={Format}, excludeEmpty={ExcludeEmpty}, userId={UserId}", sessionId, format, excludeEmptyFolders, userId);
             }
             var filter = new MessageDateFilter
             {
@@ -50,6 +50,14 @@ public static class ConversionEndpoints
             catch (InvalidOperationException ex)
             {
                 return Results.Conflict(new { error = ex.Message });
+            }
+            catch (FileNotFoundException ex)
+            {
+                logger.LogWarning("ExportAll: File not found for session {SessionId}: {Message}", sessionId, ex.Message);
+                return Results.Problem(
+                    detail: ex.Message,
+                    title: "Session file no longer available",
+                    statusCode: StatusCodes.Status410Gone);
             }
             catch (UnauthorizedAccessException)
             {

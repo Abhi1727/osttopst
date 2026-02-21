@@ -159,41 +159,24 @@ const FilePreview = ({ session, onReset }) => {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Immediate Cleanup Logic (Beacon)
-  const sessionRef = useRef(session);
-  useEffect(() => {
-    sessionRef.current = session;
-  }, [session]);
-
+  // Removed automatic purgeSession on beforeunload to prevent race conditions with downloads/navigation.
+  // The backend CleanupBackgroundService will handle stale sessions.
   const purgeSession = useCallback(async () => {
-    const activeSession = sessionRef.current;
-    if (!activeSession?.sessionId) return;
-
+    if (!session?.sessionId) return;
     try {
       const token = await getToken();
-      await fileService.deleteSession(activeSession.sessionId, token);
+      await fileService.deleteSession(session.sessionId, token);
       console.log(
-        "[FilePreview] Immediate cleanup triggered for:",
-        activeSession.sessionId,
+        "[FilePreview] Manual cleanup triggered for:",
+        session.sessionId,
       );
     } catch (err) {
-      console.error("[FilePreview] Purge handle failed:", err);
+      console.error("[FilePreview] Manual cleanup failed:", err);
     }
-  }, [getToken]);
+  }, [getToken, session?.sessionId]);
 
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // We don't await here as the browser is closing
-      purgeSession();
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      // Unmount cleanup removed to prevent premature session deletion on remounts
-    };
-  }, [purgeSession]);
+  // Intentionally removed beforeunload listener to prevent race conditions during downloads.
+  // Explicit cleanup is still handled by the "Back to Upload" button.
 
   const totalMessageCount = useMemo(() => {
     const sumMessages = (folderList) => {

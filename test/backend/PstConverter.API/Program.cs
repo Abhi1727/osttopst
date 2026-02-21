@@ -47,7 +47,8 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
             ValidateIssuer = true,
             ValidateAudience = false, // Clerk doesn't strictly require audience validation for simple setups
             ValidateLifetime = true,
-            ValidateIssuerSigningKey = true
+            ValidateIssuerSigningKey = true,
+            NameClaimType = "sub" // Map Clerk 'sub' claim to Identity.Name
         };
         options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
         {

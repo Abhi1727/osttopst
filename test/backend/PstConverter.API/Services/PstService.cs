@@ -24,8 +24,20 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     private async Task<(string filePath, string? password)> GetSessionDataAsync(string sessionId, string userId)
     {
-        var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId)
-                      ?? throw new UnauthorizedAccessException("You do not have access to this session.");
+        var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+
+        if (session == null)
+        {
+            _logger.LogWarning("Session {SessionId} not found in DB at all.", sessionId);
+            throw new FileNotFoundException("Session not found");
+        }
+
+        if (session.UserId != userId)
+        {
+            _logger.LogWarning("Unauthorized: Session {SessionId} belongs to '{OwnerId}', but request is from '{RequestId}'",
+                sessionId, session.UserId, userId);
+            throw new UnauthorizedAccessException("You do not have access to this session.");
+        }
 
         // Reject early if file assembly is still in progress or failed
         if (session.Status == "Assembling")
@@ -34,17 +46,40 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         if (session.Status == "AssemblyFailed")
             throw new InvalidOperationException("File assembly failed. Please re-upload the file.");
 
-        // Update LastAccessedAt to keep session alive
-        session.LastAccessedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        // Update LastAccessedAt to keep session alive.
+        // Swallow concurrency conflicts — two simultaneous requests may both try to update the
+        // same row; whichever wins is fine, the session remains valid either way.
+        try
+        {
+            session.LastAccessedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            // Non-critical: another request already updated LastAccessedAt — ignore.
+            _db.Entry(session).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+        }
 
         var pstPath = Path.Combine(_uploadDir, $"{sessionId}.pst");
         if (File.Exists(pstPath)) return (pstPath, session.Password);
         var ostPath = Path.Combine(_uploadDir, $"{sessionId}.ost");
         if (File.Exists(ostPath)) return (ostPath, session.Password);
 
-        _logger.LogWarning("Session record exists in DB but file is missing for session {SessionId}. Checked .pst and .ost", sessionId);
-        throw new FileNotFoundException("PST/OST file not found on disk for this session.");
+        // File is missing on disk (e.g. container volume was reset).
+        // Mark the session so future requests immediately know without re-checking disk.
+        _logger.LogWarning("Session {SessionId} exists in DB but file is missing on disk. Marking as FileGone.", sessionId);
+        try
+        {
+            session.Status = "FileGone";
+            await _db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not update session {SessionId} status to FileGone.", sessionId);
+        }
+
+        throw new FileNotFoundException("The session file is no longer available on this server. Please re-upload your file.");
+
     }
 
     public async Task<string> SaveUploadedFileAsync(Stream fileStream, string originalFileName, string userId, long size, string? password = null)

@@ -139,6 +139,7 @@ async function chunkedUpload(
 ) {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   let uploadId = null;
+  let result = null;
 
   const checkAbort = () => {
     if (signal?.aborted) {
@@ -241,8 +242,7 @@ async function chunkedUpload(
       throw new Error(err.error || "Failed to finalize upload");
     }
 
-    const initialResult = await finalRes.json();
-    let result = initialResult;
+    result = await finalRes.json();
 
     // Step 4: Poll for completion if status is "Assembling"
     if (result.status === "Assembling") {
