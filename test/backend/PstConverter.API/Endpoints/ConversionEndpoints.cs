@@ -11,7 +11,7 @@ public static class ConversionEndpoints
     {
         var group = app.MapGroup("/api/file-details");
 
-        group.MapGet("/{sessionId}/export", (
+        group.MapGet("/{sessionId}/export", async (
             string sessionId,
             [FromQuery] string? format,
             [FromQuery] int? year,
@@ -39,10 +39,13 @@ public static class ConversionEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                return Results.Stream(async outputStream =>
-                {
-                    await pstService.ExportAllAsync(outputStream, sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? false);
-                }, "application/zip", "pst_export.zip");
+                // Buffer into memory first so exceptions (e.g. UnauthorizedAccessException)
+                // are thrown here rather than inside the Results.Stream callback where they
+                // cannot be caught and result in a 500 instead of a 403.
+                var ms = new MemoryStream();
+                await pstService.ExportAllAsync(ms, sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? false);
+                ms.Position = 0;
+                return Results.Stream(ms, "application/zip", "pst_export.zip");
             }
             catch (UnauthorizedAccessException)
             {
