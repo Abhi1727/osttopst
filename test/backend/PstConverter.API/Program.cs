@@ -30,11 +30,10 @@ builder.Services.AddEndpointsApiExplorer();// This is for endpoints api explorer
 builder.Services.AddSwaggerGen();// This is for swagger gen
 builder.Services.AddOpenApi();
 
-// MySQL Database Configuration
+// SQL Server Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var serverVersion = ServerVersion.AutoDetect(connectionString); // Detect once at startup
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, serverVersion));
+    options.UseSqlServer(connectionString));
 
 // Clerk Authentication
 var clerkConfig = builder.Configuration.GetSection("Clerk");
