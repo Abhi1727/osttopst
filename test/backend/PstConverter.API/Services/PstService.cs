@@ -27,6 +27,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId)
                       ?? throw new UnauthorizedAccessException("You do not have access to this session.");
 
+        // Reject early if file assembly is still in progress or failed
+        if (session.Status == "Assembling")
+            throw new InvalidOperationException("File is still being assembled. Please wait a moment and try again.");
+
+        if (session.Status == "AssemblyFailed")
+            throw new InvalidOperationException("File assembly failed. Please re-upload the file.");
+
         // Update LastAccessedAt to keep session alive
         session.LastAccessedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
@@ -157,7 +164,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         try
         {
             Directory.Delete(chunkDir, true);
-            _logger.LogInformation("Aborted chunked upload {UploadId} and cleaned up directory.", uploadId);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Aborted chunked upload {UploadId} and cleaned up directory.", uploadId);
+            }
         }
         catch (Exception ex)
         {
@@ -270,10 +280,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     public record FinalizationResult(string SessionId, string FileName, long Size, string FileType);
 
-    public async Task<string> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders);
-    public async Task<string> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders);
+    public async Task<(MemoryStream Data, string FileName)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders);
+    public async Task<(MemoryStream Data, string FileName)> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders);
 
-    private async Task<string> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false)
+    private async Task<(MemoryStream Data, string FileName)> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false)
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
         return await _pool.AccessAsync(sessionId, srcPath, srcStorage =>
@@ -283,10 +293,27 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
             if (File.Exists(outputPath)) TryDelete(outputPath);
 
-            using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
-            CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders);
+            using (var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode))
+            {
+                CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders);
+            } // destStorage disposed here — file handle released
 
-            return Task.FromResult(outputPath);
+            // Read into memory immediately so we can delete the temp file
+            var ms = new MemoryStream();
+            using (var fs = new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                fs.CopyTo(ms);
+            }
+            TryDelete(outputPath);
+            ms.Position = 0;
+
+            var session = _db.ConversionSessions.FirstOrDefault(s => s.SessionId == sessionId);
+            var baseName = session != null
+                ? Path.GetFileNameWithoutExtension(session.OriginalFileName)
+                : sessionId;
+            var fileName = $"{baseName}_converted{ext}";
+
+            return Task.FromResult((ms, fileName));
         }, password);
     }
 
@@ -706,7 +733,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return string.IsNullOrWhiteSpace(sanitized) ? "message" : sanitized.Trim();
     }
 
-    private void TryDelete(string path)
+    private static void TryDelete(string path)
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
 
