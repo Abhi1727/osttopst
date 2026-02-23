@@ -19,7 +19,9 @@ import ExportDialog from "./ExportDialog";
 import { useAuth } from "@clerk/clerk-react";
 import { fileService } from "../services/fileService";
 import { toast } from "sonner";
+import SessionGuardModal from "./SessionGuardModal";
 import logo from "@/assets/logo.png";
+import { useCallback, useRef } from "react";
 
 const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
   const [isOpen, setIsOpen] = useState(node.isOpen || node.level < 2);
@@ -116,6 +118,65 @@ const FilePreview = ({ session, onReset }) => {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [hideEmpty, setHideEmpty] = useState(false);
+  const [isGuardOpen, setIsGuardOpen] = useState(false);
+  const timerRef = useRef(null);
+
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(
+      () => {
+        if (!isExportDialogOpen) {
+          setIsGuardOpen(true);
+        }
+      },
+      10 * 60 * 1000,
+    ); // 10 minutes
+  }, [isExportDialogOpen]);
+
+  useEffect(() => {
+    const events = ["mousemove", "keydown", "click", "scroll"];
+    const handleActivity = () => resetTimer();
+
+    events.forEach((e) => window.addEventListener(e, handleActivity));
+    resetTimer();
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, handleActivity));
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [resetTimer]);
+
+  useEffect(() => {
+    // Push state to intercept back button
+    window.history.pushState(null, null, window.location.pathname);
+
+    const handlePopState = () => {
+      window.history.pushState(null, null, window.location.pathname);
+      setIsGuardOpen(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  // Removed automatic purgeSession on beforeunload to prevent race conditions with downloads/navigation.
+  // The backend CleanupBackgroundService will handle stale sessions.
+  const purgeSession = useCallback(async () => {
+    if (!session?.sessionId) return;
+    try {
+      const token = await getToken();
+      await fileService.deleteSession(session.sessionId, token);
+      console.log(
+        "[FilePreview] Manual cleanup triggered for:",
+        session.sessionId,
+      );
+    } catch (err) {
+      console.error("[FilePreview] Manual cleanup failed:", err);
+    }
+  }, [getToken, session?.sessionId]);
+
+  // Intentionally removed beforeunload listener to prevent race conditions during downloads.
+  // Explicit cleanup is still handled by the "Back to Upload" button.
 
   const totalMessageCount = useMemo(() => {
     const sumMessages = (folderList) => {
@@ -597,7 +658,10 @@ const FilePreview = ({ session, onReset }) => {
       <footer className="h-28 px-12 border-t border-zinc-100 flex items-center justify-between bg-white shrink-0 z-20">
         <Button
           variant="outline"
-          onClick={onReset}
+          onClick={async () => {
+            await purgeSession();
+            onReset();
+          }}
           className="h-14 px-8 rounded-2xl border-2 border-zinc-100 text-zinc-500 font-black hover:bg-zinc-50 transition-all gap-3 group active:scale-95"
         >
           <ArrowLeft
@@ -634,6 +698,19 @@ const FilePreview = ({ session, onReset }) => {
         open={isExportDialogOpen}
         session={session}
         onClose={() => setIsExportDialogOpen(false)}
+      />
+
+      <SessionGuardModal
+        isOpen={isGuardOpen}
+        onClose={() => {
+          setIsGuardOpen(false);
+          resetTimer();
+        }}
+        onHome={onReset}
+        onExport={() => {
+          setIsGuardOpen(false);
+          setIsExportDialogOpen(true);
+        }}
       />
     </div>
   );

@@ -11,7 +11,7 @@ public static class ConversionEndpoints
     {
         var group = app.MapGroup("/api/file-details");
 
-        group.MapGet("/{sessionId}/export", (
+        group.MapGet("/{sessionId}/export", async (
             string sessionId,
             [FromQuery] string? format,
             [FromQuery] int? year,
@@ -26,7 +26,7 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             if (logger.IsEnabled(LogLevel.Information))
             {
-                logger.LogInformation("ExportAll request: session={SessionId}, format={Format}, excludeEmpty={ExcludeEmpty}", sessionId, format, excludeEmptyFolders);
+                logger.LogInformation("ExportAll request: session={SessionId}, format={Format}, excludeEmpty={ExcludeEmpty}, userId={UserId}", sessionId, format, excludeEmptyFolders, userId);
             }
             var filter = new MessageDateFilter
             {
@@ -39,10 +39,25 @@ public static class ConversionEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                return Results.Stream(async outputStream =>
-                {
-                    await pstService.ExportAllAsync(outputStream, sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? false);
-                }, "application/zip", "pst_export.zip");
+                // Buffer into memory first so exceptions (e.g. UnauthorizedAccessException)
+                // are thrown here rather than inside the Results.Stream callback where they
+                // cannot be caught and result in a 500 instead of a 403.
+                var ms = new MemoryStream();
+                await pstService.ExportAllAsync(ms, sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? false);
+                ms.Position = 0;
+                return Results.Stream(ms, "application/zip", "pst_export.zip");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { error = ex.Message });
+            }
+            catch (FileNotFoundException ex)
+            {
+                logger.LogWarning("ExportAll: File not found for session {SessionId}: {Message}", sessionId, ex.Message);
+                return Results.Problem(
+                    detail: ex.Message,
+                    title: "Session file no longer available",
+                    statusCode: StatusCodes.Status410Gone);
             }
             catch (UnauthorizedAccessException)
             {
@@ -64,12 +79,16 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
             {
-                var filePath = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? false);
-                return Results.File(filePath, "application/vnd.ms-outlook", "converted_export.pst");
+                var (data, fileName) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+                return Results.Stream(data, "application/vnd.ms-outlook", fileName);
             }
             catch (FileNotFoundException)
             {
                 return Results.NotFound(new { error = "Session not found" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { error = ex.Message });
             }
             catch (UnauthorizedAccessException)
             {
@@ -90,12 +109,16 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
             {
-                var filePath = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? false);
-                return Results.File(filePath, "application/vnd.ms-outlook", "converted_export.ost");
+                var (data, fileName) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+                return Results.Stream(data, "application/vnd.ms-outlook", fileName);
             }
             catch (FileNotFoundException)
             {
                 return Results.NotFound(new { error = "Session not found" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { error = ex.Message });
             }
             catch (UnauthorizedAccessException)
             {

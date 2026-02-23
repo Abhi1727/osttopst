@@ -253,7 +253,10 @@ const Pricing = () => {
             to assist you with tailored pricing.
           </p>
           <div className="flex justify-center gap-4 pt-4">
-            <Button className="bg-white text-emerald-700 hover:bg-emerald-50 px-8 py-6 font-bold rounded-md">
+            <Button
+              variant="outline"
+              className="border-2 border-emerald-400 text-white hover:bg-emerald-700 bg-transparent px-8 py-6 font-bold rounded-md"
+            >
               Contact Sales
             </Button>
             <Button

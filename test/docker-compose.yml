@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   # MySQL Database
@@ -15,11 +15,21 @@ services:
       - mysql_data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
     ports:
-      - "3306:3306"
+      - "3307:3306"
     networks:
       - pstconverter-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,10 +68,11 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};
+      - ConnectionStrings__DefaultConnection=Server=srv1931.hstgr.io;Port=3306;Database=u571325480_osttopst;User=u571325480_xziant;Password=Xziant@123;SslMode=Preferred
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD}
       - Clerk__SecretKey=${CLERK_SECRET_KEY}
       - Clerk__Authority=${CLERK_AUTHORITY}
+      - UPLOAD_DIR=/app/uploads
     volumes:
       - backend_uploads:/app/uploads
       - backend_storage:/app/storage

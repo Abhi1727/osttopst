@@ -7,27 +7,79 @@ using System.Text.Json;
 using PstConverter.Data;
 using Microsoft.EntityFrameworkCore;
 using Aspose.Email;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace PstConverter.Services;
 
-public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbContext db, ILogger<PstService> logger)
+public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbContext db, ILogger<PstService> logger, IServiceScopeFactory scopeFactory)
 {
     private readonly string _uploadDir = StorageConstants.UploadDir;
     private readonly IPstStoragePool _pool = pool;
     private readonly IDistributedCache _cache = cache;
     private readonly AppDbContext _db = db;
     private readonly ILogger<PstService> _logger = logger;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _uploadLocks = new();
 
     private async Task<(string filePath, string? password)> GetSessionDataAsync(string sessionId, string userId)
     {
-        var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId)
-                      ?? throw new UnauthorizedAccessException("You do not have access to this session.");
+        var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+
+        if (session == null)
+        {
+            _logger.LogWarning("Session {SessionId} not found in DB at all.", sessionId);
+            throw new FileNotFoundException("Session not found");
+        }
+
+        if (session.UserId != userId)
+        {
+            _logger.LogWarning("Unauthorized: Session {SessionId} belongs to '{OwnerId}', but request is from '{RequestId}'",
+                sessionId, session.UserId, userId);
+            throw new UnauthorizedAccessException("You do not have access to this session.");
+        }
+
+        // Reject early if file assembly is still in progress or failed
+        if (session.Status == "Assembling")
+            throw new InvalidOperationException("File is still being assembled. Please wait a moment and try again.");
+
+        if (session.Status == "AssemblyFailed")
+            throw new InvalidOperationException("File assembly failed. Please re-upload the file.");
+
+        // Update LastAccessedAt to keep session alive.
+        // Swallow concurrency conflicts — two simultaneous requests may both try to update the
+        // same row; whichever wins is fine, the session remains valid either way.
+        try
+        {
+            session.LastAccessedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            // Non-critical: another request already updated LastAccessedAt — ignore.
+            _db.Entry(session).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+        }
 
         var pstPath = Path.Combine(_uploadDir, $"{sessionId}.pst");
         if (File.Exists(pstPath)) return (pstPath, session.Password);
         var ostPath = Path.Combine(_uploadDir, $"{sessionId}.ost");
         if (File.Exists(ostPath)) return (ostPath, session.Password);
-        return (pstPath, session.Password);
+
+        // File is missing on disk (e.g. container volume was reset).
+        // Mark the session so future requests immediately know without re-checking disk.
+        _logger.LogWarning("Session {SessionId} exists in DB but file is missing on disk. Marking as FileGone.", sessionId);
+        try
+        {
+            session.Status = "FileGone";
+            await _db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not update session {SessionId} status to FileGone.", sessionId);
+        }
+
+        throw new FileNotFoundException("The session file is no longer available on this server. Please re-upload your file.");
+
     }
 
     public async Task<string> SaveUploadedFileAsync(Stream fileStream, string originalFileName, string userId, long size, string? password = null)
@@ -63,7 +115,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         catch (Exception ex)
         {
             _logger.LogError(ex, "ERROR during file upload");
-            if (File.Exists(filePath)) try { File.Delete(filePath); } catch { }
+            if (File.Exists(filePath)) TryDelete(filePath);
             throw;
         }
     }
@@ -88,24 +140,6 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var metaPath = Path.Combine(chunkDir, "_metadata.json");
         await File.WriteAllTextAsync(metaPath, JsonSerializer.Serialize(metadata));
 
-        // Store password temporarily in a file if provided
-        // Password is NOT stored on disk for security. 
-        // If password is required for finalization, it must be provided again or stored in a secure cache (omitted for this implementation, assuming provided at finalization or not needed during chunking).
-        // For now, we rely on the client to provide the password if needed during initial check, but InitChunkedUploadAsync doesn't open the PST.
-        // The FinalizeChunkedUploadAsync will need the password if we want to add it to the session immediately, 
-        // BUT the session creation in FinalizeChunkedUploadAsync takes a password from *somewhere*.
-        // Improved: We will NOT write it to disk. We will expect the password to be available in the session metadata if we pass it, OR we just store null and update it later.
-        // Actually, to fix the limitation without adding complex key management, we'll store it in the metadata JSON but as a separate encrypted field if we really had to, 
-        // but for this fix, we will just NOT write the plaintext file. 
-        // *Correction*: The original logic read it back in Finalize. To strictly fix "Secure password storage", we must not write `_password.txt`.
-        // We will store it in the database Session *after* finalization. 
-        // If the user provided a password during Init, we will risk losing it if we don't persist it. 
-        // Compromise: We will NOT persist it to disk. User must provide it again if session needs it, or we rely on the fact that `Finalize` doesn't take params.
-        // Let's rely on the metadata. We can store it in metadata for now (assuming internal storage is trusted enough vs strict plaintext file), 
-        // OR better: do not support password for chunked uploads unless we add a secure vault.
-        // DECISION: Remove the insecure write. If this breaks functionality for password-protected chunked uploads, it's better than the security hole.
-        // We will mock the password retention by NOT effectively saving it, effectively fixing the security hole.
-
         return uploadId;
     }
 
@@ -115,8 +149,17 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         if (!Directory.Exists(chunkDir)) throw new FileNotFoundException("Upload session not found");
 
         var metaPath = Path.Combine(chunkDir, "_metadata.json");
-        var metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(await File.ReadAllTextAsync(metaPath))
-            ?? throw new InvalidOperationException("Corrupted metadata");
+        ChunkedUploadMetadata metadata;
+        try
+        {
+            using var fs = new FileStream(metaPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            metadata = await JsonSerializer.DeserializeAsync<ChunkedUploadMetadata>(fs)
+                ?? throw new InvalidOperationException("Corrupted metadata");
+        }
+        catch (Exception)
+        {
+            throw;
+        }
 
         if (metadata.UserId != userId) throw new UnauthorizedAccessException("You do not have access to this upload session.");
 
@@ -126,10 +169,46 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             await chunkStream.CopyToAsync(fs);
         }
 
-        if (!metadata.ReceivedChunks.Contains(chunkIndex)) metadata.ReceivedChunks.Add(chunkIndex);
-        await File.WriteAllTextAsync(metaPath, JsonSerializer.Serialize(metadata));
+        return (true, chunkIndex + 1);
+    }
 
-        return (true, metadata.ReceivedChunks.Count);
+    public async Task AbortChunkedUploadAsync(string uploadId, string userId)
+    {
+        var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
+        if (!Directory.Exists(chunkDir)) return;
+
+        // Verify ownership (metadata is written in InitChunkedUploadAsync)
+        var metaPath = Path.Combine(chunkDir, "_metadata.json");
+        if (File.Exists(metaPath))
+        {
+            try
+            {
+                var json = await File.ReadAllTextAsync(metaPath);
+                var metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(json);
+                if (metadata != null && metadata.UserId != userId)
+                {
+                    throw new UnauthorizedAccessException("You do not have access to this upload session.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to read metadata for aborted upload {UploadId}", uploadId);
+            }
+        }
+
+        try
+        {
+            Directory.Delete(chunkDir, true);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Aborted chunked upload {UploadId} and cleaned up directory.", uploadId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete chunk directory during abort for {UploadId}", uploadId);
+            throw;
+        }
     }
 
     public async Task<FinalizationResult> FinalizeChunkedUploadAsync(string uploadId, string userId)
@@ -137,8 +216,20 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
         if (!Directory.Exists(chunkDir)) throw new FileNotFoundException("Upload session not found");
 
-        var metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(await File.ReadAllTextAsync(Path.Combine(chunkDir, "_metadata.json")))
-            ?? throw new InvalidOperationException("Corrupted metadata");
+        var uploadLock = _uploadLocks.GetOrAdd(uploadId, _ => new SemaphoreSlim(1, 1));
+        await uploadLock.WaitAsync();
+        ChunkedUploadMetadata metadata;
+        try
+        {
+            var json = await File.ReadAllTextAsync(Path.Combine(chunkDir, "_metadata.json"));
+            metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(json)
+                ?? throw new InvalidOperationException("Corrupted metadata");
+        }
+        finally
+        {
+            uploadLock.Release();
+            _uploadLocks.TryRemove(uploadId, out _);
+        }
 
         if (metadata.UserId != userId) throw new UnauthorizedAccessException("You do not have access to this upload session.");
 
@@ -147,7 +238,6 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         if (ext != ".ost") ext = ".pst";
         var finalPath = Path.Combine(_uploadDir, $"{sessionId}{ext}");
 
-        // Create the session in DB with "Assembling" status
         var session = new ConversionSession
         {
             SessionId = sessionId,
@@ -157,12 +247,11 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             FileType = ext.TrimStart('.'),
             CreatedAt = DateTime.UtcNow,
             Status = "Assembling",
-            Password = null // Password not supported in basic chunked flow yet
+            Password = null
         };
         _db.ConversionSessions.Add(session);
         await _db.SaveChangesAsync();
 
-        // Start background assembly task
         _ = Task.Run(async () =>
         {
             try
@@ -172,25 +261,37 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     _logger.LogInformation("Merging {Count} chunks for upload {UploadId} in background", metadata.TotalChunks, uploadId);
                 }
 
-                using (var finalStream = new FileStream(finalPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920))
+                const int bufferSize = 1024 * 1024;
+                using (var finalStream = new FileStream(finalPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize))
                 {
                     for (int i = 0; i < metadata.TotalChunks; i++)
                     {
                         var chunkPath = Path.Combine(chunkDir, $"chunk_{i:D5}");
-                        using var chunkFs = new FileStream(chunkPath, FileMode.Open, FileAccess.Read);
-                        await chunkFs.CopyToAsync(finalStream);
+                        if (!File.Exists(chunkPath))
+                        {
+                            throw new FileNotFoundException($"Missing chunk {i} for upload {uploadId}");
+                        }
+                    }
+
+                    finalStream.SetLength(metadata.TotalSize);
+
+                    for (int i = 0; i < metadata.TotalChunks; i++)
+                    {
+                        var chunkPath = Path.Combine(chunkDir, $"chunk_{i:D5}");
+                        using var chunkFs = new FileStream(chunkPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize);
+                        await chunkFs.CopyToAsync(finalStream, bufferSize);
                     }
                 }
 
-                // Update session status to Uploaded
-                using var scope = _logger.BeginScope(new Dictionary<string, object> { ["SessionId"] = sessionId });
-                using var updateDb = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseMySql(_db.Database.GetConnectionString(), ServerVersion.AutoDetect(_db.Database.GetConnectionString())).Options);
-
-                var s = await updateDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
-                if (s != null)
+                using (var scope = _scopeFactory.CreateScope())
                 {
-                    s.Status = "Uploaded";
-                    await updateDb.SaveChangesAsync();
+                    var updateDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var s = await updateDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
+                    if (s != null)
+                    {
+                        s.Status = "Uploaded";
+                        await updateDb.SaveChangesAsync();
+                    }
                 }
 
                 try { Directory.Delete(chunkDir, true); } catch { }
@@ -198,8 +299,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Background assembly failed for session {SessionId}", sessionId);
-                // Update status to Failed
-                using var updateDb = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseMySql(_db.Database.GetConnectionString(), ServerVersion.AutoDetect(_db.Database.GetConnectionString())).Options);
+                using var scope = _scopeFactory.CreateScope();
+                var updateDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var s = await updateDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
                 if (s != null)
                 {
@@ -214,10 +315,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     public record FinalizationResult(string SessionId, string FileName, long Size, string FileType);
 
-    public async Task<string> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders);
-    public async Task<string> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders);
+    public async Task<(MemoryStream Data, string FileName)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders);
+    public async Task<(MemoryStream Data, string FileName)> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders);
 
-    private async Task<string> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false)
+    private async Task<(MemoryStream Data, string FileName)> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false)
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
         return await _pool.AccessAsync(sessionId, srcPath, srcStorage =>
@@ -225,13 +326,29 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             string ext = format == FileFormat.Ost ? ".ost" : ".pst";
             var outputPath = Path.Combine(_uploadDir, $"{sessionId}_converted{ext}");
 
-            // Delete existing if any
-            if (File.Exists(outputPath)) try { File.Delete(outputPath); } catch { }
+            if (File.Exists(outputPath)) TryDelete(outputPath);
 
-            using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
-            CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders);
+            using (var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode))
+            {
+                CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders);
+            } // destStorage disposed here — file handle released
 
-            return Task.FromResult(outputPath);
+            // Read into memory immediately so we can delete the temp file
+            var ms = new MemoryStream();
+            using (var fs = new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                fs.CopyTo(ms);
+            }
+            TryDelete(outputPath);
+            ms.Position = 0;
+
+            var session = _db.ConversionSessions.FirstOrDefault(s => s.SessionId == sessionId);
+            var baseName = session != null
+                ? Path.GetFileNameWithoutExtension(session.OriginalFileName)
+                : sessionId;
+            var fileName = $"{baseName}_converted{ext}";
+
+            return Task.FromResult((ms, fileName));
         }, password);
     }
 
@@ -245,21 +362,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 if (totalMessages == 0) continue;
             }
 
-        FolderInfo newFolder;
-        try
-        {
-            // Create matching folder in destination; if it already exists, reuse it.
-            newFolder = destParent.AddSubFolder(srcFolder.DisplayName);
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("same name already exists", StringComparison.OrdinalIgnoreCase))
-        {
-            // Aspose throws when a folder with the same name already exists under destParent.
-            // Reuse the existing folder instead of failing the whole conversion.
-            newFolder = destParent
-                .GetSubFolders()
-                .FirstOrDefault(f => f.DisplayName == srcFolder.DisplayName)
-                ?? destParent.AddSubFolder(srcFolder.DisplayName + " (Copy)");
-        }
+            var newFolder = destParent.AddSubFolder(srcFolder.DisplayName);
             foreach (var msgInfo in srcFolder.GetContents())
             {
                 using var msg = srcPst.ExtractMessage(msgInfo.EntryIdString);
@@ -368,10 +471,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 BodyHtml = msg.BodyHtml ?? "",
                 BodyText = msg.Body ?? "",
                 Attachments = [.. msg.Attachments.Select(att => new AttachmentInfo {
-                    FileName = att.LongFileName ?? att.DisplayName ?? "attachment",
-                    Size = att.BinaryData?.Length ?? 0,
-                    ContentType = att.MimeTag ?? "application/octet-stream"
-                })]
+                        FileName = att.LongFileName ?? att.DisplayName ?? "attachment",
+                        Size = att.BinaryData?.Length ?? 0,
+                        ContentType = att.MimeTag ?? "application/octet-stream"
+                    })]
             });
         }, password);
     }
@@ -475,7 +578,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
         finally
         {
-            if (File.Exists(tempZipPath)) try { File.Delete(tempZipPath); } catch { }
+            if (File.Exists(tempZipPath)) TryDelete(tempZipPath);
         }
     }
 
@@ -503,7 +606,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
         finally
         {
-            if (File.Exists(tempZipPath)) try { File.Delete(tempZipPath); } catch { }
+            if (File.Exists(tempZipPath)) TryDelete(tempZipPath);
         }
     }
 
@@ -515,7 +618,6 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             if (totalMessages == 0) return;
         }
 
-        // Explicitly create a directory entry for empty folders (ZIP format uses trailing slash)
         if (!string.IsNullOrEmpty(path))
         {
             archive.CreateEntry(path + "/");
@@ -534,6 +636,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             using var es = entry.Open();
             SaveMessageToStream(msg, es, format);
         }
+
         foreach (var sub in folder.GetSubFolders())
         {
             ExportFolderRecursive(pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty);
@@ -574,7 +677,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 }
                 break;
             case ExportFormat.Msg:
-                msg.Save(ms); // Default is MSG format
+                msg.Save(ms);
                 break;
             case ExportFormat.Html:
                 using (var htmlMsg = msg.ToMailMessage(options))
@@ -632,7 +735,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
         finally
         {
-            if (File.Exists(tempZipPath)) try { File.Delete(tempZipPath); } catch { }
+            if (File.Exists(tempZipPath)) TryDelete(tempZipPath);
         }
     }
 
@@ -642,7 +745,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         foreach (var ext in (string[])[".pst", ".ost"])
         {
             var path = Path.Combine(_uploadDir, $"{sessionId}{ext}");
-            if (File.Exists(path)) File.Delete(path);
+            TryDelete(path);
+
+            var convertedPath = Path.Combine(_uploadDir, $"{sessionId}_converted{ext}");
+            TryDelete(convertedPath);
         }
     }
 
@@ -660,5 +766,24 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var invalid = Path.GetInvalidFileNameChars();
         var sanitized = new string([.. name.Where(c => !invalid.Contains(c))]);
         return string.IsNullOrWhiteSpace(sanitized) ? "message" : sanitized.Trim();
+    }
+
+    private static void TryDelete(string path)
+    {
+        if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+
+        for (int i = 0; i < 3; i++)
+        {
+            try
+            {
+                File.Delete(path);
+                return;
+            }
+            catch (IOException)
+            {
+                if (i < 2) Thread.Sleep(500);
+            }
+            catch { return; }
+        }
     }
 }

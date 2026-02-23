@@ -31,13 +31,13 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev --prefer-offline --no-audit
 
-# Create non-root user
-RUN addgroup -g 1000 appuser && \
-    adduser -D -u 1000 -G appuser appuser
+# Use existing node user (UID/GID 1000) instead of creating a new one
+# permissions for app directory
+RUN chown -R node:node /app
 
 # Copy build output and server
-COPY --from=build --chown=appuser:appuser /app/dist ./dist
-COPY --chown=appuser:appuser server.cjs ./
+COPY --from=build --chown=node:node /app/dist ./dist
+COPY --chown=node:node server.cjs ./
 
 # Install curl for healthcheck
 RUN apk add --no-cache curl
@@ -47,7 +47,7 @@ ENV NODE_ENV=production \
     PORT=3000
 
 # Switch to non-root user
-USER appuser
+USER node
 
 # Expose port
 EXPOSE 3000

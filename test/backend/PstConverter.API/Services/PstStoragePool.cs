@@ -22,7 +22,7 @@ public class PstStoragePool : IPstStoragePool
         _cache = cache;
         _logger = logger;
         _cacheOptions = new MemoryCacheEntryOptions()
-            .SetSlidingExpiration(TimeSpan.FromMinutes(10))
+            .SetSlidingExpiration(TimeSpan.FromMinutes(30))  // was 1 min — too aggressive
             .RegisterPostEvictionCallback(EvictionCallback);
     }
 
@@ -31,6 +31,9 @@ public class PstStoragePool : IPstStoragePool
 
     public async Task<T> AccessAsync<T>(string sessionId, string filePath, Func<PersonalStorage, Task<T>> action, string? password = null)
     {
+        // Get-or-create the semaphore. We NEVER dispose this inside EvictionCallback
+        // to avoid the race: Thread A holds a reference to the semaphore, Thread B (eviction)
+        // disposes it, then Thread A's WaitAsync() throws ObjectDisposedException.
         var semaphore = _locks.GetOrAdd(sessionId, _ => new SemaphoreSlim(1, 1));
         await semaphore.WaitAsync();
 
@@ -89,15 +92,11 @@ public class PstStoragePool : IPstStoragePool
             {
                 _logger.LogInformation("Evicting PST for session {SessionId}. Reason: {Reason}", sessionId, reason);
             }
+            // Only dispose the PST file handle — NOT the semaphore.
+            // The semaphore may still be referenced by other threads blocked in WaitAsync().
+            // Disposing it here would cause ObjectDisposedException on those threads.
+            // Semaphores are only cleaned up in Dispose() when the whole pool shuts down.
             try { pst.Dispose(); } catch { }
-
-            if (sessionId != null)
-            {
-                if (_locks.TryRemove(sessionId, out var semaphore))
-                {
-                    semaphore.Dispose();
-                }
-            }
         }
     }
 

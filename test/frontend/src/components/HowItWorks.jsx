@@ -16,23 +16,23 @@ const HowItWorks = () => {
   const [steps, setSteps] = useState([
     {
       stepNumber: 1,
-      title: "Upload & Securely Transfer",
+      title: "Upload the OST File",
       description:
-        "Drag and drop your .ost file (up to 50GB) into our 256-bit SSL encrypted pipeline. We ensure a safe transfer, avoiding risks associated with unverified consumer software.",
+        "You can use drag and drop to upload your .ost file to online converter. We support files up to 50GB.",
       iconName: "UploadCloud",
     },
     {
       stepNumber: 2,
       title: "Intelligent Processing",
       description:
-        "Our engine analyzes the OST, repairs header errors from 'dirty shutdowns', and eliminates duplicate emails. We maintain your original folder hierarchy and metadata integrity.",
+        "Your file is instantly converted by our cloud engine. We keep your original folder structure, metadata, and data integrity safe the whole time.",
       iconName: "Cpu",
     },
     {
       stepNumber: 3,
-      title: "Instant PST Access",
+      title: "Get the PST File",
       description:
-        "Download your standalone PST file immediately. Once converted, the data is independent of the server and ready for use in any Outlook version. Files are automatically deleted after 24 hours.",
+        "You can download your converted PST file right after. For your peace of mind, files are deleted automatically after 24 hours as we respect your privacy.",
       iconName: "Download",
     },
   ]);
@@ -136,8 +136,7 @@ const HowItWorks = () => {
           How It Works
         </h1>
         <p className="text-slate-500 max-w-xl mx-auto text-sm md:text-base">
-          A simple 3-step process to recover and convert your Outlook data with
-          enterprise-grade security.
+         A three-steps process to move and restore your Outlook data with Zero-Trust Security Framework.
         </p>
       </div>
 

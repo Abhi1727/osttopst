@@ -19,10 +19,11 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import React from "react";
+import { deleteSession } from "./services/api";
 
 function App() {
   const [session, setSession] = useState(() => {
-    const saved = localStorage.getItem("pst_session");
+    const saved = sessionStorage.getItem("pst_session");
     return saved ? JSON.parse(saved) : null;
   });
 
@@ -39,9 +40,9 @@ function App() {
   // Persist session
   useEffect(() => {
     if (session) {
-      localStorage.setItem("pst_session", JSON.stringify(session));
+      sessionStorage.setItem("pst_session", JSON.stringify(session));
     } else {
-      localStorage.removeItem("pst_session");
+      sessionStorage.removeItem("pst_session");
     }
   }, [session]);
 
@@ -51,15 +52,29 @@ function App() {
     toast.success("Session ready!");
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     console.log("[App] Resetting session...");
+    if (session?.sessionId) {
+      try {
+        const token = await getToken();
+        await deleteSession(session.sessionId, token);
+        console.log("[App] Backend session deleted:", session.sessionId);
+      } catch (err) {
+        console.error("[App] Failed to delete session on backend:", err);
+      }
+    }
     setSession(null);
-    localStorage.removeItem("pst_session");
+    sessionStorage.removeItem("pst_session");
     navigate("/");
   };
 
   const { getToken } = useAuth();
   const location = useLocation();
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // Reactive navigation to preview if session exists and we are on home
   useEffect(() => {
@@ -79,7 +94,7 @@ function App() {
             : "min-h-screen bg-white"
         }`}
       >
-        <UnifiedHeader session={session} />
+        <UnifiedHeader session={session} onReset={handleReset} />
 
         <main
           className={`flex-1 flex flex-col ${

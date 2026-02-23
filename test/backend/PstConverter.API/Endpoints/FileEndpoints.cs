@@ -41,6 +41,11 @@ public static class FileEndpoints
                     logger.LogInformation("Processing file for user: {UserId}", userId);
 
                 using var stream = file.OpenReadStream();
+                if (!IsValidPstHeader(stream))
+                {
+                    logger.LogWarning("Upload rejected: Invalid file signature for file {FileName}", file.FileName);
+                    return Results.BadRequest(new { error = $"The file '{file.FileName}' does not have a valid PST/OST signature." });
+                }
                 var sessionId = await pstService.SaveUploadedFileAsync(stream, file.FileName, userId, file.Length, password);
 
                 if (logger.IsEnabled(LogLevel.Information))
@@ -127,6 +132,12 @@ public static class FileEndpoints
                 }
 
                 using var stream = chunk.OpenReadStream();
+                if (chunkIndex == 0 && !IsValidPstHeader(stream))
+                {
+                    logger.LogWarning("Chunk upload rejected: Invalid file signature for upload {UploadId}", uploadId);
+                    return Results.BadRequest(new { error = "The file does not have a valid PST/OST signature." });
+                }
+
                 var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
                 var (success, receivedCount) = await pstService.SaveChunkAsync(uploadId, userId, chunkIndex, stream);
 
@@ -147,6 +158,34 @@ public static class FileEndpoints
         .WithName("UploadChunk")
         .WithTags("File Operations")
         .WithSummary("Upload a single chunk of a large file")
+        .RequireAuthorization();
+
+        /// 2b. Abort chunked upload
+        group.MapDelete("/upload/{uploadId}", async (
+            string uploadId,
+            PstService pstService,
+            ClaimsPrincipal user,
+            ILogger<Program> logger) =>
+        {
+            try
+            {
+                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+                await pstService.AbortChunkedUploadAsync(uploadId, userId);
+                return Results.NoContent();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Abort chunked upload failed: {UploadId}", uploadId);
+                return Results.Problem(ex.Message);
+            }
+        })
+        .WithName("AbortChunkedUpload")
+        .WithTags("File Operations")
+        .WithSummary("Abort an ongoing chunked upload and clean up temporary files")
         .RequireAuthorization();
 
         /// 3. Finalize - merge all chunks into the final file
@@ -220,6 +259,16 @@ public static class FileEndpoints
         .WithName("DeleteSession")
         .WithTags("File Operations")
         .RequireAuthorization();
+    }
+
+    private static bool IsValidPstHeader(Stream stream)
+    {
+        if (stream.Length < 4) return false;
+        var start = stream.Position;
+        var buffer = new byte[4];
+        var read = stream.Read(buffer, 0, 4);
+        stream.Position = start;
+        return read == 4 && buffer[0] == 0x21 && buffer[1] == 0x42 && buffer[2] == 0x44 && buffer[3] == 0x4E;
     }
 }
 

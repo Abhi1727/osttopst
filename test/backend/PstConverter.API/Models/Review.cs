@@ -19,5 +19,5 @@ public class Review
     [Range(1, 5)]
     public int Rating { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 }

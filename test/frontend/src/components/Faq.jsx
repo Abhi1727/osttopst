@@ -110,7 +110,7 @@ const Faq = () => {
     {
       id: "item-13",
       category: "General",
-      question: "Is the OST PST viewer safe?",
+      question: "Is the OST TO PST converter safe?",
       answer:
         "Our online viewer and converter use 256-bit SSL encryption. Unlike many 'free' downloadable tools that may harbor malware, our cloud-based process ensures your data remains in a secure pipeline.",
     },
