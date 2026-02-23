@@ -75,20 +75,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy to production server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.PRODUCTION_HOST }}
-          username: ${{ secrets.PRODUCTION_USER }}
-          key: ${{ secrets.PRODUCTION_SSH_KEY }}
-          script: |
-            mkdir -p /opt/pstconverter/nginx
-            cd /opt/pstconverter
-
-            # Sync configuration files from GitHub (using temporary checkout or direct SCP)
-            # For simplicity, we assume the files are already there or we provide a way to pull them.
-            # A better way is to use SCP to push the files before running the SSH script.
-
       - name: Copy config files to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -107,10 +93,13 @@ jobs:
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           script: |
             cd /opt/pstconverter
-            # Ensure .env exists
+            # Ensure .env exists if not already present
             if [ ! -f .env ]; then cp .env.example .env; fi
 
+            # Pull new images and restart services with production overrides
             docker-compose -f docker-compose.yml -f docker-compose.prod.yml pull
             docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+            # Post-deployment status and cleanup
             docker-compose ps
             docker image prune -f
