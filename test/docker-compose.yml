@@ -1,39 +1,37 @@
-
-
 services:
-  # MySQL Database
-  mysql:
-    image: mysql:8.0
-    container_name: pstconverter-mysql
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pstconverter-sqlserver
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Sql@1234
+      - MSSQL_PID=Developer
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d
+      - sqlserver_data:/var/opt/mssql
     ports:
-      - "3307:3306"
+      - "1434:1433"
     networks:
       - pstconverter-network
     healthcheck:
       test:
         [
           "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
+          "/opt/mssql-tools18/bin/sqlcmd",
+          "-S",
           "localhost",
-          "-u",
-          "root",
-          "-p${MYSQL_ROOT_PASSWORD}",
+          "-U",
+          "sa",
+          "-P",
+          "Sql@1234",
+          "-Q",
+          "SELECT 1",
+          "-C",
         ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
 
   # Redis Cache (Optional)
   redis:
@@ -61,14 +59,14 @@ services:
     container_name: pstconverter-backend
     restart: unless-stopped
     depends_on:
-      mysql:
+      sqlserver:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__DefaultConnection=Server=srv1931.hstgr.io;Port=3306;Database=u571325480_osttopst;User=u571325480_xziant;Password=Xziant@123;SslMode=Preferred
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PstConverterDb;User Id=sa;Password=Sql@1234;TrustServerCertificate=True;
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD}
       - Clerk__SecretKey=${CLERK_SECRET_KEY}
       - Clerk__Authority=${CLERK_AUTHORITY}
@@ -120,7 +118,7 @@ services:
 
 # Volumes for data persistence
 volumes:
-  mysql_data:
+  sqlserver_data:
     driver: local
   redis_data:
     driver: local

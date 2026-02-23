@@ -7,10 +7,16 @@ public static class DbInitializer
 {
     public static void Initialize(AppDbContext context)
     {
-        // Ensure database is created
-        // Note: For production, we should use context.Database.Migrate()
-        // context.Database.EnsureCreated();
-
-        // Migration logic for SQL Server handled by EF Core Migrations
+        // Automatically create database and apply migrations
+        try
+        {
+            context.Database.Migrate();
+            Console.WriteLine("Database initialization successful.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database initialization failed: {ex.Message}");
+            throw;
+        }
     }
 }
