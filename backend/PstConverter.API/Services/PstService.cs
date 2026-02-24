@@ -96,6 +96,33 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 await fileStream.CopyToAsync(fs);
             }
 
+            var storeGuid = string.Empty;
+            try
+            {
+                storeGuid = ExtractStoreGuid(filePath);
+                if (!string.IsNullOrEmpty(storeGuid))
+                {
+                    // Check for existing successful session for this user and GUID in last 24h
+                    var cutoff = DateTime.UtcNow.AddHours(-24);
+                    var existing = await _db.ConversionSessions
+                        .FirstOrDefaultAsync(s => s.UserId == userId && s.StoreGuid == storeGuid && s.CreatedAt > cutoff && s.Status == "Uploaded");
+
+                    if (existing != null)
+                    {
+                        if (_logger.IsEnabled(LogLevel.Information))
+                        {
+                            _logger.LogInformation("Found existing session {SessionId} for StoreGuid {StoreGuid}. Reusing.", existing.SessionId, storeGuid);
+                        }
+                        TryDelete(filePath);
+                        return existing.SessionId;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to extract StoreGuid during single upload");
+            }
+
             var session = new ConversionSession
             {
                 SessionId = sessionId,
@@ -105,7 +132,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 FileType = ext.TrimStart('.'),
                 CreatedAt = DateTime.UtcNow,
                 Status = "Uploaded",
-                Password = password
+                Password = password,
+                StoreGuid = storeGuid
             };
             _db.ConversionSessions.Add(session);
             await _db.SaveChangesAsync();
@@ -289,6 +317,35 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     var s = await updateDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
                     if (s != null)
                     {
+                        var storeGuid = string.Empty;
+                        try
+                        {
+                            storeGuid = ExtractStoreGuid(finalPath);
+                            if (!string.IsNullOrEmpty(storeGuid))
+                            {
+                                // Check for existing successful session for this user and GUID in last 24h
+                                var cutoff = DateTime.UtcNow.AddHours(-24);
+                                var existing = await updateDb.ConversionSessions
+                                    .FirstOrDefaultAsync(x => x.UserId == userId && x.StoreGuid == storeGuid && x.CreatedAt > cutoff && x.Status == "Uploaded" && x.SessionId != sessionId);
+
+                                if (existing != null)
+                                {
+                                    if (_logger.IsEnabled(LogLevel.Information))
+                                    {
+                                        _logger.LogInformation("Post-assembly: Found existing session {SessionId} for StoreGuid {StoreGuid}. Marking current session as Duplicate.", existing.SessionId, storeGuid);
+                                    }
+                                    s.Status = "Duplicate";
+                                    // Optionally we could update the SessionId returned to the user, 
+                                    // but for background assembly it's easier to mark this as duplicate.
+                                    await updateDb.SaveChangesAsync();
+                                    TryDelete(finalPath);
+                                    return;
+                                }
+                            }
+                        }
+                        catch (Exception ex) { _logger.LogWarning(ex, "Failed to extract StoreGuid after assembly"); }
+
+                        s.StoreGuid = storeGuid;
                         s.Status = "Uploaded";
                         await updateDb.SaveChangesAsync();
                     }
@@ -739,9 +796,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
     }
 
-    public void CleanUp(string sessionId)
+    public async Task CleanUpAsync(string sessionId)
     {
-        _pool.Remove(sessionId);
+        await _pool.RemoveAsync(sessionId);
         foreach (var ext in (string[])[".pst", ".ost"])
         {
             var path = Path.Combine(_uploadDir, $"{sessionId}{ext}");
@@ -766,6 +823,25 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var invalid = Path.GetInvalidFileNameChars();
         var sanitized = new string([.. name.Where(c => !invalid.Contains(c))]);
         return string.IsNullOrWhiteSpace(sanitized) ? "message" : sanitized.Trim();
+    }
+
+    private string ExtractStoreGuid(string filePath)
+    {
+        try
+        {
+            // Fingerprint: SHA-256 of first 1MB + File Size (Matches frontend)
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var buffer = new byte[1024 * 1024]; // 1MB
+            var read = fs.Read(buffer, 0, buffer.Length);
+            var hashBytes = System.Security.Cryptography.SHA256.HashData(buffer.AsSpan(0, read));
+            var headerHash = Convert.ToHexString(hashBytes).ToLowerInvariant();
+            return $"{headerHash}_{fs.Length}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Fingerprint extraction failed for {File}: {Msg}", Path.GetFileName(filePath), ex.Message);
+            return string.Empty;
+        }
     }
 
     private static void TryDelete(string path)

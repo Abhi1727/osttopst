@@ -8,6 +8,7 @@ public interface IPstStoragePool : IDisposable
 {
     Task<T> AccessAsync<T>(string sessionId, string filePath, Func<PersonalStorage, Task<T>> action, string? password = null);
     void Remove(string sessionId);
+    Task RemoveAsync(string sessionId);
 }
 
 public class PstStoragePool : IPstStoragePool
@@ -81,6 +82,28 @@ public class PstStoragePool : IPstStoragePool
     public void Remove(string sessionId)
     {
         _cache.Remove(sessionId);
+    }
+
+    public async Task RemoveAsync(string sessionId)
+    {
+        if (_locks.TryGetValue(sessionId, out var semaphore))
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                _cache.Remove(sessionId);
+                // After cache removal, the PST should be disposed by EvictionCallback.
+                // We are holding the lock, so no new AccessAsync can start for this ID.
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }
+        else
+        {
+            _cache.Remove(sessionId);
+        }
     }
 
     private void EvictionCallback(object key, object? value, EvictionReason reason, object? state)

@@ -5,11 +5,20 @@ import Glossary from "./Glossary";
 import ConversionMissions from "./ConversionMissions";
 import TechnicalAdvantages from "./TechnicalAdvantages";
 import ReviewSection from "./ReviewSection";
+import ConversionHistory from "../ConversionHistory";
+import { SignedIn } from "@clerk/clerk-react";
 
-const LandingPage = ({ onUploadComplete }) => {
+const LandingPage = ({ onUploadComplete, onRestore }) => {
   return (
     <div className="font-sans">
       <Hero onUploadComplete={onUploadComplete} />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SignedIn>
+          <ConversionHistory onRestore={onRestore} />
+        </SignedIn>
+      </div>
+
       <Features />
       <Glossary />
       <ConversionMissions />

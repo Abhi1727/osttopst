@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Search,
   Rocket,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,17 +164,28 @@ const FilePreview = ({ session, onReset }) => {
   // The backend CleanupBackgroundService will handle stale sessions.
   const purgeSession = useCallback(async () => {
     if (!session?.sessionId) return;
+
+    const confirm = window.confirm(
+      "Are you sure you want to discard this conversion? This will delete all files and reset your progress.",
+    );
+    if (!confirm) return;
+
     try {
+      const toastId = toast.loading("Deleting session...");
       const token = await getToken();
       await fileService.deleteSession(session.sessionId, token);
+      toast.dismiss(toastId);
+      toast.success("Session deleted successfully");
       console.log(
         "[FilePreview] Manual cleanup triggered for:",
         session.sessionId,
       );
+      onReset();
     } catch (err) {
+      toast.error("Failed to delete session: " + err.message);
       console.error("[FilePreview] Manual cleanup failed:", err);
     }
-  }, [getToken, session?.sessionId]);
+  }, [getToken, session?.sessionId, onReset]);
 
   // Intentionally removed beforeunload listener to prevent race conditions during downloads.
   // Explicit cleanup is still handled by the "Back to Upload" button.
@@ -656,20 +668,30 @@ const FilePreview = ({ session, onReset }) => {
 
       {/* Bottom Action Bar */}
       <footer className="h-28 px-12 border-t border-zinc-100 flex items-center justify-between bg-white shrink-0 z-20">
-        <Button
-          variant="outline"
-          onClick={async () => {
-            await purgeSession();
-            onReset();
-          }}
-          className="h-14 px-8 rounded-2xl border-2 border-zinc-100 text-zinc-500 font-black hover:bg-zinc-50 transition-all gap-3 group active:scale-95"
-        >
-          <ArrowLeft
-            size={20}
-            className="group-hover:-translate-x-1 transition-transform"
-          />
-          Back to Upload
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => {
+              onReset();
+            }}
+            className="h-14 px-8 rounded-2xl border-2 border-zinc-100 text-zinc-500 font-black hover:bg-zinc-50 transition-all gap-3 group active:scale-95"
+          >
+            <ArrowLeft
+              size={20}
+              className="group-hover:-translate-x-1 transition-transform"
+            />
+            Keep & Back
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={purgeSession}
+            className="h-14 px-8 rounded-2xl text-red-400 font-bold hover:text-red-500 hover:bg-red-50 transition-all gap-3 active:scale-95"
+          >
+            <Trash2 size={20} />
+            Discard Session
+          </Button>
+        </div>
 
         <div className="flex items-center gap-10">
           <div className="hidden xl:flex items-center gap-4 px-6 py-3 bg-emerald-50/50 border border-emerald-100/50 rounded-3xl">

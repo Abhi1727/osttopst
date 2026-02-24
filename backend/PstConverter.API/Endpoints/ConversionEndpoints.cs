@@ -2,6 +2,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PstConverter.Services;
 using PstConverter.Models;
+using PstConverter.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace PstConverter.Endpoints;
 
@@ -20,6 +22,7 @@ public static class ConversionEndpoints
             [FromQuery] DateTime? endDate,
             [FromQuery] bool? excludeEmptyFolders,
             PstService pstService,
+            AppDbContext db,
             ClaimsPrincipal user,
             ILogger<Program> logger) =>
         {
@@ -45,6 +48,15 @@ public static class ConversionEndpoints
                 var ms = new MemoryStream();
                 await pstService.ExportAllAsync(ms, sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? false);
                 ms.Position = 0;
+
+                // Mark as paid upon successful extraction
+                var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                if (session != null)
+                {
+                    session.IsPaid = true;
+                    await db.SaveChangesAsync();
+                }
+
                 return Results.Stream(ms, "application/zip", "pst_export.zip");
             }
             catch (InvalidOperationException ex)
@@ -74,12 +86,21 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
             {
                 var (data, fileName) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+
+                // Mark as paid upon successful conversion
+                var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                if (session != null)
+                {
+                    session.IsPaid = true;
+                    await db.SaveChangesAsync();
+                }
+
                 return Results.Stream(data, "application/vnd.ms-outlook", fileName);
             }
             catch (FileNotFoundException)
@@ -104,12 +125,21 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
             {
                 var (data, fileName) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+
+                // Mark as paid upon successful conversion
+                var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                if (session != null)
+                {
+                    session.IsPaid = true;
+                    await db.SaveChangesAsync();
+                }
+
                 return Results.Stream(data, "application/vnd.ms-outlook", fileName);
             }
             catch (FileNotFoundException)

@@ -140,11 +140,7 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
             }
             foreach (var session in oldSessions)
             {
-                pool.Remove(session.SessionId);
-
-                // Critical: Wait a moment for the cache eviction callback to finish disposing the PST handle.
-                // Aspose.Email might need a moment to close the file stream.
-                await Task.Delay(2000, stoppingToken);
+                await pool.RemoveAsync(session.SessionId);
 
                 // Also explicitly delete files if they match session ID (redundant but safe)
                 // The directory cleanup above handles files by LastWriteTime, which might be different from LastAccessedAt in DB.

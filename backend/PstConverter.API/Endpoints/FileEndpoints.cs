@@ -250,7 +250,7 @@ public static class FileEndpoints
 
             if (session == null) return Results.NotFound();
 
-            pstService.CleanUp(sessionId);
+            await pstService.CleanUpAsync(sessionId);
             db.ConversionSessions.Remove(session);
             await db.SaveChangesAsync();
 

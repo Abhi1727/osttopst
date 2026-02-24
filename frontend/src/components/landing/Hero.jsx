@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth, useClerk } from "@clerk/clerk-react";
 import { fileService } from "../../services/fileService";
 import { conversionService } from "../../services/conversionService";
+import { checkDuplicate } from "../../services/api";
 import { toast } from "sonner";
 import {
   FileText,
@@ -70,6 +71,19 @@ const Hero = ({ onUploadComplete }) => {
     disabled: uploading || !!completedSession,
   });
 
+  const calculateFingerprint = async (file) => {
+    // Fingerprint: SHA-256 of first 1MB + File Size
+    const chunkSize = 1024 * 1024; // 1MB
+    const slice = file.slice(0, chunkSize);
+    const buffer = await slice.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    return `${hashHex}_${file.size}`;
+  };
+
   const handleConvert = async () => {
     if (!file) return;
 
@@ -83,6 +97,32 @@ const Hero = ({ onUploadComplete }) => {
       const initialToken = await getToken();
       if (!initialToken) {
         console.warn("[Hero] No token found! Authentication might be missing.");
+      }
+
+      // Pre-upload optimization: Check for duplicates
+      setUploadDetail("Checking for existing conversions...");
+      try {
+        const fingerprint = await calculateFingerprint(file);
+        console.log("[Hero] Calculated fingerprint:", fingerprint);
+        const dupResult = await checkDuplicate(fingerprint, initialToken);
+        if (dupResult.found) {
+          if (dupResult.isPaid) {
+            toast.success("Lifetime access detected! No upload needed.");
+            setUploadDetail("Redirecting to your paid conversion...");
+          } else {
+            toast.success("Previous conversion found! Resuming...");
+          }
+
+          setCompletedSession(dupResult.session);
+          setUploadPhase("complete");
+
+          setTimeout(() => {
+            if (onUploadComplete) onUploadComplete(dupResult.session);
+          }, 1500);
+          return;
+        }
+      } catch (dupErr) {
+        console.warn("[Hero] Duplicate check failed (skipping):", dupErr);
       }
 
       // We reuse the existing fileService.uploadFile logic, passing the getToken function

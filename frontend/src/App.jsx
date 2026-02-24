@@ -23,7 +23,7 @@ import { deleteSession } from "./services/api";
 
 function App() {
   const [session, setSession] = useState(() => {
-    const saved = sessionStorage.getItem("pst_session");
+    const saved = localStorage.getItem("pst_session");
     return saved ? JSON.parse(saved) : null;
   });
 
@@ -40,9 +40,9 @@ function App() {
   // Persist session
   useEffect(() => {
     if (session) {
-      sessionStorage.setItem("pst_session", JSON.stringify(session));
+      localStorage.setItem("pst_session", JSON.stringify(session));
     } else {
-      sessionStorage.removeItem("pst_session");
+      localStorage.removeItem("pst_session");
     }
   }, [session]);
 
@@ -50,22 +50,22 @@ function App() {
     console.log("[App] handleUploadComplete called with:", data);
     setSession(data);
     toast.success("Session ready!");
+    navigate("/preview");
   };
 
-  const handleReset = async () => {
-    console.log("[App] Resetting session...");
-    if (session?.sessionId) {
-      try {
-        const token = await getToken();
-        await deleteSession(session.sessionId, token);
-        console.log("[App] Backend session deleted:", session.sessionId);
-      } catch (err) {
-        console.error("[App] Failed to delete session on backend:", err);
-      }
-    }
+  const handleReset = () => {
+    console.log(
+      "[App] Clearing local session state (preserving backend history)...",
+    );
     setSession(null);
-    sessionStorage.removeItem("pst_session");
+    localStorage.removeItem("pst_session");
     navigate("/");
+  };
+
+  const handleRestore = (recoveredSession) => {
+    console.log("[App] Restoring session:", recoveredSession);
+    setSession(recoveredSession);
+    navigate("/preview");
   };
 
   const { getToken } = useAuth();
@@ -76,13 +76,9 @@ function App() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Reactive navigation to preview if session exists and we are on home
-  useEffect(() => {
-    if (session && location.pathname === "/") {
-      console.log("[App] Session detected, navigating to preview...");
-      navigate("/preview");
-    }
-  }, [session, location.pathname, navigate]);
+  // No automatic redirection - allow user to see landing page/history
+  // even if a session is in localStorage. Navigation to /preview happens
+  // explicitly via handleUploadComplete or handleRestore.
 
   return (
     <ErrorBoundary>
@@ -104,7 +100,12 @@ function App() {
           <Routes>
             <Route
               path="/"
-              element={<LandingPage onUploadComplete={handleUploadComplete} />}
+              element={
+                <LandingPage
+                  onUploadComplete={handleUploadComplete}
+                  onRestore={handleRestore}
+                />
+              }
             />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route

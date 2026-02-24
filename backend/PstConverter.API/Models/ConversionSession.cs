@@ -31,4 +31,9 @@ public class ConversionSession
     public string FileType { get; set; } = string.Empty;
 
     public string? Password { get; set; }
+
+    [MaxLength(100)]
+    public string? StoreGuid { get; set; }
+
+    public bool IsPaid { get; set; } = false;
 }

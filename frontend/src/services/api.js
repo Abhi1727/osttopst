@@ -15,6 +15,16 @@ export const getRecentSessions = async (token) => {
   return handleResponse(res);
 };
 
+export const checkDuplicate = async (fingerprint, token) => {
+  const res = await fetch(
+    `${API_BASE_URL}/sessions/duplicate-check?fingerprint=${encodeURIComponent(fingerprint)}`,
+    {
+      headers: getHeaders(token),
+    },
+  );
+  return handleResponse(res);
+};
+
 export const checkSession = async (sessionId, token) => {
   const res = await fetch(`${API_BASE_URL}/sessions/${sessionId}/check`, {
     headers: getHeaders(token),
