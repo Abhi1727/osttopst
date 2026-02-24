@@ -121,14 +121,15 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var pool = scope.ServiceProvider.GetRequiredService<IPstStoragePool>();
 
+        var cutoff = DateTime.UtcNow - _maxFileAge;
         var oldSessions = await db.ConversionSessions
-            .Where(s => s.LastAccessedAt < DateTime.UtcNow - _maxFileAge)
+            .Where(s => s.LastAccessedAt < cutoff)
             .ToListAsync(stoppingToken);
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
             _logger.LogDebug("Found {Count} sessions in database. Checking for expirations older than {Cutoff}",
-                await db.ConversionSessions.CountAsync(stoppingToken), DateTime.UtcNow - _maxFileAge);
+                await db.ConversionSessions.CountAsync(stoppingToken), cutoff);
         }
 
         if (oldSessions.Count > 0)

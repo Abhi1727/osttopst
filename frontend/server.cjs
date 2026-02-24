@@ -11,7 +11,25 @@ const API_URL = process.env.API_URL || "http://127.0.0.1:5000";
 // Security headers
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://*.clerk.accounts.dev",
+        ],
+        connectSrc: [
+          "'self'",
+          "https://*.clerk.accounts.dev",
+          "http://127.0.0.1:5000",
+        ],
+        imgSrc: ["'self'", "data:", "https://*.clerk.accounts.dev"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        frameSrc: ["'self'", "https://*.clerk.accounts.dev"],
+        upgradeInsecureRequests: [],
+      },
+    },
     crossOriginEmbedderPolicy: false,
   }),
 );

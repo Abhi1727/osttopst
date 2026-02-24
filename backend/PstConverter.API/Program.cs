@@ -70,6 +70,28 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
         };
     });
 
+// Add Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100,
+                QueueLimit = 20,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(new { error = "Too many requests. Please try again later." }, token);
+    };
+});
+
 // Add CORS 
 builder.Services.AddCors(options =>
 {
@@ -84,9 +106,8 @@ builder.Services.AddCors(options =>
             }
             else
             {
-                // In production, we typically want to allow our specific domain
-                // For now, allowing all for ease of deployment, but restricted by Origin in deployment scenarios
-                policy.AllowAnyOrigin()
+                // Tighten CORS for production
+                policy.WithOrigins("https://osttopst.us", "https://www.osttopst.us")
                       .AllowAnyMethod()
                       .AllowAnyHeader();
             }
@@ -145,6 +166,7 @@ app.Use(async (context, next) =>
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 // Initialize Database Schema (Add missing columns if needed)
 using (var scope = app.Services.CreateScope())
@@ -171,6 +193,8 @@ app.Use(async (context, next) =>
     context.Response.Headers.XFrameOptions = "DENY";
     context.Response.Headers.XXSSProtection = "1; mode=block";
     context.Response.Headers.ContentSecurityPolicy = "default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev;";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocaton=()";
     await next();
 });
 
