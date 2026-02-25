@@ -212,6 +212,10 @@ app.MapReviewEndpoints();
 // Fallback to index.html for SPA-style routing (useful if we serve React from here, though we are decoupled)
 app.MapFallbackToFile("index.html");
 
-Console.WriteLine("--- PST Converter API Started ---");
-Console.WriteLine("URL: http://localhost:5000");
+Console.WriteLine("=================================================");
+Console.WriteLine("   PST CONVERTER API - SYSTEM READY             ");
+Console.WriteLine("=================================================");
+Console.WriteLine($"URL: http://localhost:5000");
+Console.WriteLine($"Time: {DateTime.Now}");
+Console.WriteLine("-------------------------------------------------");
 app.Run();

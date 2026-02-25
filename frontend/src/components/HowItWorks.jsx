@@ -1,278 +1,175 @@
-import React, { useState, useEffect } from "react";
-import {
-  UploadCloud,
-  Cpu,
-  Download,
-  ArrowRight,
-  HelpCircle,
-  FileText,
-  Zap,
-} from "lucide-react";
+import React from "react";
+import { Zap, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 import { useNavigate } from "react-router-dom";
+import { motion, useScroll, useSpring } from "framer-motion";
 
-const HowItWorks = () => {
-  const [steps, setSteps] = useState([
-    {
-      stepNumber: 1,
-      title: "Upload the OST File",
-      description:
-        "You can use drag and drop to upload your .ost file to online converter. We support files up to 50GB.",
-      iconName: "UploadCloud",
-    },
-    {
-      stepNumber: 2,
-      title: "Intelligent Processing",
-      description:
-        "Your file is instantly converted by our cloud engine. We keep your original folder structure, metadata, and data integrity safe the whole time.",
-      iconName: "Cpu",
-    },
-    {
-      stepNumber: 3,
-      title: "Get the PST File",
-      description:
-        "You can download your converted PST file right after. For your peace of mind, files are deleted automatically after 24 hours as we respect your privacy.",
-      iconName: "Download",
-    },
-  ]);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+// Import step images from assets
+import step1Img from "../assets/step1.png";
+import step2Img from "../assets/step2.png";
+import step3Img from "../assets/step3.png";
 
-  useEffect(() => {
-    fetch("/api/howitswork")
-      .then((res) => {
-        if (res.ok) return res.json();
-        throw new Error("API not ready");
-      })
-      .then((data) => {
-        setSteps(data);
-      })
-      .catch((err) => {
-        console.log("Using default steps (API offline or unreachable)");
-      });
-  }, []);
-
-  const getIcon = (iconName) => {
-    switch (iconName) {
-      case "UploadCloud":
-        return <UploadCloud className="w-8 h-8 text-white" />;
-      case "Cpu":
-        return <Cpu className="w-8 h-8 text-white" />;
-      case "Download":
-        return <Download className="w-8 h-8 text-slate-900" />;
-      default:
-        return null;
-    }
-  };
-
-  const getBgIcon = (iconName) => {
-    switch (iconName) {
-      case "UploadCloud":
-        return <FileUpIcon className="w-32 h-32 text-slate-100" />;
-      case "Cpu":
-        return <Cpu className="w-32 h-32 text-slate-100" />;
-      case "Download":
-        return <ShieldCheck className="w-32 h-32 text-slate-100" />; // Utilizing a ShieldIcon for security implication or checkmark
-      default:
-        return null;
-    }
-  };
-
-  // Custom ShieldCheck Icon for the background
-  const ShieldCheck = ({ className }) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  );
-
-  // Custom FileUp Icon for the background
-  const FileUpIcon = ({ className }) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-      <polyline points="14 2 14 8 20 8" />
-      <path d="M12 12v6" />
-      <path d="m9 15 3-3 3 3" />
-    </svg>
-  );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        Loading...
-      </div>
-    );
-  }
+const StepItem = ({ img, index }) => {
+  const isEven = index % 2 === 0;
 
   return (
-    <div className="bg-slate-50 min-h-screen font-sans flex flex-col">
-      {/* Header Section */}
-      <div className="bg-gradient-to-b from-emerald-50/50 to-slate-50 pt-20 pb-16 px-4 text-center relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-64 h-64 bg-amber-100/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+    <div className="relative flex items-center justify-center w-full min-h-[300px] md:min-h-[500px] mb-16 md:mb-28">
+      {/* Timeline Node & Number */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          whileInView={{ scale: 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 200,
+            damping: 15,
+            delay: 0.1,
+          }}
+          viewport={{ once: true }}
+          className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white border-4 border-emerald-500 shadow-2xl shadow-emerald-500/30 flex items-center justify-center z-20"
+        >
+          <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-emerald-500"></div>
+        </motion.div>
 
-        <span className="inline-block bg-emerald-100 text-emerald-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-4">
-          Process Guide
-        </span>
-        <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
-          How It Works
-        </h1>
-        <p className="text-slate-500 max-w-xl mx-auto text-sm md:text-base">
-         A three-steps process to move and restore your Outlook data with Zero-Trust Security Framework.
-        </p>
+        {/* Step Number Label */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          viewport={{ once: true }}
+          className={`absolute ${isEven ? "left-full ml-6" : "right-full mr-6"} top-1/2 -translate-y-1/2 whitespace-nowrap hidden md:block`}
+        >
+          <span className="text-4xl lg:text-5xl font-black text-slate-800 uppercase tracking-tighter">
+            Step 0{index + 1}
+          </span>
+        </motion.div>
       </div>
 
-      {/* Steps Section */}
-      <div className="max-w-4xl mx-auto px-4 w-full flex-1 pb-24 space-y-6">
-        {steps.map((step, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-2xl p-8 md:p-10 shadow-sm border border-slate-100 flex flex-col md:flex-row items-start gap-8 relative overflow-hidden group hover:shadow-md transition-shadow"
-          >
-            {/* Background Icon */}
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/4 opacity-50 pointer-events-none">
-              {index === 0 && (
-                <FileUpIcon className="w-40 h-40 text-slate-100" />
-              )}
-              {index === 1 && <Cpu className="w-40 h-40 text-slate-100" />}
-              {index === 2 && (
-                <ShieldCheck className="w-40 h-40 text-slate-100" />
-              )}
-            </div>
-
-            {/* Icon Box */}
-            <div
-              className={`flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${
-                index === 2
-                  ? "bg-amber-400 shadow-amber-400/20"
-                  : "bg-emerald-600 shadow-emerald-600/20"
-              }`}
-            >
-              {getIcon(step.iconName)}
-            </div>
-
-            <div className="flex-1 relative z-10">
-              <span className="text-emerald-600 font-bold text-xs uppercase tracking-wider block mb-2">
-                Step 0{step.stepNumber}
-              </span>
-              <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">
-                {step.title}
-              </h3>
-              {/* Applying specific formatting to parts of the description if needed, logic to match screenshots bold text */}
-              <p className="text-slate-500 leading-relaxed text-sm md:text-base">
-                {step.description.split(" ").map((word, i) => {
-                  // Highlight logic (simple heuristic based on keywords or just render plain for now)
-                  // The screenshot shows specific bolding: "50GB", "folder structure", "automatically deleted after 24 hours"
-                  const boldWords = [
-                    "50GB,",
-                    "50GB",
-                    "folder",
-                    "structure,",
-                    "structure",
-                    "metadata,",
-                    "automatically",
-                    "deleted",
-                    "after",
-                    "24",
-                    "hours",
-                  ];
-                  if (boldWords.includes(word)) {
-                    if (word === "automatically" && step.stepNumber === 3)
-                      return (
-                        <span key={i} className="font-bold text-emerald-600">
-                          {word}{" "}
-                        </span>
-                      );
-                    if (word === "deleted" && step.stepNumber === 3)
-                      return (
-                        <span key={i} className="font-bold text-emerald-600">
-                          {word}{" "}
-                        </span>
-                      );
-                    if (word === "after" && step.stepNumber === 3)
-                      return (
-                        <span key={i} className="font-bold text-emerald-600">
-                          {word}{" "}
-                        </span>
-                      );
-                    if (word === "24" && step.stepNumber === 3)
-                      return (
-                        <span key={i} className="font-bold text-emerald-600">
-                          {word}{" "}
-                        </span>
-                      );
-                    if (word === "hours" && step.stepNumber === 3)
-                      return (
-                        <span key={i} className="font-bold text-emerald-600">
-                          {word}{" "}
-                        </span>
-                      );
-
-                    return (
-                      <span key={i} className="font-bold text-slate-800">
-                        {word}{" "}
-                      </span>
-                    );
-                  }
-                  return word + " ";
-                })}
-              </p>
-            </div>
+      {/* Content Container (Alternating) */}
+      <div
+        className={`w-full grid md:grid-cols-2 gap-10 md:gap-20 items-center px-4`}
+      >
+        <motion.div
+          initial={{ opacity: 0, x: isEven ? -100 : 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, x: 0, scale: 1 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          viewport={{ once: true, margin: "-10%" }}
+          className={`${isEven ? "md:col-start-1" : "md:col-start-2"} order-last md:order-none`}
+        >
+          <div className="relative group overflow-hidden rounded-[32px] md:rounded-[50px] shadow-2xl shadow-slate-200/50 hover:shadow-emerald-500/20 transition-all duration-700">
+            <img
+              src={img}
+              alt={`Step ${index + 1}`}
+              className="w-full h-auto block transform group-hover:scale-105 transition-transform duration-1000"
+            />
           </div>
-        ))}
+        </motion.div>
+
+        {/* Placeholder for the other side on desktop */}
+        <div className="hidden md:block" />
       </div>
+    </div>
+  );
+};
+
+const HowItWorks = () => {
+  const navigate = useNavigate();
+  const images = [step1Img, step2Img, step3Img];
+
+  const { scrollYProgress } = useScroll();
+  const scaleY = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
+
+  return (
+    <div className="bg-slate-50 min-h-screen font-sans flex flex-col overflow-x-hidden">
+      {/* Header Section */}
+      <section className="bg-gradient-to-b from-emerald-50/80 to-slate-50 pt-32 pb-24 px-4 text-center relative">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <span className="inline-block bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8">
+              Visual Journey
+            </span>
+            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black text-slate-900 mb-8 tracking-tighter leading-none">
+              How It <span className="text-emerald-500">Works</span>
+            </h1>
+            <p className="text-slate-500 max-w-2xl mx-auto text-lg md:text-xl font-medium leading-relaxed">
+              Explore our intuitive 3-step process to securely migrate your
+              Outlook data with total confidence.
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Decorative background blur */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0,transparent_70%)] pointer-events-none -z-10" />
+      </section>
+
+      {/* Timeline Section */}
+      <section className="relative w-full max-w-7xl mx-auto py-20">
+        {/* Central Scrolling Progress Line */}
+        <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-slate-200 -translate-x-1/2 hidden md:block">
+          <motion.div
+            style={{ scaleY, originY: 0 }}
+            className="w-full h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          {images.map((img, index) => (
+            <StepItem key={index} img={img} index={index} />
+          ))}
+        </div>
+      </section>
 
       {/* CTA Section */}
-      <div className="bg-slate-800 py-20 px-4 relative overflow-hidden">
-        {/* Decorative Circles */}
-        <div className="absolute top-1/2 left-10 -translate-y-1/2 w-48 h-48 rounded-full border border-slate-700/50"></div>
-        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-64 h-64 rounded-full border border-slate-700/50"></div>
+      <section className="bg-slate-900 py-32 px-4 relative overflow-hidden">
+        {/* Modern dark patterns */}
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:40px_40px]" />
 
-        <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center">
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-            Ready to start?
-          </h2>
-          <p className="text-slate-400 mb-10 max-w-lg mx-auto">
-            Experience the fastest and most secure way to convert your Outlook
-            data files online.
-          </p>
-          <div className="flex gap-4">
-            <Button
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 px-8 rounded-md flex items-center gap-2"
-              onClick={() => navigate("/")}
-            >
-              <Zap className="w-4 h-4 fill-white" />
-              Convert Now
-            </Button>
-            <Button
-              variant="outline"
-              className="bg-slate-700/50 border-slate-600 text-white hover:bg-slate-700 hover:text-white font-bold h-12 px-8 rounded-md flex items-center gap-2"
-              onClick={() => navigate("/support")}
-            >
-              <HelpCircle className="w-4 h-4" />
-              Learn More
-            </Button>
-          </div>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tight">
+              Ready to{" "}
+              <span className="text-emerald-400 text-glow-emerald">
+                Simplify
+              </span>
+              ?
+            </h2>
+            <p className="text-slate-400 mb-12 max-w-xl mx-auto text-lg md:text-xl font-medium">
+              Join thousands of users who have successfully transitioned their
+              data with our secure technology.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <Button
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black h-16 px-12 rounded-2xl flex items-center gap-3 text-lg transition-all hover:scale-105 active:scale-95 shadow-xl shadow-emerald-500/20"
+                onClick={() => navigate("/")}
+              >
+                <Zap className="w-5 h-5 fill-current" />
+                Start Conversion
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-transparent border-2 border-slate-700 text-white hover:bg-white/5 font-black h-16 px-12 rounded-2xl flex items-center gap-3 text-lg transition-all"
+                onClick={() => navigate("/support")}
+              >
+                <HelpCircle className="w-5 h-5" />
+                Learn More
+              </Button>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

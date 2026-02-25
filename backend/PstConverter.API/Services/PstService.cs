@@ -138,6 +138,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             _db.ConversionSessions.Add(session);
             await _db.SaveChangesAsync();
 
+            Console.WriteLine($"[UPLOAD] Session created: {sessionId}, Status: Uploaded");
             return sessionId;
         }
         catch (Exception ex)
@@ -168,6 +169,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var metaPath = Path.Combine(chunkDir, "_metadata.json");
         await File.WriteAllTextAsync(metaPath, JsonSerializer.Serialize(metadata));
 
+        Console.WriteLine($"[CHUNK] Initialized chunked upload: {uploadId}, Total Chunks: {totalChunks}, File: {originalFileName}");
         return uploadId;
     }
 
@@ -195,6 +197,11 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         using (var fs = new FileStream(chunkPath, FileMode.Create, FileAccess.Write))
         {
             await chunkStream.CopyToAsync(fs);
+        }
+
+        if (chunkIndex % 5 == 0 || chunkIndex == metadata.TotalChunks - 1)
+        {
+            Console.WriteLine($"[CHUNK] Received chunk {chunkIndex + 1}/{metadata.TotalChunks} for upload {uploadId}");
         }
 
         return (true, chunkIndex + 1);
@@ -280,6 +287,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         _db.ConversionSessions.Add(session);
         await _db.SaveChangesAsync();
 
+        Console.WriteLine($"[ASSEMBLY] Starting background assembly for session {sessionId}, Upload ID: {uploadId}");
+
         _ = Task.Run(async () =>
         {
             try
@@ -310,6 +319,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         await chunkFs.CopyToAsync(finalStream, bufferSize);
                     }
                 }
+                Console.WriteLine($"[ASSEMBLY] Merged {metadata.TotalChunks} chunks into {finalPath}");
 
                 using (var scope = _scopeFactory.CreateScope())
                 {
@@ -348,6 +358,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         s.StoreGuid = storeGuid;
                         s.Status = "Uploaded";
                         await updateDb.SaveChangesAsync();
+                        Console.WriteLine($"[ASSEMBLY] Session {sessionId} is now READY");
                     }
                 }
 
@@ -378,6 +389,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private async Task<(MemoryStream Data, string FileName)> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false)
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
+        Console.WriteLine($"[CONVERT] Starting conversion for session {sessionId} to {format}");
         return await _pool.AccessAsync(sessionId, srcPath, srcStorage =>
         {
             string ext = format == FileFormat.Ost ? ".ost" : ".pst";
@@ -405,6 +417,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 : sessionId;
             var fileName = $"{baseName}_converted{ext}";
 
+            Console.WriteLine($"[CONVERT] Conversion complete. Prepared download: {fileName}");
             return Task.FromResult((ms, fileName));
         }, password);
     }
@@ -603,7 +616,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         var tempZipPath = Path.Combine(_uploadDir, $"export_{Guid.NewGuid():N}.zip");
-
+        Console.WriteLine($"[EXPORT] Folder export started: Session={sessionId}, Folder={folderId}, Format={format}");
         try
         {
             await _pool.AccessAsync(sessionId, filePath, pst =>
@@ -643,6 +656,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         var tempZipPath = Path.Combine(_uploadDir, $"export_{Guid.NewGuid():N}.zip");
+        Console.WriteLine($"[EXPORT] Full export started: Session={sessionId}, Format={format}");
 
         try
         {
@@ -759,6 +773,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         var tempZipPath = Path.Combine(_uploadDir, $"export_{Guid.NewGuid():N}.zip");
+        Console.WriteLine($"[EXPORT] Selected messages export started: Session={sessionId}, Count={entryIds.Count}, Format={format}");
 
         try
         {

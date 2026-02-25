@@ -66,13 +66,15 @@ const ExportDialog = ({ open, session, onClose }) => {
     try {
       setIsExporting(true);
       const token = await getToken();
-      await conversionService.exportAll(
+      const savedName = await conversionService.exportAll(
         session.sessionId,
         format,
         false, // Default to including empty folders
         token,
       );
-      toast.success("Export started! Check your downloads.");
+      if (savedName) {
+        toast.success(`Export saved as: ${savedName}`);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Export failed: " + err.message);
@@ -89,19 +91,23 @@ const ExportDialog = ({ open, session, onClose }) => {
       const ext = filename.split(".").pop().toLowerCase();
 
       if (ext === "ost") {
-        await conversionService.convertToPst(
+        const savedName = await conversionService.convertToPst(
           session.sessionId,
           token,
           false, // Default to including empty folders
         );
-        toast.success("Converting OST to PST...");
+        if (savedName) {
+          toast.success(`Converted file saved as: ${savedName}`);
+        }
       } else {
-        await conversionService.convertToOst(
+        const savedName = await conversionService.convertToOst(
           session.sessionId,
           token,
           false, // Default to including empty folders
         );
-        toast.success("Converting PST to OST...");
+        if (savedName) {
+          toast.success(`Converted file saved as: ${savedName}`);
+        }
       }
     } catch (err) {
       toast.error("Conversion failed: " + err.message);

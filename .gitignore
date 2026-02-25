@@ -30,3 +30,10 @@ test/frontend/.vite/deps/
 [Dd]esktop.ini
 [Tt]humbs.db
 .DS_Store
+
+*.png
+*.jpg
+*.jpeg
+
+*.mp4
+*.mp3
