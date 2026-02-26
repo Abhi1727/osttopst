@@ -137,7 +137,7 @@ public static class MessageEndpoints
         .WithTags("Message Operations")
         .RequireAuthorization();
 
-        group.MapPost("/{sessionId}/messages/export-batch", (
+        group.MapPost("/{sessionId}/messages/export-batch", async (
             string sessionId,
             [FromQuery] string? format,
             [FromBody] BatchExportRequest request,
@@ -159,10 +159,8 @@ public static class MessageEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                return Results.Stream(async outputStream =>
-                {
-                    await pstService.ExportSelectedMessagesAsync(outputStream, sessionId, userId, request.EntryIds, exportFormat);
-                }, "application/zip", "selected_messages_export.zip");
+                var filePath = await pstService.ExportSelectedMessagesAsync(sessionId, userId, request.EntryIds, exportFormat);
+                return Results.File(filePath, "application/zip", "selected_messages_export.zip");
             }
             catch (UnauthorizedAccessException)
             {

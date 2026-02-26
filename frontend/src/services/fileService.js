@@ -1,4 +1,5 @@
 import { API_BASE_URL, getHeaders } from "./api";
+import { conversionService } from "./conversionService";
 
 // ======== CONFIGURATION ========
 const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB per chunk (Better for large files)
@@ -37,7 +38,7 @@ function uploadChunkWithRetry(
       try {
         const token = await resolveToken(tokenOrProvider);
         const xhr = new XMLHttpRequest();
-        xhr.timeout = 300000; // 5 minutes per chunk to handle slow speeds
+        xhr.timeout = 5 * 60 * 1000; // 5 minutes per chunk to handle slow speeds
 
         xhr.open(
           "POST",
@@ -243,6 +244,15 @@ async function chunkedUpload(
     }
 
     result = await finalRes.json();
+    // Expose sessionId to caller via onProgress or some shared state if needed, 
+    // but Hero.jsx already has access to it via the result which we return.
+    // To support cancellation during polling, we can pass it back via onProgress.
+    onProgress({
+      phase: "finalizing",
+      percent: 95,
+      detail: "Assembling file on server...",
+      activeSessionId: result.sessionId
+    });
 
     // Step 4: Poll for completion if status is "Assembling"
     if (result.status === "Assembling") {
@@ -283,7 +293,7 @@ async function chunkedUpload(
   } catch (err) {
     if (signal?.aborted && uploadId) {
       // Cleanup on server
-      fileService.cancelChunkedUpload(uploadId, tokenOrProvider);
+      await fileService.cancelChunkedUpload(uploadId, tokenOrProvider);
     }
     throw err;
   }
@@ -507,7 +517,11 @@ export const fileService = {
   },
 
   async exportAll(sessionId, format, excludeEmpty, token) {
-    const url = `${API_BASE_URL}/file-details/${sessionId}/export?format=${format}&excludeEmptyFolders=${excludeEmpty}&token=${token}`;
-    window.location.href = url;
+    return await conversionService.exportAll(
+      sessionId,
+      format,
+      excludeEmpty,
+      token,
+    );
   },
 };

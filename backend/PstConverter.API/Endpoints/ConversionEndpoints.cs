@@ -1,3 +1,4 @@
+using System.IO;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PstConverter.Services;
@@ -42,12 +43,12 @@ public static class ConversionEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                // Buffer into memory first so exceptions (e.g. UnauthorizedAccessException)
-                // are thrown here rather than inside the Results.Stream callback where they
-                // cannot be caught and result in a 500 instead of a 403.
-                var ms = new MemoryStream();
-                await pstService.ExportAllAsync(ms, sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? false);
-                ms.Position = 0;
+                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? false);
+
+                if (!isReady)
+                {
+                    return Results.Accepted();
+                }
 
                 // Mark as paid upon successful extraction
                 var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
@@ -57,7 +58,7 @@ public static class ConversionEndpoints
                     await db.SaveChangesAsync();
                 }
 
-                return Results.Stream(ms, "application/zip", "pst_export.zip");
+                return Results.File(filePath, "application/zip", "pst_export.zip");
             }
             catch (InvalidOperationException ex)
             {
@@ -78,6 +79,13 @@ public static class ConversionEndpoints
             }
             catch (Exception ex)
             {
+                try
+                {
+                    var logPath = @"C:\temp\debug_log.txt";
+                    File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] ERROR in ConversionEndpoints: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}");
+                    Console.WriteLine($"[ERROR] {ex.Message}");
+                }
+                catch { }
                 logger.LogError(ex, "ExportAll failed for session {SessionId}", sessionId);
                 return Results.Problem(ex.Message);
             }
@@ -91,7 +99,12 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
             {
-                var (data, fileName) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+
+                if (!isReady)
+                {
+                    return Results.Accepted();
+                }
 
                 // Mark as paid upon successful conversion
                 var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
@@ -101,7 +114,7 @@ public static class ConversionEndpoints
                     await db.SaveChangesAsync();
                 }
 
-                return Results.Stream(data, "application/vnd.ms-outlook", fileName);
+                return Results.File(filePath, "application/vnd.ms-outlook", fileName);
             }
             catch (FileNotFoundException)
             {
@@ -130,7 +143,12 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
             {
-                var (data, fileName) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+
+                if (!isReady)
+                {
+                    return Results.Accepted();
+                }
 
                 // Mark as paid upon successful conversion
                 var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
@@ -140,7 +158,7 @@ public static class ConversionEndpoints
                     await db.SaveChangesAsync();
                 }
 
-                return Results.Stream(data, "application/vnd.ms-outlook", fileName);
+                return Results.File(filePath, "application/vnd.ms-outlook", fileName);
             }
             catch (FileNotFoundException)
             {

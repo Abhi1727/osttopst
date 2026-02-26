@@ -27,6 +27,7 @@ const Hero = ({ onUploadComplete }) => {
   const [uploadPhase, setUploadPhase] = useState(null); // 'uploading' | 'processing' | 'complete'
   const [uploadDetail, setUploadDetail] = useState("");
   const [completedSession, setCompletedSession] = useState(null);
+  const [activeSessionId, setActiveSessionId] = useState(null);
   const [abortController, setAbortController] = useState(null);
 
   const { getToken } = useAuth();
@@ -148,6 +149,9 @@ const Hero = ({ onUploadComplete }) => {
               setUploadDetail(info.detail);
             }
             setProgress(info.percent || 0);
+            if (info.activeSessionId && !activeSessionId) {
+              setActiveSessionId(info.activeSessionId);
+            }
           } else {
             setProgress(info);
           }
@@ -181,12 +185,13 @@ const Hero = ({ onUploadComplete }) => {
       toast.error(err.message || "Conversion failed");
       setUploading(false);
       setUploadPhase("idle"); // Reset to allow retry
+      setActiveSessionId(null);
     } finally {
       setAbortController(null);
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (abortController) {
       abortController.abort();
       uploadActive.current = false;
@@ -195,6 +200,18 @@ const Hero = ({ onUploadComplete }) => {
       setProgress(0);
       setUploadDetail("");
       toast.info("Upload cancelled");
+
+      // If we have an active session ID (it reached assembly phase), delete the session entirely.
+      if (activeSessionId) {
+        try {
+          const token = await getToken();
+          await fileService.deleteSession(activeSessionId, token);
+          console.log(`[Hero] Deleted aborted session: ${activeSessionId}`);
+        } catch (err) {
+          console.warn("[Hero] Failed to delete aborted session on server:", err);
+        }
+        setActiveSessionId(null);
+      }
     }
   };
 
@@ -206,17 +223,47 @@ const Hero = ({ onUploadComplete }) => {
   };
 
   return (
-    <section className="py-12 md:py-20 px-4 md:px-6 lg:px-12 bg-white flex flex-col items-center min-h-[700px] justify-center">
-      <div className="w-full max-w-6xl bg-white rounded-[40px] shadow-2xl shadow-emerald-500/10 border border-slate-100 p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-8 items-stretch">
+    <section className="py-12 md:py-20 px-4 md:px-6 lg:px-12 bg-white flex flex-col items-center min-h-[600px] justify-center">
+      {/* Main Heading & Tagline */}
+      <div className="text-center mb-12 max-w-4xl mx-auto space-y-4">
+        <h1 className="text-4xl md:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight">
+          Convert OST to PST{" "}
+          <span className="text-emerald-600 block md:inline">
+            & Securely & Instantly
+          </span>
+        </h1>
+        <p className="text-slate-500 text-lg md:text-xl font-medium max-w-3xl mx-auto leading-relaxed">
+          The most reliable tool to recover and convert Outlook Offline Data
+          files into accessible PST format without any data loss or metadata
+          corruption.
+        </p>
+      </div>
+
+      <div className="w-full max-w-6xl bg-white rounded-[40px] shadow-2xl shadow-emerald-500/10 border border-slate-100 p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-8 items-center">
         {/* Left Side: Video Content */}
-        <div className="w-full md:w-1/2 bg-[#E1F1FF] rounded-[30px] overflow-hidden relative flex items-center justify-center min-h-[350px]">
+        <div className="w-full md:w-[45%] bg-gradient-to-br from-[#F0F7FF] via-[#E1F1FF] to-[#D0E8FF] rounded-[30px] overflow-hidden relative flex items-center justify-center border border-white/60 shadow-xl shadow-blue-500/5 group/video aspect-video">
+          {/* Decorative Background Elements */}
+          <div className="absolute top-1/4 -left-10 w-40 h-40 bg-blue-400/10 blur-[80px] rounded-full pointer-events-none group-hover/video:bg-blue-400/20 transition-colors duration-700"></div>
+          <div className="absolute bottom-1/4 -right-10 w-40 h-40 bg-emerald-400/10 blur-[80px] rounded-full pointer-events-none group-hover/video:bg-emerald-400/20 transition-colors duration-700"></div>
+
+          {/* Mirror Effect/Reflection */}
+          <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent pointer-events-none"></div>
+
+          {/* Video Tag */}
+          <div className="absolute top-6 left-6 z-20 flex items-center gap-2 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white shadow-sm">
+            <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div>
+            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+              Live Preview
+            </span>
+          </div>
+
           <video
             src={conversionVideo}
             autoPlay
             loop
             muted
             playsInline
-            className="w-full h-full object-contain p-6 md:p-10"
+            className="w-full h-full object-cover relative z-10 opacity-95 group-hover/video:scale-[1.01] transition-transform duration-700 ease-out"
           />
         </div>
 
@@ -224,14 +271,14 @@ const Hero = ({ onUploadComplete }) => {
         <div
           {...getRootProps()}
           className={`
-            w-full md:w-1/2 border-2 border-dashed rounded-[30px] p-8 md:p-12
+            w-full md:w-[55%] border-2 border-dashed rounded-[30px] p-8 md:p-12
             flex flex-col items-center justify-center text-center
             transition-all duration-300 relative
             ${isDragActive ? "border-emerald-500 bg-emerald-50/30" : "border-slate-200 bg-white shadow-inner shadow-slate-50/30"}
-            ${uploading || completedSession ? "pointer-events-none" : "hover:border-emerald-400 group cursor-pointer"}
+            ${uploading || completedSession ? "" : "hover:border-emerald-400 group cursor-pointer"}
           `}
         >
-          <input {...getInputProps()} />
+          <input {...getInputProps()} disabled={uploading || !!completedSession} />
 
           {/* Default/Idle State */}
           {!uploading && !completedSession && (
@@ -276,7 +323,7 @@ const Hero = ({ onUploadComplete }) => {
 
                   <div className="space-y-1 mt-4">
                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
-                      5GB upload file size limit
+                      50GB upload file size limit
                     </p>
                     <p className="text-[10px] text-slate-400">
                       By Uploading the OST file you agree to our{" "}
@@ -359,21 +406,24 @@ const Hero = ({ onUploadComplete }) => {
                 </div>
                 <Progress
                   value={progress}
-                  className="h-3 bg-slate-100 rounded-full"
+                  className="h-3 bg-slate-100 rounded-full mb-4"
                   indicatorClassName="bg-gradient-to-r from-emerald-500 to-emerald-400"
                 />
               </div>
 
-              <Button
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCancel();
-                }}
-                className="text-rose-500 hover:bg-rose-50 h-10 px-8 font-bold text-xs uppercase tracking-widest rounded-full"
-              >
-                Cancel Conversion
-              </Button>
+              <div className="flex justify-center">
+                <Button
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log("[Hero] Force cancel button clicked.");
+                    handleCancel();
+                  }}
+                  className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 h-10 px-8 font-bold text-xs uppercase tracking-widest rounded-full relative z-50 pointer-events-auto cursor-pointer"
+                >
+                  Cancel Conversion
+                </Button>
+              </div>
             </div>
           )}
 

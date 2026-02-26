@@ -37,7 +37,7 @@ public static class FolderEndpoints
         .WithSummary("Get the folder tree for the current session")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/folders/export", (
+        group.MapGet("/{sessionId}/folders/export", async (
             string sessionId,
             [FromQuery] string folderId,
             [FromQuery] string? format,
@@ -65,10 +65,8 @@ public static class FolderEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                return Results.Stream(async outputStream =>
-                {
-                    await pstService.ExportFolderAsync(outputStream, sessionId, userId, folderId, exportFormat, filter);
-                }, "application/zip", "folder_export.zip");
+                var filePath = await pstService.ExportFolderAsync(sessionId, userId, folderId, exportFormat, filter);
+                return Results.File(filePath, "application/zip", "folder_export.zip");
             }
             catch (UnauthorizedAccessException)
             {

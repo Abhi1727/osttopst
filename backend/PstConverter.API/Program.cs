@@ -56,6 +56,12 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                 logger.LogError("Authentication failed: {Message}", context.Exception.Message);
+                try
+                {
+                    var logPath = @"C:\temp\debug_log.txt";
+                    File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] AUTH FAILED: {context.Exception.Message}{Environment.NewLine}");
+                }
+                catch { }
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>

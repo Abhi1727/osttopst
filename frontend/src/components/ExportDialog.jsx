@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Download,
   Eye,
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { conversionService } from "../services/conversionService";
+import { deleteSession } from "../services/api";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "sonner";
 
@@ -58,28 +59,66 @@ const ExportDialog = ({ open, session, onClose }) => {
   const [format, setFormat] = useState("EML");
   const [isExporting, setIsExporting] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [progress, setProgress] = useState(null);
   const { getToken } = useAuth();
+  const abortControllerRef = useRef(null);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   if (!open || !session) return null;
+
+  const handleCancel = async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      toast.info("Conversion/Export cancelled.");
+      
+      // Notify server to cancel background task
+      try {
+        const token = await getToken();
+        await conversionService.cancelOperation(session.sessionId, token);
+      } catch (err) {
+        console.warn("Failed to notify server of cancellation:", err);
+      }
+    }
+  };
 
   const handleExport = async () => {
     try {
       setIsExporting(true);
       const token = await getToken();
+      
+      abortControllerRef.current = new AbortController();
+      
       const savedName = await conversionService.exportAll(
         session.sessionId,
         format,
         false, // Default to including empty folders
         token,
+        (p) => setProgress(p),
+        abortControllerRef.current.signal
       );
       if (savedName) {
         toast.success(`Export saved as: ${savedName}`);
       }
     } catch (err) {
+      if (err.name === "AbortError" || err.message === "AbortError") {
+        console.log("Export cancelled by user");
+        return;
+      }
       console.error(err);
       toast.error("Export failed: " + err.message);
     } finally {
       setIsExporting(false);
+      setProgress(null);
+      abortControllerRef.current = null;
     }
   };
 
@@ -90,11 +129,15 @@ const ExportDialog = ({ open, session, onClose }) => {
       const filename = session.originalFileName || session.fileName || "";
       const ext = filename.split(".").pop().toLowerCase();
 
+      abortControllerRef.current = new AbortController();
+
       if (ext === "ost") {
         const savedName = await conversionService.convertToPst(
           session.sessionId,
           token,
           false, // Default to including empty folders
+          (p) => setProgress(p),
+          abortControllerRef.current.signal
         );
         if (savedName) {
           toast.success(`Converted file saved as: ${savedName}`);
@@ -104,15 +147,23 @@ const ExportDialog = ({ open, session, onClose }) => {
           session.sessionId,
           token,
           false, // Default to including empty folders
+          (p) => setProgress(p),
+          abortControllerRef.current.signal
         );
         if (savedName) {
           toast.success(`Converted file saved as: ${savedName}`);
         }
       }
     } catch (err) {
+      if (err.name === "AbortError" || err.message === "AbortError") {
+        console.log("Conversion cancelled by user");
+        return;
+      }
       toast.error("Conversion failed: " + err.message);
     } finally {
       setIsConverting(false);
+      setProgress(null);
+      abortControllerRef.current = null;
     }
   };
 
@@ -212,20 +263,39 @@ const ExportDialog = ({ open, session, onClose }) => {
                 })}
               </div>
 
-              <Button
-                onClick={handleExport}
-                disabled={isExporting}
-                className="w-full h-16 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg shadow-xl shadow-emerald-200 transition-all active:scale-[0.98] gap-3"
-              >
-                {isExporting ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <>
-                    <Download className="w-6 h-6" />
-                    Download Zip File
-                  </>
+              <div className="space-y-2">
+                <Button
+                  onClick={handleExport}
+                  disabled={isExporting || isConverting}
+                  className="w-full h-16 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg shadow-xl shadow-emerald-200 transition-all active:scale-[0.98] gap-3"
+                >
+                  {isExporting ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      {progress && (
+                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-tight">
+                          {progress.detail}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <Download className="w-6 h-6" />
+                      Download Zip File
+                    </>
+                  )}
+                </Button>
+                {isExporting && (
+                  <Button
+                    variant="ghost"
+                    onClick={handleCancel}
+                    className="w-full h-10 text-zinc-400 hover:text-red-500 font-bold text-xs uppercase tracking-widest gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel Export
+                  </Button>
                 )}
-              </Button>
+              </div>
             </div>
 
             <div className="relative">
@@ -252,21 +322,40 @@ const ExportDialog = ({ open, session, onClose }) => {
                 <span className="text-emerald-600">{targetFormat}</span> format,
                 preserving all structure.
               </p>
-              <Button
-                onClick={handleConvert}
-                disabled={isConverting}
-                variant="outline"
-                className="w-full h-16 rounded-2xl border-2 border-emerald-600 text-emerald-600 font-extrabold text-lg hover:bg-emerald-50 transition-all active:scale-[0.98] gap-3"
-              >
-                {isConverting ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <>
-                    <Download className="w-6 h-6" />
-                    Download Full {targetFormat} File
-                  </>
+              <div className="space-y-2">
+                <Button
+                  onClick={handleConvert}
+                  disabled={isConverting || isExporting}
+                  variant="outline"
+                  className="w-full h-16 rounded-2xl border-2 border-emerald-600 text-emerald-600 font-extrabold text-lg hover:bg-emerald-50 transition-all active:scale-[0.98] gap-3"
+                >
+                  {isConverting ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      {progress && (
+                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-tight">
+                          {progress.detail}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <Download className="w-6 h-6" />
+                      Download Full {targetFormat} File
+                    </>
+                  )}
+                </Button>
+                {isConverting && (
+                  <Button
+                    variant="ghost"
+                    onClick={handleCancel}
+                    className="w-full h-10 text-zinc-400 hover:text-red-500 font-bold text-xs uppercase tracking-widest gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel Conversion
+                  </Button>
                 )}
-              </Button>
+              </div>
             </div>
           </div>
         </div>
