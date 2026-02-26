@@ -91,7 +91,7 @@ public static class SessionEndpoints
                 originalFileName = session.OriginalFileName,
                 status = session.Status,
                 exists = pstExists || ostExists,
-                isConverted = convertedPstExists || convertedOstExists,
+                isConverted = (convertedPstExists || convertedOstExists) && session.Status != "Converting",
                 size = session.Size,
                 fileType = session.FileType,
                 createdAt = session.CreatedAt,

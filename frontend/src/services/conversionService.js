@@ -13,10 +13,13 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
     while (attempts < maxAttempts) {
       if (signal?.aborted) throw new Error("AbortError");
 
-      const checkRes = await fetch(`${API_BASE_URL}/sessions/${sessionId}/check`, {
-        headers: getHeaders(token),
-        signal: signal,
-      });
+      const checkRes = await fetch(
+        `${API_BASE_URL}/sessions/${sessionId}/check`,
+        {
+          headers: getHeaders(token),
+          signal: signal,
+        },
+      );
 
       if (checkRes.ok) {
         const status = await checkRes.json();
@@ -30,7 +33,10 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
           return true;
         }
 
-        if (status.status === "ConversionFailed" || status.status === "ExportFailed") {
+        if (
+          status.status === "ConversionFailed" ||
+          status.status === "ExportFailed"
+        ) {
           throw new Error("Conversion or export failed on the server.");
         }
       }
@@ -39,11 +45,11 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
       if (onProgress) {
         onProgress({
           phase: "processing",
-          percent: Math.min(95, 5 + attempts * 0.5),
+          percent: Math.min(99, 5 + attempts * 0.5),
           detail: `Processing large file... (Attempt ${attempts})`,
         });
       }
-      
+
       // Wait 5s but check signal
       await new Promise((resolve, reject) => {
         const timer = setTimeout(resolve, 5000);
@@ -77,59 +83,18 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
   }
 
   // 2. Now handle the actual file transmission
-  if ("showSaveFilePicker" in window) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: suggestedName,
-        types: [
-          {
-            description: "Data Files",
-            accept: {
-              "application/octet-stream": [
-                ".pst",
-                ".ost",
-                ".zip",
-                ".eml",
-                ".msg",
-                ".html",
-                ".mhtml",
-              ],
-            },
-          },
-        ],
-      });
+  // We use the browser's native download mechanisms to display progress bars
+  // and handle massive files without piping arrays through memory or timing out.
+  if (signal?.aborted) return null;
 
-      const response = await fetch(url, {
-        headers: getHeaders(token),
-        signal: signal,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(
-          `[Download] Fetch failed: ${response.status} ${response.statusText}`,
-          errorText,
-        );
-        throw new Error(`Download failed: ${response.statusText}`);
-      }
-
-      const writable = await handle.createWritable();
-      await response.body.pipeTo(writable);
-      console.log(`[Download] File saved successfully as: ${handle.name}`);
-      return handle.name;
-    } catch (err) {
-      if (err.name === "AbortError" || err.message === "AbortError") {
-        console.log("[Download] Download/Polling cancelled.");
-        return null;
-      }
-      console.error("[Download] File System Access error:", err);
-      // Fall through to fallback
-    }
+  if (onProgress) {
+    onProgress({
+      phase: "downloading",
+      percent: 100,
+      detail: "Starting download in your browser...",
+    });
   }
 
-  // Fallback for browsers not supporting File System Access API or if it failed
-  if (signal?.aborted) return null;
-  
   console.log("[Download] Using fallback <a> tag download method.");
   const fullUrl = url.includes("?")
     ? `${url}&token=${token}`
@@ -145,19 +110,37 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
 };
 
 export const conversionService = {
-  async convertToPst(sessionId, token, excludeEmpty = false, onProgress, signal) {
+  async convertToPst(
+    sessionId,
+    token,
+    excludeEmpty = false,
+    onProgress,
+    signal,
+  ) {
     const url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-pst?excludeEmptyFolders=${excludeEmpty}`;
     return await downloadFile(url, "converted.pst", token, onProgress, signal);
   },
 
-  async convertToOst(sessionId, token, excludeEmpty = false, onProgress, signal) {
+  async convertToOst(
+    sessionId,
+    token,
+    excludeEmpty = false,
+    onProgress,
+    signal,
+  ) {
     const url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-ost?excludeEmptyFolders=${excludeEmpty}`;
     return await downloadFile(url, "converted.ost", token, onProgress, signal);
   },
 
   async exportAll(sessionId, format, excludeEmpty, token, onProgress, signal) {
     const url = `${API_BASE_URL}/file-details/${sessionId}/export?format=${format}&excludeEmptyFolders=${excludeEmpty}`;
-    return await downloadFile(url, `export_${format.toLowerCase()}.zip`, token, onProgress, signal);
+    return await downloadFile(
+      url,
+      `export_${format.toLowerCase()}.zip`,
+      token,
+      onProgress,
+      signal,
+    );
   },
 
   async cancelOperation(sessionId, token) {

@@ -429,14 +429,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             : sessionId;
         var fileName = $"{baseName}_converted{ext}";
 
-        if (File.Exists(outputPath))
-        {
-            return (outputPath, fileName, true);
-        }
-
         if (session != null && session.Status == "Converting")
         {
             return (outputPath, fileName, false);
+        }
+
+        if (File.Exists(outputPath))
+        {
+            return (outputPath, fileName, true);
         }
 
         Console.WriteLine($"[CONVERT] Starting BACKGROUND conversion for session {sessionId} to {format}");
@@ -736,15 +736,15 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{format}_{excludeEmptyFolders}.zip");
 
-        if (File.Exists(tempZipPath))
-        {
-            return (tempZipPath, true);
-        }
-
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
         if (session != null && session.Status == "Exporting")
         {
             return (tempZipPath, false);
+        }
+
+        if (File.Exists(tempZipPath))
+        {
+            return (tempZipPath, true);
         }
 
         Console.WriteLine($"[EXPORT] Starting BACKGROUND export for session {sessionId} to {format}");
