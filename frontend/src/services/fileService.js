@@ -32,12 +32,28 @@ function uploadChunkWithRetry(
   chunkBlob,
   tokenOrProvider,
   retries = MAX_RETRIES,
+  signal = null,
 ) {
   return new Promise((resolve, reject) => {
+    let currentXhr = null;
+
+    if (signal) {
+      if (signal.aborted) {
+        return reject(new Error("Upload cancelled"));
+      }
+      signal.addEventListener("abort", () => {
+        if (currentXhr) {
+          currentXhr.abort();
+        }
+        reject(new Error("Upload cancelled"));
+      });
+    }
+
     const attempt = async (attemptsLeft) => {
       try {
         const token = await resolveToken(tokenOrProvider);
         const xhr = new XMLHttpRequest();
+        currentXhr = xhr;
         xhr.timeout = 5 * 60 * 1000; // 5 minutes per chunk to handle slow speeds
 
         xhr.open(
@@ -244,14 +260,14 @@ async function chunkedUpload(
     }
 
     result = await finalRes.json();
-    // Expose sessionId to caller via onProgress or some shared state if needed, 
+    // Expose sessionId to caller via onProgress or some shared state if needed,
     // but Hero.jsx already has access to it via the result which we return.
     // To support cancellation during polling, we can pass it back via onProgress.
     onProgress({
       phase: "finalizing",
       percent: 95,
       detail: "Assembling file on server...",
-      activeSessionId: result.sessionId
+      activeSessionId: result.sessionId,
     });
 
     // Step 4: Poll for completion if status is "Assembling"

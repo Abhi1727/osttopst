@@ -264,32 +264,23 @@ public static class FileEndpoints
 
     public static bool IsValidOutlookDataFile(Stream stream, string expectedExtension)
     {
-        if (stream.Length < 12) return false;
+        if (stream.Length < 4) return false;
         
         var start = stream.Position;
-        var buffer = new byte[12];
-        var read = stream.Read(buffer, 0, 12);
+        var buffer = new byte[4];
+        var read = stream.Read(buffer, 0, 4);
         stream.Position = start;
 
         // Check the 4-byte magic word (!BDN)
-        if (read < 12 || buffer[0] != 0x21 || buffer[1] != 0x42 || buffer[2] != 0x44 || buffer[3] != 0x4E)
+        if (read < 4 || buffer[0] != 0x21 || buffer[1] != 0x42 || buffer[2] != 0x44 || buffer[3] != 0x4E)
         {
             return false;
         }
 
-        // Check the wVer (File format version) at offset 10
-        // Little-endian, so buffer[10] is the least significant byte of wVer
-        ushort wVer = BitConverter.ToUInt16(buffer, 10);
-
-        bool isOstSignature = (wVer == 36 || wVer == 38);
-        bool isPstSignature = (wVer == 14 || wVer == 15 || wVer == 23);
-
-        expectedExtension = expectedExtension.ToLowerInvariant();
-
-        if (expectedExtension == ".ost" && isOstSignature) return true;
-        if (expectedExtension == ".pst" && isPstSignature) return true;
-
-        return false;
+        // We no longer strictly match wVer with the file extension.
+        // As long as it starts with !BDN, we accept it as an Outlook Data File
+        // to handle renamed extensions (e.g., an OST file renamed to PST).
+        return true;
     }
 }
 

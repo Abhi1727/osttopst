@@ -73,13 +73,28 @@ public static class SessionEndpoints
 
             if (session == null) return Results.NotFound();
 
+            // If this session was marked as a duplicate after background assembly, return the original session instead.
+            if (session.Status == "Duplicate" && !string.IsNullOrEmpty(session.StoreGuid))
+            {
+                var cutoff = DateTime.UtcNow.AddHours(-24);
+                var original = await db.ConversionSessions
+                    .Where(x => x.UserId == userId && x.StoreGuid == session.StoreGuid && x.CreatedAt > cutoff && x.Status != "Duplicate" && x.SessionId != sessionId)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (original != null)
+                {
+                    session = original;
+                }
+            }
+
             // Check if file still exists on disk using standardized path
-            var pstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{sessionId}.pst"));
-            var ostExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{sessionId}.ost"));
+            var pstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}.pst"));
+            var ostExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}.ost"));
 
             // Check for converted files too
-            var convertedPstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{sessionId}_converted.pst"));
-            var convertedOstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{sessionId}_converted.ost"));
+            var convertedPstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}_converted.pst"));
+            var convertedOstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}_converted.ost"));
 
             // Update LastAccessedAt
             session.LastAccessedAt = DateTime.UtcNow;
