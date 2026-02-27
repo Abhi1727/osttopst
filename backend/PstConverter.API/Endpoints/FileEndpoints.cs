@@ -41,10 +41,10 @@ public static class FileEndpoints
                     logger.LogInformation("Processing file for user: {UserId}", userId);
 
                 using var stream = file.OpenReadStream();
-                if (!IsValidPstHeader(stream))
+                if (!IsValidOutlookDataFile(stream, ext))
                 {
-                    logger.LogWarning("Upload rejected: Invalid file signature for file {FileName}", file.FileName);
-                    return Results.BadRequest(new { error = $"The file '{file.FileName}' does not have a valid PST/OST signature." });
+                    logger.LogWarning("Upload rejected: Invalid file signature for file {FileName} with extension {Extension}", file.FileName, ext);
+                    return Results.BadRequest(new { error = $"The file '{file.FileName}' does not have a valid {ext.ToUpperInvariant().TrimStart('.')} signature." });
                 }
                 var sessionId = await pstService.SaveUploadedFileAsync(stream, file.FileName, userId, file.Length, password);
 
@@ -62,11 +62,12 @@ public static class FileEndpoints
             }
         })
         .DisableAntiforgery()
+        .AllowAnonymous()
         .WithName("UploadPst")
         .WithTags("File Operations")
         .WithSummary("Upload a PST/OST file (single request, for small files)")
-        .WithDescription("Saves the uploaded file and returns a session ID for subsequent operations.")
-        .RequireAuthorization();
+        .WithDescription("Saves the uploaded file and returns a session ID for subsequent operations.");
+        //.RequireAuthorization();
 
         // ======== CHUNKED UPLOAD ENDPOINTS ========
 
@@ -132,16 +133,16 @@ public static class FileEndpoints
                 }
 
                 using var stream = chunk.OpenReadStream();
-                if (chunkIndex == 0 && !IsValidPstHeader(stream))
-                {
-                    logger.LogWarning("Chunk upload rejected: Invalid file signature for upload {UploadId}", uploadId);
-                    return Results.BadRequest(new { error = "The file does not have a valid PST/OST signature." });
-                }
-
+                
                 var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
                 var (success, receivedCount) = await pstService.SaveChunkAsync(uploadId, userId, chunkIndex, stream);
 
                 return Results.Ok(new { success, chunkIndex, receivedCount });
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning("Chunk upload rejected: {Message} for upload {UploadId}", ex.Message, uploadId);
+                return Results.BadRequest(new { error = ex.Message });
             }
             catch (FileNotFoundException ex)
             {
@@ -261,14 +262,34 @@ public static class FileEndpoints
         .RequireAuthorization();
     }
 
-    private static bool IsValidPstHeader(Stream stream)
+    public static bool IsValidOutlookDataFile(Stream stream, string expectedExtension)
     {
-        if (stream.Length < 4) return false;
+        if (stream.Length < 12) return false;
+        
         var start = stream.Position;
-        var buffer = new byte[4];
-        var read = stream.Read(buffer, 0, 4);
+        var buffer = new byte[12];
+        var read = stream.Read(buffer, 0, 12);
         stream.Position = start;
-        return read == 4 && buffer[0] == 0x21 && buffer[1] == 0x42 && buffer[2] == 0x44 && buffer[3] == 0x4E;
+
+        // Check the 4-byte magic word (!BDN)
+        if (read < 12 || buffer[0] != 0x21 || buffer[1] != 0x42 || buffer[2] != 0x44 || buffer[3] != 0x4E)
+        {
+            return false;
+        }
+
+        // Check the wVer (File format version) at offset 10
+        // Little-endian, so buffer[10] is the least significant byte of wVer
+        ushort wVer = BitConverter.ToUInt16(buffer, 10);
+
+        bool isOstSignature = (wVer == 36 || wVer == 38);
+        bool isPstSignature = (wVer == 14 || wVer == 15 || wVer == 23);
+
+        expectedExtension = expectedExtension.ToLowerInvariant();
+
+        if (expectedExtension == ".ost" && isOstSignature) return true;
+        if (expectedExtension == ".pst" && isPstSignature) return true;
+
+        return false;
     }
 }
 

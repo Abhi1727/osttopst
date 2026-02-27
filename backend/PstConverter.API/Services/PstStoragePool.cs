@@ -81,6 +81,10 @@ public class PstStoragePool : IPstStoragePool
 
     public void Remove(string sessionId)
     {
+        if (_cache.TryGetValue(sessionId, out PersonalStorage? pst) && pst != null)
+        {
+            try { pst.Dispose(); } catch { }
+        }
         _cache.Remove(sessionId);
     }
 
@@ -91,8 +95,12 @@ public class PstStoragePool : IPstStoragePool
             await semaphore.WaitAsync();
             try
             {
+                if (_cache.TryGetValue(sessionId, out PersonalStorage? pst) && pst != null)
+                {
+                    try { pst.Dispose(); } catch { }
+                }
                 _cache.Remove(sessionId);
-                // After cache removal, the PST should be disposed by EvictionCallback.
+                // After cache removal, the PST should be disposed by EvictionCallback as well.
                 // We are holding the lock, so no new AccessAsync can start for this ID.
             }
             finally
@@ -102,6 +110,10 @@ public class PstStoragePool : IPstStoragePool
         }
         else
         {
+            if (_cache.TryGetValue(sessionId, out PersonalStorage? pst) && pst != null)
+            {
+                try { pst.Dispose(); } catch { }
+            }
             _cache.Remove(sessionId);
         }
     }

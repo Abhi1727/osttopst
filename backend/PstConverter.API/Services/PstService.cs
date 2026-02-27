@@ -206,6 +206,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         if (metadata.UserId != userId) throw new UnauthorizedAccessException("You do not have access to this upload session.");
 
+        if (chunkIndex == 0)
+        {
+            var ext = Path.GetExtension(metadata.OriginalFileName);
+            if (!PstConverter.Endpoints.FileEndpoints.IsValidOutlookDataFile(chunkStream, ext))
+            {
+                throw new ArgumentException($"The file does not have a valid {ext.ToUpperInvariant().TrimStart('.')} signature.");
+            }
+        }
+
+
         var chunkPath = Path.Combine(chunkDir, $"chunk_{chunkIndex:D5}");
         using (var fs = new FileStream(chunkPath, FileMode.Create, FileAccess.Write))
         {
