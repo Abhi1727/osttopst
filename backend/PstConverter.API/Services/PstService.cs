@@ -52,6 +52,26 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             throw new UnauthorizedAccessException("You do not have access to this session.");
         }
 
+        // Redirect duplicate sessions to their original session
+        if (session.Status == "Duplicate" && !string.IsNullOrEmpty(session.StoreGuid))
+        {
+            var cutoff = DateTime.UtcNow.AddHours(-24);
+            var originalSession = await _db.ConversionSessions
+                .Where(x => x.UserId == userId && x.StoreGuid == session.StoreGuid && x.CreatedAt > cutoff && x.Status != "Duplicate" && x.SessionId != sessionId)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (originalSession != null)
+            {
+                if (_logger.IsEnabled(LogLevel.Information))
+                {
+                    _logger.LogInformation("Redirecting duplicate session {DuplicateId} to original {OriginalId}", sessionId, originalSession.SessionId);
+                }
+                session = originalSession;
+                sessionId = originalSession.SessionId;
+            }
+        }
+
         // Reject early if file assembly is still in progress or failed
         if (session.Status == "Assembling")
             throw new InvalidOperationException("File is still being assembled. Please wait a moment and try again.");
@@ -371,6 +391,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                     {
                                         _logger.LogInformation("Post-assembly: Found existing session {SessionId} for StoreGuid {StoreGuid}. Marking current session as Duplicate.", existing.SessionId, storeGuid);
                                     }
+                                    s.StoreGuid = storeGuid;
                                     s.Status = "Duplicate";
                                     // Optionally we could update the SessionId returned to the user, 
                                     // but for background assembly it's easier to mark this as duplicate.
