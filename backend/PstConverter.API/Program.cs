@@ -121,7 +121,7 @@ builder.Services.AddCors(options =>
         {
             if (builder.Environment.IsDevelopment())
             {
-                policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+                    policy.AllowAnyOrigin()
                       .AllowAnyMethod()
                       .AllowAnyHeader();
             }
