@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="flex items-center gap-2 text-slate-600">
           <img src={logo} alt="Logo" className="w-4 h-4 object-contain" />
           <span className="text-sm font-semibold">
-           Copyright © 2026 - <span>OSTtoPST.us</span>
+            Copyright © 2026 - <span>OSTtoPST.us</span>
           </span>
         </div>
 
@@ -20,7 +20,10 @@ const Footer = () => {
           <a href="#" className="hover:text-emerald-600 transition-colors">
             Terms & Conditions
           </a>
-          <a href="#" className="hover:text-emerald-600 transition-colors">
+          <a
+            href="/support"
+            className="hover:text-emerald-600 transition-colors"
+          >
             Contact
           </a>
         </div>

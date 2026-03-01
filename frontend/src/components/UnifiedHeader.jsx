@@ -61,21 +61,39 @@ const UnifiedHeader = ({ session, onReset }) => {
       </div>
 
       <nav className="hidden lg:flex items-center gap-8">
-        {["Home", "Premium Plans", "How It Works", "FAQ", "Support"].map(
+        {["Home", "Our Plan", "How Its Work", "Blogs", "Contact Us"].map(
           (item) => {
             let path = "/";
             if (item === "Home") path = "/";
-            if (item === "Premium Plans") path = "/premium-plans";
-            if (item === "How It Works") path = "/how-it-works";
-            if (item === "FAQ") path = "/faq";
-            if (item === "Support") path = "/support";
+            if (item === "Our Plan") path = "/premium-plans";
+            if (item === "How Its Work") {
+              if (location.pathname === "/") {
+                const el = document.getElementById("how-it-works");
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth" });
+                  return null; // Don't navigate if scrolling
+                }
+              }
+              path = "/#how-it-works";
+            }
+            if (item === "Blogs") path = "/blogs";
+            if (item === "Contact Us") path = "/support";
 
             const isActive = location.pathname === path;
 
             return (
               <span
                 key={item}
-                onClick={() => handleNavigation(path)}
+                onClick={() => {
+                  if (item === "How Its Work" && location.pathname === "/") {
+                    const el = document.getElementById("how-it-works");
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth" });
+                      return;
+                    }
+                  }
+                  handleNavigation(path);
+                }}
                 className={`cursor-pointer text-sm font-medium transition-colors ${
                   isActive
                     ? "text-emerald-600 font-bold"
@@ -112,24 +130,33 @@ const UnifiedHeader = ({ session, onReset }) => {
               <nav className="flex flex-col gap-6">
                 {[
                   "Home",
-                  "Premium Plans",
-                  "How It Works",
-                  "FAQ",
-                  "Support",
+                  "Our Plan",
+                  "How Its Work",
+                  "Blogs",
+                  "Contact Us",
                 ].map((item) => {
                   let path = "/";
                   if (item === "Home") path = "/";
-                  if (item === "Premium Plans") path = "/premium-plans";
-                  if (item === "How It Works") path = "/how-it-works";
-                  if (item === "FAQ") path = "/faq";
-                  if (item === "Support") path = "/support";
+                  if (item === "Our Plan") path = "/premium-plans";
+                  if (item === "How Its Work") path = "/#how-it-works";
+                  if (item === "Blogs") path = "/blogs";
+                  if (item === "Contact Us") path = "/support";
 
                   return (
                     <span
                       key={item}
                       onClick={() => {
+                        if (
+                          item === "How Its Work" &&
+                          location.pathname === "/"
+                        ) {
+                          const el = document.getElementById("how-it-works");
+                          if (el) {
+                            el.scrollIntoView({ behavior: "smooth" });
+                            return;
+                          }
+                        }
                         handleNavigation(path);
-                        // Close sheet if needed, though simpler just to navigate since sheet unmounts or navigate pushes new page
                       }}
                       className={`text-lg font-semibold cursor-pointer ${
                         location.pathname === path

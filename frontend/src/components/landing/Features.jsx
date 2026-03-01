@@ -72,42 +72,7 @@ const Features = () => {
           ))}
         </div>
 
-        <div className="mt-20 grid md:grid-cols-3 gap-8 border-t border-slate-200 pt-12">
-          <div className="flex gap-4">
-            <div className="p-2 rounded-full h-fit">
-              <Shield className="w-6 h-6 text-emerald-600" />
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-800">Privacy Guaranteed</h4>
-              <p className="text-xs text-slate-500 mt-1">
-                Files are automatically deleted from our servers after 2 hours.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="p-2 rounded-full h-fit">
-              <FolderTree className="w-6 h-6 text-emerald-600" />
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-800">Full Data Integrity</h4>
-              <p className="text-xs text-slate-500 mt-1">
-                Maintains folder hierarchy, attachments, and rich-text
-                formatting.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="p-2 rounded-full h-fit">
-              <FileText className="w-6 h-6 text-emerald-600" />
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-800">Fast Processing</h4>
-              <p className="text-xs text-slate-500 mt-1">
-                Cloud-based high-speed engines process large files in minutes.
-              </p>
-            </div>
-          </div>
-        </div>
+    
       </div>
     </section>
   );

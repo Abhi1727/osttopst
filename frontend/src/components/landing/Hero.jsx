@@ -222,25 +222,17 @@ const Hero = ({ onUploadComplete }) => {
   };
 
   return (
-    <section className="py-12 md:py-20 px-4 md:px-6 lg:px-12 bg-white flex flex-col items-center min-h-[600px] justify-center">
+    <section className="py-12 md:py-4 px-4 md:px-6 lg:px-12 bg-white flex flex-col items-center min-h-[600px] justify-center">
       {/* Main Heading & Tagline */}
-      <div className="text-center mb-12 max-w-4xl mx-auto space-y-4">
+      <div className="text-center mb-12 max-w-4xl mx-auto space-y-1">
         <h1 className="text-xl md:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
-          Convert OST to PST Online{" "}
-          <span className="text-emerald-600 block md:inline">
-            {/* Fast & Secure */}
-            Securely <br />
-            <span className="text-slate-900">& Instantly</span>
-          </span>
+          Convert OST to PST Online File For Free
+
         </h1>
-        <p className="text-slate-500 text-sm md:text-l font-medium max-w-3xl mx-auto leading-relaxed">
-          Through our Online OST to PST Converter you can convert an OST to a
-          PST file quickly and easily on the web without using Outlook. With
-          this free tool we provide you with the most reliable way to convert
-          your OST File Into a PST File, keeping every email, contact, calendar
-          entry, and attachment within the original file structure.
+        <p className="text-slate-500 text-lg md:text-xl font-medium max-w-3xl mx-auto leading-relaxed">
+         An easy and free online method to convert OST to PST files instantly & securely.
         </p>
-        <div className="flex flex-wrap justify-center gap-3">
+        {/* <div className="flex flex-wrap justify-center gap-3">
           <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
             <Lock className="w-4 h-4 text-emerald-500" /> SSL Secured
           </button>
@@ -253,7 +245,7 @@ const Hero = ({ onUploadComplete }) => {
           <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
             <Gift className="w-4 h-4 text-emerald-500" /> Free Conversion
           </button>
-        </div>
+        </div> */}
       </div>
 
       <div className="w-full max-w-6xl bg-white rounded-[40px] shadow-2xl shadow-emerald-500/10 border border-slate-100 p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-8 items-stretch">

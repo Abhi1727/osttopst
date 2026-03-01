@@ -12,6 +12,7 @@ import FilePreview from "./components/FilePreview";
 import HowItWorks from "./components/HowItWorks";
 import Faq from "./components/Faq";
 import Support from "./components/Support";
+import Blogs from "./components/Blogs";
 import Pricing from "./components/Pricing";
 import UnifiedHeader from "./components/UnifiedHeader";
 import Footer from "./components/landing/Footer";
@@ -114,6 +115,7 @@ function App() {
             />
             <Route path="/faq" element={<Faq />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/blogs" element={<Blogs />} />
             <Route path="/premium-plans" element={<Pricing />} />
           </Routes>
         </main>
