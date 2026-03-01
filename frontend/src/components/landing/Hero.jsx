@@ -16,9 +16,13 @@ import {
   ArrowRight,
   Lock,
   Upload,
+  Zap,
+  Cloud,
+  Gift,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import conversionVideo from "../../assets/Website_Color_Scheme_and_Video.mp4";
+import ExportDialog from "../ExportDialog";
 
 const Hero = ({ onUploadComplete }) => {
   const [file, setFile] = useState(null);
@@ -29,6 +33,7 @@ const Hero = ({ onUploadComplete }) => {
   const [completedSession, setCompletedSession] = useState(null);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [abortController, setAbortController] = useState(null);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   const { getToken } = useAuth();
   const uploadActive = useRef(false);
@@ -75,6 +80,11 @@ const Hero = ({ onUploadComplete }) => {
   });
 
   const calculateFingerprint = async (file) => {
+    // Fallback if crypto.subtle is unavailable (e.g. non-HTTPS local dev)
+    if (!crypto || !crypto.subtle) {
+      return `fallback_${file.name}_${file.size}_${file.lastModified}`;
+    }
+
     // Fingerprint: SHA-256 of first 1MB + File Size
     const chunkSize = 1024 * 1024; // 1MB
     const slice = file.slice(0, chunkSize);
@@ -118,10 +128,6 @@ const Hero = ({ onUploadComplete }) => {
 
           setCompletedSession(dupResult.session);
           setUploadPhase("complete");
-
-          setTimeout(() => {
-            if (onUploadComplete) onUploadComplete(dupResult.session);
-          }, 1500);
           return;
         }
       } catch (dupErr) {
@@ -164,17 +170,6 @@ const Hero = ({ onUploadComplete }) => {
         console.log("[Hero] Upload/Conversion result received:", result);
         setCompletedSession(result);
         setUploadPhase("complete");
-
-        // Auto-notify parent after a short delay
-        console.log("[Hero] Notifying parent component in 1.5s...");
-        setTimeout(() => {
-          if (onUploadComplete) {
-            console.log("[Hero] Calling onUploadComplete with result...");
-            onUploadComplete(result);
-          } else {
-            console.warn("[Hero] onUploadComplete prop is missing!");
-          }
-        }, 1500);
       }
     } catch (err) {
       if (err.message === "Upload cancelled") {
@@ -199,6 +194,7 @@ const Hero = ({ onUploadComplete }) => {
       setUploadPhase("idle");
       setProgress(0);
       setUploadDetail("");
+      setFile(null);
       toast.info("Upload cancelled");
 
       // If we have an active session ID (it reached assembly phase), delete the session entirely.
@@ -208,7 +204,10 @@ const Hero = ({ onUploadComplete }) => {
           await fileService.deleteSession(activeSessionId, token);
           console.log(`[Hero] Deleted aborted session: ${activeSessionId}`);
         } catch (err) {
-          console.warn("[Hero] Failed to delete aborted session on server:", err);
+          console.warn(
+            "[Hero] Failed to delete aborted session on server:",
+            err,
+          );
         }
         setActiveSessionId(null);
       }
@@ -226,59 +225,82 @@ const Hero = ({ onUploadComplete }) => {
     <section className="py-12 md:py-20 px-4 md:px-6 lg:px-12 bg-white flex flex-col items-center min-h-[600px] justify-center">
       {/* Main Heading & Tagline */}
       <div className="text-center mb-12 max-w-4xl mx-auto space-y-4">
-        <h1 className="text-4xl md:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight">
-          Convert OST to PST{" "}
+        <h1 className="text-xl md:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
+          Convert OST to PST Online{" "}
           <span className="text-emerald-600 block md:inline">
-            & Securely & Instantly
+            {/* Fast & Secure */}
+            Securely <br />
+            <span className="text-slate-900">& Instantly</span>
           </span>
         </h1>
-        <p className="text-slate-500 text-lg md:text-xl font-medium max-w-3xl mx-auto leading-relaxed">
-          The most reliable tool to recover and convert Outlook Offline Data
-          files into accessible PST format without any data loss or metadata
-          corruption.
+        <p className="text-slate-500 text-sm md:text-l font-medium max-w-3xl mx-auto leading-relaxed">
+          Through our Online OST to PST Converter you can convert an OST to a
+          PST file quickly and easily on the web without using Outlook. With
+          this free tool we provide you with the most reliable way to convert
+          your OST File Into a PST File, keeping every email, contact, calendar
+          entry, and attachment within the original file structure.
         </p>
+        <div className="flex flex-wrap justify-center gap-3">
+          <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
+            <Lock className="w-4 h-4 text-emerald-500" /> SSL Secured
+          </button>
+          <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
+            <Zap className="w-4 h-4 text-emerald-500" /> No Outlook Required
+          </button>
+          <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
+            <Cloud className="w-4 h-4 text-emerald-500" /> Cloud Based
+          </button>
+          <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
+            <Gift className="w-4 h-4 text-emerald-500" /> Free Conversion
+          </button>
+        </div>
       </div>
 
-      <div className="w-full max-w-6xl bg-white rounded-[40px] shadow-2xl shadow-emerald-500/10 border border-slate-100 p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-8 items-center">
+      <div className="w-full max-w-6xl bg-white rounded-[40px] shadow-2xl shadow-emerald-500/10 border border-slate-100 p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-8 items-stretch">
         {/* Left Side: Video Content */}
-        <div className="w-full md:w-[45%] bg-gradient-to-br from-[#F0F7FF] via-[#E1F1FF] to-[#D0E8FF] rounded-[30px] overflow-hidden relative flex items-center justify-center border border-white/60 shadow-xl shadow-blue-500/5 group/video aspect-video">
-          {/* Decorative Background Elements */}
-          <div className="absolute top-1/4 -left-10 w-40 h-40 bg-blue-400/10 blur-[80px] rounded-full pointer-events-none group-hover/video:bg-blue-400/20 transition-colors duration-700"></div>
-          <div className="absolute bottom-1/4 -right-10 w-40 h-40 bg-emerald-400/10 blur-[80px] rounded-full pointer-events-none group-hover/video:bg-emerald-400/20 transition-colors duration-700"></div>
+        {!uploading && !completedSession && (
+          <div className="w-full md:w-[45%] bg-gradient-to-br from-[#F0F7FF] via-[#E1F1FF] to-[#D0E8FF] rounded-[30px] overflow-hidden relative flex items-center justify-center border border-white/60 shadow-xl shadow-blue-500/5 group/video aspect-video md:aspect-auto">
+            {/* Decorative Background Elements */}
+            <div className="absolute top-1/4 -left-10 w-40 h-40 bg-blue-400/10 blur-[80px] rounded-full pointer-events-none group-hover/video:bg-blue-400/20 transition-colors duration-700"></div>
+            <div className="absolute bottom-1/4 -right-10 w-40 h-40 bg-emerald-400/10 blur-[80px] rounded-full pointer-events-none group-hover/video:bg-emerald-400/20 transition-colors duration-700"></div>
 
-          {/* Mirror Effect/Reflection */}
-          <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent pointer-events-none"></div>
+            {/* Mirror Effect/Reflection */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent pointer-events-none"></div>
 
-          {/* Video Tag */}
-          <div className="absolute top-6 left-6 z-20 flex items-center gap-2 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white shadow-sm">
-            <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
-              Live Preview
-            </span>
+            {/* Video Tag */}
+            {/* <div className="absolute top-6 left-6 z-20 flex items-center gap-2 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white shadow-sm">
+              <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                Live Preview
+              </span>
+            </div> */}
+
+            <video
+              src={conversionVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover relative z-10 opacity-95 group-hover/video:scale-[1.01] transition-transform duration-700 ease-out"
+            />
           </div>
-
-          <video
-            src={conversionVideo}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover relative z-10 opacity-95 group-hover/video:scale-[1.01] transition-transform duration-700 ease-out"
-          />
-        </div>
+        )}
 
         {/* Right Side: Upload Interaction */}
         <div
           {...getRootProps()}
           className={`
-            w-full md:w-[55%] border-2 border-dashed rounded-[30px] p-8 md:p-12
+            w-full ${uploading || completedSession ? "md:w-full" : "md:w-[55%]"} border-2 border-dashed rounded-[30px] p-8 md:p-12
             flex flex-col items-center justify-center text-center
             transition-all duration-300 relative
             ${isDragActive ? "border-emerald-500 bg-emerald-50/30" : "border-slate-200 bg-white shadow-inner shadow-slate-50/30"}
-            ${uploading || completedSession ? "" : "hover:border-emerald-400 group cursor-pointer"}
+            ${uploading || completedSession ? "border-none bg-white shadow-none" : "hover:border-emerald-400 group cursor-pointer"}
           `}
         >
-          <input {...getInputProps()} disabled={uploading || !!completedSession} />
+          <input
+            {...getInputProps()}
+            disabled={uploading || !!completedSession}
+          />
 
           {/* Default/Idle State */}
           {!uploading && !completedSession && (
@@ -379,87 +401,233 @@ const Hero = ({ onUploadComplete }) => {
             </div>
           )}
 
-          {/* Uploading State */}
-          {uploading && !completedSession && (
-            <div className="w-full space-y-8 animate-in fade-in duration-500">
-              <div className="space-y-2">
-                <h3 className="text-2xl font-black text-slate-800">
-                  {uploadPhase === "processing"
-                    ? "Processing File"
-                    : "Uploading File"}
-                </h3>
-                <p className="text-slate-400 text-sm">
-                  {uploadDetail || "Preparing your conversion..."}
-                </p>
+          {/* Processing / Complete State */}
+          {(uploading || completedSession) && (
+            <div className="w-full animate-in fade-in duration-500 bg-white rounded-2xl p-2 md:p-6 text-center shadow-none md:shadow-sm">
+              {/* Stepper Header */}
+              <div className="flex justify-between items-start w-full max-w-lg mx-auto mb-10 relative">
+                {/* Connecting Line */}
+                <div className="absolute top-4 left-10 right-10 h-[2px] bg-slate-100 -z-10">
+                  <div
+                    className="h-full bg-emerald-400 transition-all duration-500 ease-in-out"
+                    style={{
+                      width: completedSession
+                        ? "100%"
+                        : uploadPhase === "processing" ||
+                            uploadPhase === "complete"
+                          ? "50%"
+                          : "0%",
+                    }}
+                  ></div>
+                </div>
+
+                {/* Step 1: Upload */}
+                <div className="flex flex-col items-center gap-2 bg-white px-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-emerald-100 text-emerald-600 shadow-sm border border-emerald-200">
+                    1
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {uploadPhase === "uploading" ? (
+                      <RotateCw className="w-4 h-4 text-emerald-500 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    )}
+                    <span className="text-xs font-bold text-slate-600">
+                      File Uploaded
+                    </span>
+                  </div>
+                </div>
+
+                {/* Step 2: Convert */}
+                <div className="flex flex-col items-center gap-2 bg-white px-2 z-10">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors border ${
+                      uploadPhase === "processing" ||
+                      uploadPhase === "complete" ||
+                      completedSession
+                        ? "bg-emerald-100 text-emerald-600 border-emerald-200 shadow-sm"
+                        : "bg-slate-50 text-slate-400 border-slate-100"
+                    }`}
+                  >
+                    2
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {uploadPhase === "processing" && !completedSession ? (
+                      <RotateCw className="w-4 h-4 text-emerald-500 animate-spin" />
+                    ) : completedSession || uploadPhase === "complete" ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    ) : null}
+                    <span
+                      className={`text-xs font-bold ${
+                        uploadPhase === "processing" ||
+                        uploadPhase === "complete" ||
+                        completedSession
+                          ? "text-slate-600"
+                          : "text-slate-400"
+                      }`}
+                    >
+                      OST Converted
+                    </span>
+                  </div>
+                </div>
+
+                {/* Step 3: Preview */}
+                <div className="flex flex-col items-center gap-2 bg-white px-2 z-10">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors border ${
+                      completedSession
+                        ? "bg-emerald-100 text-emerald-600 border-emerald-200 shadow-sm"
+                        : "bg-slate-50 text-slate-400 border-slate-100"
+                    }`}
+                  >
+                    3
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {completedSession ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    ) : null}
+                    <span
+                      className={`text-xs font-bold ${
+                        completedSession ? "text-slate-600" : "text-slate-400"
+                      }`}
+                    >
+                      Preview & Save
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="relative">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-emerald-600">
-                    {progress}% Complete
-                  </span>
-                  {uploadPhase === "processing" ? (
-                    <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />
+              {/* File Info Card */}
+              <div className="border border-slate-100 bg-slate-50/50 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm mb-12 w-full text-left">
+                <div className="flex items-center gap-6 w-full md:w-auto overflow-hidden">
+                  {/* File Icon */}
+                  <div className="w-14 h-16 bg-white border border-slate-200 rounded flex flex-col items-center justify-center shadow-sm shrink-0">
+                    <span className="text-[10px] font-black text-emerald-600 leading-none mb-0.5">
+                      OST
+                    </span>
+                    <File className="w-6 h-6 text-emerald-600" />
+                  </div>
+
+                  {/* File Details Grid */}
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-8 gap-y-2 w-full text-left">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-slate-900">
+                        File Name:
+                      </span>
+                      <span
+                        className="text-sm text-slate-500 truncate max-w-[120px]"
+                        title={file?.name}
+                      >
+                        {file?.name || "Unknown"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-slate-900">
+                        File Size:
+                      </span>
+                      <span className="text-sm text-slate-500">
+                        {file ? formatFileSize(file.size) : "-"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col lg:col-span-1 col-span-2">
+                      <span className="text-xs font-bold text-slate-900">
+                        File Format:
+                      </span>
+                      <span className="text-sm text-slate-500 truncate">
+                        {file?.name?.split(".").pop() || "ost"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status / Progress on the right */}
+                <div className="flex flex-col items-end shrink-0 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
+                  {completedSession ? (
+                    <span className="text-sm font-bold text-emerald-600 whitespace-nowrap">
+                      File Converted Successfully.
+                    </span>
                   ) : (
-                    <RotateCw className="w-4 h-4 text-emerald-500 animate-spin" />
+                    <div className="w-full md:w-48 flex flex-col items-end gap-1.5 shrink-0">
+                      <span className="text-xs font-bold text-emerald-600">
+                        {uploadPhase === "processing"
+                          ? "Converting"
+                          : "Uploading"}
+                        ... {progress}%
+                      </span>
+                      <Progress
+                        value={progress}
+                        className="h-1.5 bg-slate-200 rounded-full w-full"
+                        indicatorClassName="bg-gradient-to-r from-emerald-500 to-emerald-400 delay-100"
+                      />
+                      <span
+                        className="text-[10px] text-slate-400 font-medium truncate w-full text-right"
+                        title={uploadDetail}
+                      >
+                        {uploadDetail || "Processing..."}
+                      </span>
+                    </div>
                   )}
                 </div>
-                <Progress
-                  value={progress}
-                  className="h-3 bg-slate-100 rounded-full mb-4"
-                  indicatorClassName="bg-gradient-to-r from-emerald-500 to-emerald-400"
-                />
               </div>
 
-              <div className="flex justify-center">
-                <Button
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log("[Hero] Force cancel button clicked.");
-                    handleCancel();
-                  }}
-                  className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 h-10 px-8 font-bold text-xs uppercase tracking-widest rounded-full relative z-50 pointer-events-auto cursor-pointer"
-                >
-                  Cancel Conversion
-                </Button>
-              </div>
-            </div>
-          )}
+              {/* Bottom Message / Actions */}
+              {completedSession ? (
+                <div className="text-center space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                  <h3 className="text-2xl md:text-3xl font-black text-slate-800 flex items-center justify-center gap-2">
+                    OST File Converted Successfully!!
+                  </h3>
+                  <p className="text-slate-600 text-sm md:text-[15px] font-medium leading-relaxed">
+                    You can Download the converted file as per your requirement.
+                    <br />
+                    Select an option below to continue with your file.
+                  </p>
 
-          {/* Complete State */}
-          {completedSession && (
-            <div className="w-full space-y-6 animate-in zoom-in-95 duration-500">
-              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600" />
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-2xl font-black text-slate-800">
-                  Conversion Ready!
-                </h3>
-                <p className="text-slate-500 text-sm font-medium">
-                  Your file has been successfully processed
-                </p>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 max-w-[280px] mx-auto">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
-                  Items Recovered
-                </p>
-                <p className="text-xl font-black text-emerald-600">
-                  {completedSession.messageCount || "All Ready"}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                <Lock className="w-3 h-3" />
-                Secure 256-bit Encrypted
-              </div>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6">
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsExportDialogOpen(true);
+                      }}
+                      className="w-full sm:w-auto px-8 h-12 bg-white text-emerald-600 border-2 border-emerald-500 hover:bg-emerald-50 font-bold rounded-xl shadow-sm hover:shadow-md transition-all"
+                    >
+                      Export
+                    </Button>
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onUploadComplete)
+                          onUploadComplete(completedSession);
+                      }}
+                      className="w-full sm:w-auto px-8 h-12 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:scale-[1.02] transition-all"
+                    >
+                      Preview & Export
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancel();
+                    }}
+                    className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 h-10 px-8 font-bold text-xs uppercase tracking-widest rounded-full relative z-50 pointer-events-auto cursor-pointer"
+                  >
+                    Cancel Conversion
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      <ExportDialog
+        open={isExportDialogOpen}
+        session={completedSession}
+        onClose={() => setIsExportDialogOpen(false)}
+      />
     </section>
   );
 };

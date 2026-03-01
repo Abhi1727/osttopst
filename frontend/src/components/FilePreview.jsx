@@ -118,7 +118,7 @@ const FilePreview = ({ session, onReset }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
-  const [hideEmpty, setHideEmpty] = useState(false);
+  const [hideEmpty, setHideEmpty] = useState(true);
   const [isGuardOpen, setIsGuardOpen] = useState(false);
   const timerRef = useRef(null);
 
@@ -280,7 +280,7 @@ const FilePreview = ({ session, onReset }) => {
     try {
       const toastId = toast.loading(`Preparing ${format} export...`);
       const token = await getToken();
-      await fileService.exportAll(session.sessionId, format, false, token);
+      await fileService.exportAll(session.sessionId, format, true, token);
       toast.dismiss(toastId);
       toast.success("Export successful!");
     } catch (err) {
@@ -378,7 +378,7 @@ const FilePreview = ({ session, onReset }) => {
                         )}
                       />
                       <span className="text-[11px] font-black uppercase tracking-wider">
-                        Hide empty folders
+                        Hide System folders
                       </span>
                     </div>
                     {hideEmpty && <Check size={14} strokeWidth={3} />}

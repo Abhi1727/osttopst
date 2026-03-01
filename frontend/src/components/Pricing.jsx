@@ -14,6 +14,75 @@ import {
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
+const comparisonFeatures = [
+  {
+    name: "Full OST to PST Conversion",
+    personal: true,
+    corporate: true,
+    technical: true,
+  },
+  {
+    name: "Preview Before Download",
+    personal: true,
+    corporate: true,
+    technical: true,
+  },
+  {
+    name: "Number of PCs / Licenses",
+    personal: "1 PC",
+    corporate: "Up to 10 PCs",
+    technical: "Unlimited (Server)",
+  },
+  {
+    name: "Advanced Filters (Date, Folder, Size)",
+    personal: false,
+    corporate: true,
+    technical: true,
+  },
+  {
+    name: "Batch Conversion (Multiple OST Files)",
+    personal: false,
+    corporate: true,
+    technical: true,
+  },
+  {
+    name: "Commercial Use License",
+    personal: false,
+    corporate: true,
+    technical: true,
+  },
+  {
+    name: "Multiple Output Formats (EML, MSG, PDF)",
+    personal: false,
+    corporate: false,
+    technical: true,
+  },
+  {
+    name: "Command-Line Interface (CLI)",
+    personal: false,
+    corporate: false,
+    technical: true,
+  },
+  {
+    name: "24/7 Dedicated Support",
+    personal: false,
+    corporate: false,
+    technical: true,
+  },
+  {
+    name: "Technical Support Duration",
+    personal: "1 Year",
+    corporate: "Priority Queue",
+    technical: "24/7 Dedicated",
+  },
+  {
+    name: "30-Day Money-Back Guarantee",
+    personal: true,
+    corporate: true,
+    technical: true,
+  },
+];
+
 const PricingCard = ({
   title,
   price,
@@ -265,6 +334,106 @@ const Pricing = () => {
             >
               Request a Quote
             </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Comparison Table Section */}
+      <div className="w-full bg-white pb-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className=" rounded-t-lg py-10 px-4">
+            <h2 className="text-5xl font-bold text-slate-800 text-center mb-2 tracking-tight">
+              Compare All Plans <span className="text-emerald-600">Side by Side</span>
+            </h2>
+            <p className="text-gray-500 text-sm text-center max-w-xl mx-auto">
+              Not sure which OST to PST converter license is right for you?
+              Here's a clear breakdown of what each plan includes.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto ">
+            <table className="w-full text-left border-collapse min-w-[600px] text-sm md:text-base">
+              <thead>
+                <tr>
+                  <th className="p-4 bg-slate-800 text-white font-medium w-[40%]">
+                    Feature
+                  </th>
+                  <th className="p-4 bg-slate-800 text-white text-center font-medium border-l border-white/20 w-[20%]">
+                    <div>Personal</div>
+                    <div className="text-xs font-normal opacity-90">$49</div>
+                  </th>
+                  <th className="p-4 bg-emerald-600 text-white text-center font-bold border-l border-emerald-500 w-[20%] shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
+                    <div>Corporate</div>
+                    <div className="text-xs font-normal opacity-90">$199</div>
+                  </th>
+                  <th className="p-4 bg-slate-800 text-white text-center font-medium border-l border-white/20 w-[20%]">
+                    <div>Technical</div>
+                    <div className="text-xs font-normal opacity-90">$399</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 border-x border-b border-gray-100">
+                {comparisonFeatures.map((feature, index) => (
+                  <tr
+                    key={index}
+                    className="hover:bg-gray-50/50 transition-colors"
+                  >
+                    <td className="p-4 text-gray-600">{feature.name}</td>
+                    <td className="p-4 text-center">
+                      {typeof feature.personal === "boolean" ? (
+                        feature.personal ? (
+                          <span className="text-emerald-500 font-bold text-lg leading-none">
+                            ✓
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 font-bold text-lg leading-none">
+                            ✕
+                          </span>
+                        )
+                      ) : (
+                        <div className="text-xs text-gray-600 font-medium">
+                          {feature.personal}
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-4 text-center bg-emerald-50/20">
+                      {typeof feature.corporate === "boolean" ? (
+                        feature.corporate ? (
+                          <span className="text-emerald-600 font-bold text-lg leading-none">
+                            ✓
+                          </span>
+                        ) : (
+                          <span className="text-emerald-200 font-bold text-lg leading-none">
+                            ✕
+                          </span>
+                        )
+                      ) : (
+                        <div className="text-xs text-emerald-700 font-bold">
+                          {feature.corporate}
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {typeof feature.technical === "boolean" ? (
+                        feature.technical ? (
+                          <span className="text-emerald-500 font-bold text-lg leading-none">
+                            ✓
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 font-bold text-lg leading-none">
+                            ✕
+                          </span>
+                        )
+                      ) : (
+                        <div className="text-xs text-gray-600 font-medium">
+                          {feature.technical}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

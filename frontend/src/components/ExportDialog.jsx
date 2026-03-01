@@ -79,7 +79,7 @@ const ExportDialog = ({ open, session, onClose }) => {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
       toast.info("Conversion/Export cancelled.");
-      
+
       // Notify server to cancel background task
       try {
         const token = await getToken();
@@ -94,16 +94,16 @@ const ExportDialog = ({ open, session, onClose }) => {
     try {
       setIsExporting(true);
       const token = await getToken();
-      
+
       abortControllerRef.current = new AbortController();
-      
+
       const savedName = await conversionService.exportAll(
         session.sessionId,
         format,
-        false, // Default to including empty folders
+        true, // Default to excluding empty folders
         token,
         (p) => setProgress(p),
-        abortControllerRef.current.signal
+        abortControllerRef.current.signal,
       );
       if (savedName) {
         toast.success(`Export saved as: ${savedName}`);
@@ -135,9 +135,9 @@ const ExportDialog = ({ open, session, onClose }) => {
         const savedName = await conversionService.convertToPst(
           session.sessionId,
           token,
-          false, // Default to including empty folders
+          true, // Default to excluding empty folders
           (p) => setProgress(p),
-          abortControllerRef.current.signal
+          abortControllerRef.current.signal,
         );
         if (savedName) {
           toast.success(`Converted file saved as: ${savedName}`);
@@ -146,9 +146,9 @@ const ExportDialog = ({ open, session, onClose }) => {
         const savedName = await conversionService.convertToOst(
           session.sessionId,
           token,
-          false, // Default to including empty folders
+          true, // Default to excluding empty folders
           (p) => setProgress(p),
-          abortControllerRef.current.signal
+          abortControllerRef.current.signal,
         );
         if (savedName) {
           toast.success(`Converted file saved as: ${savedName}`);

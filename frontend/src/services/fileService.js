@@ -474,7 +474,7 @@ export const fileService = {
     }
   },
 
-  async getFolders(sessionId, token, excludeEmpty = false) {
+  async getFolders(sessionId, token, excludeEmpty = true) {
     const response = await fetch(
       `${API_BASE_URL}/file-details/${sessionId}/folders?excludeEmptyFolders=${excludeEmpty}`,
       {

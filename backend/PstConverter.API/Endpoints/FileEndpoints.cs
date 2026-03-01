@@ -133,7 +133,7 @@ public static class FileEndpoints
                 }
 
                 using var stream = chunk.OpenReadStream();
-                
+
                 var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
                 var (success, receivedCount) = await pstService.SaveChunkAsync(uploadId, userId, chunkIndex, stream);
 
@@ -264,22 +264,29 @@ public static class FileEndpoints
 
     public static bool IsValidOutlookDataFile(Stream stream, string expectedExtension)
     {
-        if (stream.Length < 4) return false;
-        
+        if (stream.Length < 12) return false;
+
         var start = stream.Position;
-        var buffer = new byte[4];
-        var read = stream.Read(buffer, 0, 4);
+        var buffer = new byte[12];
+        var read = stream.Read(buffer, 0, 12);
         stream.Position = start;
 
         // Check the 4-byte magic word (!BDN)
-        if (read < 4 || buffer[0] != 0x21 || buffer[1] != 0x42 || buffer[2] != 0x44 || buffer[3] != 0x4E)
+        if (read < 12 || buffer[0] != 0x21 || buffer[1] != 0x42 || buffer[2] != 0x44 || buffer[3] != 0x4E)
         {
             return false;
         }
 
-        // We no longer strictly match wVer with the file extension.
-        // As long as it starts with !BDN, we accept it as an Outlook Data File
-        // to handle renamed extensions (e.g., an OST file renamed to PST).
+        short wVer = BitConverter.ToInt16(buffer, 10);
+        expectedExtension = expectedExtension.ToLowerInvariant();
+
+        // Check format version constraints
+        if (expectedExtension == ".pst" && (wVer == 36 || wVer == 38))
+        {
+            // PST cannot have OST 2013/2016 wVer values
+            return false;
+        }
+
         return true;
     }
 }

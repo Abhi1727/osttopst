@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="flex items-center gap-2 text-slate-600">
           <img src={logo} alt="Logo" className="w-4 h-4 object-contain" />
           <span className="text-sm font-semibold">
-            © 2026 OST TO PST Converter
+           Copyright © 2026 - <span>OSTtoPST.us</span>
           </span>
         </div>
 

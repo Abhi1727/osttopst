@@ -113,7 +113,7 @@ export const conversionService = {
   async convertToPst(
     sessionId,
     token,
-    excludeEmpty = false,
+    excludeEmpty = true,
     onProgress,
     signal,
   ) {
@@ -124,7 +124,7 @@ export const conversionService = {
   async convertToOst(
     sessionId,
     token,
-    excludeEmpty = false,
+    excludeEmpty = true,
     onProgress,
     signal,
   ) {

@@ -54,12 +54,10 @@ const TechnicalAdvantages = () => {
           <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
-                Wide Range of Support
+                Broad Compatibility Across All OST & PST Variants
               </h3>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                Our conversion engine is compatible with all variations of
-                Outlook and Exchange data files, ensuring a seamless experience
-                regardless of your software version.
+                Our free OST to PST converter software is engineered to handle every variant of OST and PST file you might encounter.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[

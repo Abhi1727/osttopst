@@ -16,7 +16,7 @@ public static class FolderEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
             {
-                return Results.Ok(await pstService.GetFolderTreeAsync(sessionId, userId, excludeEmptyFolders ?? false));
+                return Results.Ok(await pstService.GetFolderTreeAsync(sessionId, userId, excludeEmptyFolders ?? true));
             }
             catch (FileNotFoundException)
             {

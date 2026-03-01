@@ -15,23 +15,44 @@ const Features = () => {
   const features = [
     {
       icon: Lock,
-      title: "Secure Upload & Conversion",
+      title: "Exchange server crash",
       description:
-        "Uses SSL encryption for secure upload of OST files that are deleted from our servers within 24 hours after conversion.",
+        "If an Exchange server crashes, the OST file will lose its connection to the Exchange server and become “orphaned.” Using our software to convert the OST to PST will allow you to recover all of the readable items in your OST file and save them into a viewable, portable PST file.",
       badgeColor: "bg-emerald-50",
     },
     {
       icon: FolderTree,
-      title: "Preserves Folder Structure",
+      title: "You’ve deleted or expired your Office 365 Account",
       description:
-        "Retains the original folder structure and mailbox hierarchy, keeping your data organized and structured as it was in the OST file.",
+        "When your Office 365 or Exchange account has been deleted or expired, it causes the local OST file to lose its connection to the Exchange server. Therefore, converting an OST to a PST using our free software will allow you to preserve the contents of your email history before you delete the account or before it expires.",
       badgeColor: "bg-emerald-50",
     },
     {
       icon: FileText,
-      title: "HTML Preview of Converted Data",
+      title: "Expired Office 365 Account",
       description:
-        "The tool provides a HTML-based preview for OST file ≤500MB, allowing you to review your data before downloading the converted PST file.",
+        "If your Office 365 account has expired, the local OST file will become disconnected. This means that the only way to keep your email history after you’ve deleted your Office 365 account (or after it expires) is to convert your OST to a PST, as described above.",
+      badgeColor: "bg-emerald-50",
+    },
+    {
+      icon: FileText,
+      title: "You are setting up a new computer or reinstalling Outlook",
+      description:
+        "OST files are machine and profile dependent. You cannot copy the OST file from one computer to another computer and import it into Outlook. You must convert the OST into a PST before being able to import it into Outlook on another machine. Converting the OST to a PST beforehand makes the file fully portable, allowing you to import it into Outlook on any computer.",
+      badgeColor: "bg-emerald-50",
+    },
+    {
+      icon: FileText,
+      title: "Migration of Email Platforms",
+      description:
+        "Are you seeking a service to aid you in migrating your emails? If you're considering switching from Exchange to Gmail, or moving from one Office 365 tenant to another, the easiest method for migrating your email data is to extract your local OST file into PST format; this is an easy way to correctly separate your email data, so you may later import them back into the new emailing system.",
+      badgeColor: "bg-emerald-50",
+    },
+    {
+      icon: FileText,
+      title: "Repair the Corruption of Your OST File",
+      description:
+        "OST files sometimes experience corruption and stop being usable because of sync issues and power outages, as well as due to disk corruption. The OST-to-PST file converter provided by us has functionality built into it for automatically fixing the header (structure) of the file so you get as much data out of your corrupted file, prior to losing it completely.",
       badgeColor: "bg-emerald-50",
     },
   ];
@@ -41,7 +62,7 @@ const Features = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-slate-800">
-            Highlights of OST to PST Online Conversion Tool
+            Why Use Our Online Tool? 
           </h2>
         </div>
 

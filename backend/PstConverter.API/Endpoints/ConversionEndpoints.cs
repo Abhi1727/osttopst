@@ -43,7 +43,7 @@ public static class ConversionEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? false);
+                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? true);
 
                 if (!isReady)
                 {
@@ -99,7 +99,7 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
             {
-                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? true);
 
                 if (!isReady)
                 {
@@ -143,7 +143,7 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
             {
-                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? false);
+                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? true);
 
                 if (!isReady)
                 {

@@ -49,7 +49,7 @@ export const cancelOperation = async (sessionId, token) => {
   return handleResponse(res);
 };
 
-export const getFolderTree = async (sessionId, token, excludeEmpty = false) => {
+export const getFolderTree = async (sessionId, token, excludeEmpty = true) => {
   const res = await fetch(
     `${API_BASE_URL}/file-details/${sessionId}/folders?excludeEmptyFolders=${excludeEmpty}`,
     { headers: getHeaders(token) },

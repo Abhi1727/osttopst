@@ -141,7 +141,7 @@ const ConversionHistory = ({ onRestore }) => {
                   className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2 font-bold px-4"
                 >
                   <Download className="w-4 h-4" />
-                  Get Files
+                  Re-convert
                 </Button>
               )}
               <Button
