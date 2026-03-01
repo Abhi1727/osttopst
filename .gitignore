@@ -37,3 +37,5 @@ test/frontend/.vite/deps/
 
 *.mp4
 *.mp3
+
+*.cursorrules
