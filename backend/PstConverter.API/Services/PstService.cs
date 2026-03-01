@@ -24,7 +24,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _uploadLocks = new();
     private static readonly ConcurrentDictionary<string, CancellationTokenSource> _conversionCts = new();
 
-    private void LogDebug(string message)
+    private static void LogDebug(string message)
     {
         try
         {
@@ -581,6 +581,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         var tree = await _pool.AccessAsync(sessionId, filePath, pst => Task.FromResult(BuildFolderTree(pst.RootFolder, excludeEmptyFolders)), password);
 
+        tree = FlattenFolderTree(tree);
+
         _cache.SetString(cacheKey, JsonSerializer.Serialize(tree), new DistributedCacheEntryOptions { SlidingExpiration = TimeSpan.FromMinutes(30) });
         return tree;
     }
@@ -605,6 +607,36 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             });
         }
         return result;
+    }
+
+    private static List<PstFolderInfo> FlattenFolderTree(List<PstFolderInfo> folders)
+    {
+        if (folders == null || folders.Count == 0) return folders ?? [];
+
+        var structural = folders.FirstOrDefault(f =>
+            f.DisplayName.Contains("IPM_SUBTREE", StringComparison.OrdinalIgnoreCase) ||
+            f.DisplayName.StartsWith("Top of", StringComparison.OrdinalIgnoreCase) ||
+            f.DisplayName.Contains("Root - Mailbox", StringComparison.OrdinalIgnoreCase));
+
+        if (structural != null)
+        {
+            return FlattenFolderTree(structural.SubFolders);
+        }
+
+        while (folders.Count == 1)
+        {
+            var single = folders[0];
+            if (single.MessageCount == 0 && single.SubFolders.Count > 0)
+            {
+                folders = single.SubFolders;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return folders;
     }
 
     public async Task<List<PstMessageSummary>> GetMessagesAsync(string sessionId, string userId, string folderId, MessageDateFilter? filter = null)
@@ -973,7 +1005,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         if (_conversionCts.TryRemove(sessionId, out var cts))
         {
-            _logger.LogInformation("Cancelling background task for session {SessionId}", sessionId);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Cancelling background task for session {SessionId}", sessionId);
+            }
             cts.Cancel();
             cts.Dispose();
         }
@@ -1000,7 +1035,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         if (_conversionCts.TryRemove(sessionId, out var cts))
         {
-            _logger.LogInformation("Cancellation requested for background task in session {SessionId}", sessionId);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Cancellation requested for background task in session {SessionId}", sessionId);
+            }
             cts.Cancel();
             cts.Dispose();
 
