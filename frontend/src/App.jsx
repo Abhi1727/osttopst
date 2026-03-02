@@ -13,6 +13,8 @@ import HowItWorks from "./components/HowItWorks";
 import Faq from "./components/Faq";
 import Support from "./components/Support";
 import Blogs from "./components/Blogs";
+import AdminDashboard from "./components/AdminDashboard";
+import BlogPostDetail from "./components/BlogPostDetail";
 import Pricing from "./components/Pricing";
 import UnifiedHeader from "./components/UnifiedHeader";
 import Footer from "./components/landing/Footer";
@@ -116,6 +118,8 @@ function App() {
             <Route path="/faq" element={<Faq />} />
             <Route path="/support" element={<Support />} />
             <Route path="/blogs" element={<Blogs />} />
+            <Route path="/admin/blogs" element={<AdminDashboard />} />
+            <Route path="/blogs/:id" element={<BlogPostDetail />} />
             <Route path="/premium-plans" element={<Pricing />} />
           </Routes>
         </main>

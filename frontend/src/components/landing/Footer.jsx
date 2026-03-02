@@ -40,6 +40,12 @@ const Footer = () => {
           >
             Contact
           </a>
+          <a
+            href="/admin/blogs"
+            className="text-emerald-600/50 hover:text-emerald-600 transition-colors font-bold"
+          >
+            Admin
+          </a>
         </div>
 
         <div className="flex gap-3">
