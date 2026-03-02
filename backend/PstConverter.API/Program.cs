@@ -40,13 +40,16 @@ catch (Exception ex)
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
+builder.Services.AddControllers();// This is for controllers
 builder.Services.AddMemoryCache();// This is for memory cache
 builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();// This is for storage pool
 builder.Services.AddScoped<PstService>();// This is for pst service
 builder.Services.AddHostedService<CleanupBackgroundService>();// This is for cleanup background service
+builder.Services.AddSingleton<LicenseAuthService>();// License auth (token caching)
+builder.Services.AddSingleton<LicenseApiClient>();// License API wrapper
 builder.Services.AddEndpointsApiExplorer();// This is for endpoints api explorer
 builder.Services.AddSwaggerGen();// This is for swagger gen
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi();// This is for open api
 
 // SQL Server Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -228,6 +231,15 @@ app.Use(async (context, next) =>
 // Minimal API Test Root
 app.MapGet("/api/status", () => Results.Ok(new { status = "API is running", timestamp = DateTime.Now }));
 
+// License server connectivity test
+app.MapGet("/api/license/test", async (LicenseApiClient licenseClient, IConfiguration config) =>
+{
+    var userId = config["LicenseApi:UserId"]!;
+    var toolId = config["LicenseApi:ToolId"]!;
+    var result = await licenseClient.GetLicenceStatus(userId, toolId);
+    return Results.Ok(new { userId, toolId, response = result });
+});
+
 app.MapFileEndpoints();
 app.MapFolderEndpoints();
 app.MapMessageEndpoints();
@@ -235,6 +247,8 @@ app.MapConversionEndpoints();
 app.MapSessionEndpoints();
 app.MapHowItWorksEndpoints();
 app.MapReviewEndpoints();
+
+app.MapControllers(); // Register attribute-routed API controllers like BlogsController
 
 // Fallback to index.html for SPA-style routing (useful if we serve React from here, though we are decoupled)
 app.MapFallbackToFile("index.html");

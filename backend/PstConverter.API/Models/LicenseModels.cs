@@ -7,19 +7,13 @@ namespace PstConverter.Models
         public string? UserId { get; set; }
         public string? ToolId { get; set; }
         public string? ModuleId { get; set; }
-        public string? ItemId { get; set; }
+        // public string? ItemId { get; set; } we will pass this as An argument in the function
     }
 
-    public class LicenseToken
+    public class LicenseToken(string token)
     {
-        public string Token { get; private set; }
-        public DateTime CreatedAt { get; private set; }
-
-        public LicenseToken(string token)
-        {
-            Token = token;
-            CreatedAt = DateTime.UtcNow;
-        }
+        public string Token { get; } = token;
+        public DateTime CreatedAt { get; } = DateTime.UtcNow;
 
         public bool IsExpired => DateTime.UtcNow >= CreatedAt.AddMinutes(50);
     }

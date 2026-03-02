@@ -120,7 +120,7 @@ function App() {
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/admin/blogs" element={<AdminDashboard />} />
             <Route path="/blogs/:id" element={<BlogPostDetail />} />
-            <Route path="/premium-plans" element={<Pricing />} />
+            <Route path="/our-plans" element={<Pricing />} />
           </Routes>
         </main>
         {location.pathname !== "/preview" && <Footer />}

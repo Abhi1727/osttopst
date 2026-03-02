@@ -8,20 +8,55 @@ import {
   Eye,
   Send,
   FileType,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import imgMigration from "../assets/blog/blog_email_migration_1772432378369.png";
+import mammoth from "mammoth";
+import * as pdfjsLib from "pdfjs-dist";
+import DOMPurify from "dompurify";
+
+// Initialize PDF.js worker using a more stable and specific CDN path for v5
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const AdminDashboard = () => {
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("idle"); // idle, success, error
   const [extractedData, setExtractedData] = useState(null);
+  const [publishedPosts, setPublishedPosts] = useState([]);
   const [blogMetadata, setBlogMetadata] = useState({
     title: "",
     category: "Data Migration",
     excerpt: "",
   });
+  const [thumbnailFile, setThumbnailFile] = useState(null); // File to upload
+  const [thumbnailPreview, setThumbnailPreview] = useState(imgMigration); // Preview image
+
+  // Load posts on mount from API
+  React.useEffect(() => {
+    fetch("/api/blogs")
+      .then((res) => res.json())
+      .then((data) => setPublishedPosts(data))
+      .catch((err) => console.error("Error loading blogs:", err));
+  }, []);
+
+  const handleThumbnailChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      if (!selectedFile.type.startsWith("image/")) {
+        toast.error("Please upload a valid image file for the thumbnail.");
+        return;
+      }
+      setThumbnailFile(selectedFile); // Store the actual file for FormData
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result); // Base64 just for preview
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -47,68 +82,168 @@ const AdminDashboard = () => {
     setIsUploading(true);
     setUploadStatus("idle");
 
-    // Simulate API call for file processing
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      const arrayBuffer = await file.arrayBuffer();
+      let content = "";
+      let title = file.name.replace(/\.[^/.]+$/, "").replace(/-/g, " ");
+      let excerpt = "";
 
-      // Mock extracted data
+      if (
+        file.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        file.type === "application/msword"
+      ) {
+        // Handle Word Upload with Image Support
+        const options = {
+          convertImage: mammoth.images.imgElement((image) => {
+            return image.read("base64").then((imageBuffer) => {
+              return {
+                src: "data:" + image.contentType + ";base64," + imageBuffer,
+              };
+            });
+          }),
+        };
+        const result = await mammoth.convertToHtml({ arrayBuffer }, options);
+        content = DOMPurify.sanitize(result.value);
+        // Basic extraction for excerpt (first 160 chars)
+        const plainText = result.value.replace(/<[^>]*>/g, "");
+        excerpt = plainText.substring(0, 160) + "...";
+      } else if (file.type === "application/pdf") {
+        // Handle PDF Upload
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        let fullText = "";
+        for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item) => item.str).join(" ");
+          fullText += pageText + "\n\n";
+        }
+        // Basic HTML wrapping for PDF text
+        content = fullText
+          .split("\n\n")
+          .filter((p) => p.trim())
+          .map((p) => `<p>${p}</p>`)
+          .join("");
+        excerpt = fullText.substring(0, 160).trim() + "...";
+      }
+
       setExtractedData({
         content:
-          "<h1>Extracted Content from " +
-          file.name +
-          "</h1><p>This is a professional prototype of the extracted content from your document. In a real implementation, the backend would parse the headings, images, and text from your PDF or Word file and convert it into high-quality HTML or Markdown for the blog.</p><h3>Key Takeaways</h3><ul><li>Automated extraction reduces manual entry.</li><li>Maintains original formatting logic.</li><li>SEO optimized structure.</li></ul>",
-        wordCount: 450,
+          content ||
+          "<h1>Empty Content</h1><p>No content could be extracted from this file.</p>",
+        wordCount: content ? content.split(/\s+/).length : 0,
       });
 
       setBlogMetadata({
-        title: file.name.replace(/\.[^/.]+$/, "").replace(/-/g, " "),
+        title: title,
         category: "Data Migration",
         excerpt:
+          excerpt ||
           "A deep dive into the technical details extracted from our latest research document...",
       });
 
       setUploadStatus("success");
-      toast.success("Document processed successfully!");
+      toast.success("Document analyzed and processed!");
     } catch (error) {
+      console.error("Extraction error:", error);
       setUploadStatus("error");
-      toast.error("Failed to process document.");
+      toast.error("Failed to process document format.");
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handlePublish = () => {
-    const newPost = {
-      id: Date.now(),
-      title: blogMetadata.title,
-      summary: blogMetadata.excerpt,
-      category: blogMetadata.category,
-      content: extractedData.content,
-      author: "SEO Admin",
-      date: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      readTime: "5 min read",
-      image: imgMigration, // Defaulting to migration image for prototype
-    };
+  const handlePublish = async () => {
+    // 1. Strict Form Validation
+    if (!blogMetadata.title.trim()) {
+      toast.error("Post Title is required before publishing.");
+      return;
+    }
+    if (!blogMetadata.category.trim()) {
+      toast.error("Category is required before publishing.");
+      return;
+    }
+    if (!extractedData || !extractedData.content) {
+      toast.error("You must upload and process a document before publishing.");
+      return;
+    }
 
-    const savedPosts = localStorage.getItem("published_blogs");
-    const parsed = savedPosts ? JSON.parse(savedPosts) : [];
-    const updated = [newPost, ...parsed];
-    localStorage.setItem("published_blogs", JSON.stringify(updated));
+    try {
+      const formData = new FormData();
+      formData.append("title", blogMetadata.title);
+      formData.append("summary", blogMetadata.excerpt);
+      formData.append("category", blogMetadata.category);
+      formData.append("content", extractedData.content);
+      formData.append("author", "SEO Admin");
+      formData.append(
+        "date",
+        new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+      );
+      formData.append("readTime", "5 min read");
+      formData.append("id", Date.now().toString());
 
-    toast.success("Blog post published successfully!");
-    // Reset state
-    setFile(null);
-    setExtractedData(null);
-    setUploadStatus("idle");
-    setBlogMetadata({
-      title: "",
-      category: "Data Migration",
-      excerpt: "",
-    });
+      if (thumbnailFile) {
+        formData.append("thumbnail", thumbnailFile);
+      } else {
+        formData.append("defaultImage", thumbnailPreview); // fallback to migration image string
+      }
+
+      const response = await fetch("/api/blogs", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Failed to save blog to server");
+
+      const result = await response.json();
+
+      // Update UI list
+      setPublishedPosts([result.blog, ...publishedPosts]);
+
+      toast.success("Blog post published successfully!");
+
+      // Reset state
+      setFile(null);
+      setExtractedData(null);
+      setUploadStatus("idle");
+      setBlogMetadata({
+        title: "",
+        category: "Data Migration",
+        excerpt: "",
+      });
+      setThumbnailFile(null);
+      setThumbnailPreview(imgMigration);
+    } catch (error) {
+      console.error("Publish error:", error);
+      toast.error("Error publishing blog to local file system.");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (
+      window.confirm(
+        "Are you sure you want to permanently delete this blog post?",
+      )
+    ) {
+      try {
+        const response = await fetch(`/api/blogs/${id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) throw new Error("Failed to delete blog from server");
+
+        setPublishedPosts(publishedPosts.filter((post) => post.id !== id));
+        toast.success("Blog post deleted successfully.");
+      } catch (error) {
+        console.error("Delete error:", error);
+        toast.error("Error deleting blog.");
+      }
+    }
   };
 
   return (
@@ -272,9 +407,10 @@ const AdminDashboard = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
-                    Category
+                    Category <span className="text-emerald-500">*</span>
                   </label>
-                  <select
+                  <input
+                    list="categories"
                     value={blogMetadata.category}
                     onChange={(e) =>
                       setBlogMetadata({
@@ -282,15 +418,52 @@ const AdminDashboard = () => {
                         category: e.target.value,
                       })
                     }
+                    placeholder="Select or type custom category"
                     className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:bg-white focus:border-emerald-500/30 transition-all text-slate-700 font-medium"
-                  >
-                    <option>Data Migration</option>
-                    <option>Security</option>
-                    <option>Best Practices</option>
-                    <option>Cloud Solutions</option>
-                    <option>Productivity</option>
-                    <option>Troubleshooting</option>
-                  </select>
+                  />
+                  <datalist id="categories">
+                    <option value="Data Migration" />
+                    <option value="Security" />
+                    <option value="Best Practices" />
+                    <option value="Cloud Solutions" />
+                    <option value="Productivity" />
+                    <option value="Troubleshooting" />
+                  </datalist>
+                </div>
+              </div>
+
+              {/* Thumbnail Upload Section */}
+              <div className="mb-6 space-y-2">
+                <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                  Thumbnail Image
+                </label>
+                <div className="flex items-center gap-6">
+                  <div className="w-32 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm shrink-0">
+                    <img
+                      src={thumbnailPreview}
+                      alt="Thumbnail Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      id="thumbnail-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleThumbnailChange}
+                    />
+                    <label
+                      htmlFor="thumbnail-upload"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all active:scale-95"
+                    >
+                      <Upload className="w-4 h-4 text-emerald-600" />
+                      Upload Custom Thumbnail
+                    </label>
+                    <p className="text-xs text-slate-400 mt-2">
+                      Recommended size: 1200x630px (JPG, PNG)
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -346,6 +519,76 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Manage Published Blogs Section */}
+        <div className="mt-20">
+          <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-4">
+            <h2 className="text-2xl font-bold text-slate-800">
+              Manage Published Blogs
+            </h2>
+            <span className="text-sm font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+              {publishedPosts.length} Post{publishedPosts.length !== 1 && "s"}
+            </span>
+          </div>
+
+          {publishedPosts.length === 0 ? (
+            <div className="bg-white rounded-[2.5rem] p-12 text-center border border-slate-100 shadow-sm">
+              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-8 h-8 text-slate-300" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">
+                No blogs published yet
+              </h3>
+              <p className="text-slate-500">
+                Upload a document above to generate your first blog post.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {publishedPosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow group flex flex-col"
+                >
+                  <div className="h-40 overflow-hidden relative">
+                    <img
+                      src={post.image}
+                      alt={post.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-4 left-4">
+                      <span className="bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-black px-2.5 py-1 rounded-md shadow-sm uppercase tracking-wider">
+                        {post.category}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-6 flex-1 flex flex-col">
+                    <h3 className="font-bold text-slate-800 text-lg mb-2 line-clamp-2 leading-tight">
+                      {post.title}
+                    </h3>
+                    <p className="text-slate-500 text-sm mb-6 line-clamp-2">
+                      {post.summary}
+                    </p>
+
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
+                      <span className="text-xs font-bold text-slate-400">
+                        {post.date}
+                      </span>
+                      <button
+                        onClick={() => handleDelete(post.id)}
+                        className="text-red-500 hover:text-white hover:bg-red-500 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors"
+                        title="Delete Post"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

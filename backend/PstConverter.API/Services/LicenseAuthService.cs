@@ -16,8 +16,12 @@ namespace PstConverter.Services
         public LicenseAuthService(IConfiguration configuration)
         {
             _configuration = configuration;
-            _baseUrl = _configuration["LicenseApi:BaseUrl"] ?? "https://api.license-server.com/";
-            _restClient = new RestClient(_baseUrl);
+            _baseUrl = _configuration["LicenseApi:BaseUrl"] ?? "https://192.168.0.200:49416/";
+            var options = new RestClientOptions(_baseUrl)
+            {
+                RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true
+            };
+            _restClient = new RestClient(options);
         }
 
         public async Task<string> GetTokenAsync(string userId, string toolId)

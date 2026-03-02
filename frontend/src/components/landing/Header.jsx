@@ -35,7 +35,7 @@ const Header = () => {
           <span
             key={item}
             onClick={() => {
-              if (item === "Premium Plans") navigate("/premium-plans");
+              if (item === "Premium Plans") navigate("/our-plans");
               if (item === "How It Works") navigate("/how-it-works");
               if (item === "Support") navigate("/support");
             }}

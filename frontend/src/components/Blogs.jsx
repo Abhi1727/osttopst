@@ -162,14 +162,19 @@ const Blogs = () => {
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
 
-  // Load posts from localStorage combined with static posts
-  const [allPosts, setAllPosts] = useState(() => {
-    const savedPosts = localStorage.getItem("published_blogs");
-    const parsed = savedPosts ? JSON.parse(savedPosts) : [];
-    // Combine static posts with new ones, ensuring no duplicates by ID
-    // Dynamic posts will have higher IDs or different structure
-    return [...parsed, ...BLOG_POSTS];
-  });
+  // Load dynamic posts from local file system API and combine with static posts
+  const [allPosts, setAllPosts] = useState([...BLOG_POSTS]);
+
+  React.useEffect(() => {
+    fetch("/api/blogs")
+      .then((res) => res.json())
+      .then((data) => {
+        // Safe check in case data hasn't been created yet
+        const dynamicPosts = Array.isArray(data) ? data : [];
+        setAllPosts([...dynamicPosts, ...BLOG_POSTS]);
+      })
+      .catch((err) => console.error("Error loading live blogs:", err));
+  }, []);
 
   const filteredPosts = allPosts.filter((post) => {
     const matchesCategory =

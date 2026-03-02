@@ -65,7 +65,7 @@ const UnifiedHeader = ({ session, onReset }) => {
           (item) => {
             let path = "/";
             if (item === "Home") path = "/";
-            if (item === "Our Plan") path = "/premium-plans";
+            if (item === "Our Plan") path = "/our-plans";
             if (item === "How Its Work") {
               if (location.pathname === "/") {
                 const el = document.getElementById("how-it-works");
@@ -137,7 +137,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                 ].map((item) => {
                   let path = "/";
                   if (item === "Home") path = "/";
-                  if (item === "Our Plan") path = "/premium-plans";
+                  if (item === "Our Plan") path = "/our-plans";
                   if (item === "How Its Work") path = "/#how-it-works";
                   if (item === "Blogs") path = "/blogs";
                   if (item === "Contact Us") path = "/support";
