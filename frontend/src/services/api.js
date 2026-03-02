@@ -68,73 +68,89 @@ export const handleResponse = async (res) => {
   return res.json();
 };
 
-export const downloadFile = async (url, suggestedName, token) => {
+export const downloadFile = async (
+  url,
+  suggestedName,
+  token,
+  onProgress,
+  signal,
+) => {
   console.log(
     `[Download] Initiating download for: ${suggestedName} from ${url}`,
   );
 
-  if ("showSaveFilePicker" in window) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: suggestedName,
-        types: [
-          {
-            description: "Data Files",
-            accept: {
-              "application/octet-stream": [
-                ".pst",
-                ".ost",
-                ".zip",
-                ".eml",
-                ".msg",
-                ".html",
-                ".mhtml",
-              ],
-            },
-          },
-        ],
-      });
+  const maxRetries = 300; // 10 minutes max polling
+  let retryCount = 0;
 
-      const response = await fetch(url, {
-        headers: getHeaders(token),
-      });
+  while (retryCount < maxRetries) {
+    if (signal?.aborted) throw new Error("AbortError");
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(
-          `[Download] Fetch failed: ${response.status} ${response.statusText}`,
-          errorText,
-        );
-        throw new Error(`Download failed: ${response.statusText}`);
-      }
+    const response = await fetch(url, {
+      headers: getHeaders(token),
+      signal,
+    });
 
-      const writable = await handle.createWritable();
-      await response.body.pipeTo(writable);
-      console.log(`[Download] File saved successfully as: ${handle.name}`);
-      return handle.name;
-    } catch (err) {
-      if (err.name === "AbortError") {
-        console.log("[Download] User cancelled the save dialog.");
-        return null;
-      }
-      console.error("[Download] File System Access error:", err);
-      // Fall through to fallback
+    if (response.status === 202) {
+      // Background task still in progress
+      onProgress?.({ detail: "Preparing export... please wait" });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      retryCount++;
+      continue;
     }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Download] Fetch failed: ${response.status}`, errorText);
+      throw new Error(`Download failed: ${response.statusText}`);
+    }
+
+    // Success - 200 OK
+    if ("showSaveFilePicker" in window) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: suggestedName,
+          types: [
+            {
+              description: "Data Files",
+              accept: {
+                "application/octet-stream": [
+                  ".pst",
+                  ".ost",
+                  ".zip",
+                  ".eml",
+                  ".msg",
+                  ".html",
+                  ".mhtml",
+                ],
+              },
+            },
+          ],
+        });
+
+        const writable = await handle.createWritable();
+        await response.body.pipeTo(writable);
+        console.log(`[Download] File saved successfully as: ${handle.name}`);
+        return handle.name;
+      } catch (err) {
+        if (err.name === "AbortError") return null;
+        console.warn("[Download] File System Access failed, falling back", err);
+      }
+    }
+
+    // Fallback for browsers without File System Access API
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = suggestedName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    setTimeout(() => {
+      if (document.body.contains(a)) document.body.removeChild(a);
+    }, 100);
+    return suggestedName;
   }
 
-  // Fallback for browsers not supporting File System Access API or if it failed
-  console.log("[Download] Using fallback <a> tag download method.");
-  const fullUrl = url.includes("?")
-    ? `${url}&token=${token}`
-    : `${url}?token=${token}`;
-
-  const a = document.createElement("a");
-  a.href = fullUrl;
-  a.download = suggestedName;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    if (document.body.contains(a)) document.body.removeChild(a);
-  }, 100);
-  return suggestedName;
+  throw new Error("Export timed out. Please try again.");
 };

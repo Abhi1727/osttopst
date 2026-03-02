@@ -639,7 +639,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return folders;
     }
 
-    public async Task<List<PstMessageSummary>> GetMessagesAsync(string sessionId, string userId, string folderId, MessageDateFilter? filter = null)
+    public async Task<List<PstMessageSummary>> GetMessagesAsync(string sessionId, string userId, string folderId, MessageDateFilter? filter = null, string? sortBy = "date", string? sortOrder = "desc")
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         return await _pool.AccessAsync(sessionId, filePath, pst =>
@@ -647,8 +647,12 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             var folder = pst.GetFolderById(folderId);
             if (folder is null) return Task.FromResult(new List<PstMessageSummary>());
 
+            LogDebug($"GetMessagesAsync: Folder '{folder.DisplayName}', ContentCount={folder.ContentCount}");
             var list = new List<PstMessageSummary>();
-            foreach (var msgInfo in folder.GetContents())
+            var contents = folder.GetContents();
+            LogDebug($"GetMessagesAsync: GetContents() returned {contents.Count} items");
+
+            foreach (var msgInfo in contents)
             {
                 DateTime date = DateTime.MinValue;
                 if (msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME))
@@ -667,6 +671,23 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     HasAttachments = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_HASATTACH) && msgInfo.Properties[MapiPropertyTag.PR_HASATTACH].GetBoolean()
                 });
             }
+
+            // Apply sorting
+            if (sortBy?.ToLower() == "date")
+            {
+                if (sortOrder?.ToLower() == "asc")
+                    list = [.. list.OrderBy(m => m.Date)];
+                else
+                    list = [.. list.OrderByDescending(m => m.Date)];
+            }
+            else if (sortBy?.ToLower() == "subject")
+            {
+                if (sortOrder?.ToLower() == "asc")
+                    list = [.. list.OrderBy(m => m.Subject)];
+                else
+                    list = [.. list.OrderByDescending(m => m.Subject)];
+            }
+
             return Task.FromResult(list);
         }, password);
     }
@@ -752,7 +773,6 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     public async Task ExportMessageAsync(Stream outputStream, string sessionId, string userId, string entryId, ExportFormat format)
     {
-        // ... method implementation ... (mostly unchanged for single message)
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         await _pool.AccessAsync(sessionId, filePath, pst =>
         {
@@ -766,7 +786,6 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{Guid.NewGuid():N}.zip");
-        Console.WriteLine($"[EXPORT] Folder export started: Session={sessionId}, Folder={folderId}, Format={format}");
         await _pool.AccessAsync(sessionId, filePath, pst =>
         {
             var folder = pst.GetFolderById(folderId) ?? throw new FileNotFoundException("Folder not found");
@@ -788,33 +807,51 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             }
             return Task.FromResult(true);
         }, password);
-
-        Console.WriteLine($"[EXPORT] File created at: {Path.GetFullPath(tempZipPath)}");
         return tempZipPath;
     }
 
-    public async Task<(string FilePath, bool isReady)> ExportAllAsync(string sessionId, string userId, ExportFormat format, MessageDateFilter? filter = null, bool excludeEmptyFolders = false)
+    public async Task<(string FilePath, bool isReady)> ExportAllAsync(string sessionId, string userId, ExportFormat format, string? folderId = null, List<string>? entryIds = null, MessageDateFilter? filter = null, bool excludeEmptyFolders = false)
     {
-        LogDebug($"ExportAllAsync started: Session={sessionId}, User={userId}, Format={format}");
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
-        var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{format}_{excludeEmptyFolders}.zip");
+        string suffix = "";
+        if (!string.IsNullOrEmpty(folderId)) suffix += $"_f_{folderId}";
+        if (entryIds != null && entryIds.Count > 0)
+        {
+            // Use a stable hash of sorted IDs to ensure consistent filenames across restarts
+            var idHash = GetStableHash(string.Join(",", entryIds.OrderBy(x => x)));
+            suffix += $"_sel_{entryIds.Count}_{idHash}";
+        }
+        if (filter != null && !filter.IsEmpty())
+        {
+            suffix += $"_fltr_{filter.Year}_{filter.Month}";
+        }
+
+        var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{format}{suffix}_{excludeEmptyFolders}.zip");
 
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-        if (session != null && session.Status == "Exporting")
+
+        // Per-task status check
+        string exportingStatus = $"Exporting{suffix}";
+        string readyStatus = $"Ready{suffix}";
+
+        bool isFinished = session != null && session.Status == readyStatus;
+
+        if (session != null && session.Status == exportingStatus)
         {
+            LogDebug($"ExportAllAsync: Task for {suffix} is currently exporting.");
             return (tempZipPath, false);
         }
 
-        if (File.Exists(tempZipPath))
+        if (File.Exists(tempZipPath) && isFinished)
         {
+            LogDebug($"ExportAllAsync: Task for {suffix} is already ready.");
             return (tempZipPath, true);
         }
 
-        Console.WriteLine($"[EXPORT] Starting BACKGROUND export for session {sessionId} to {format}");
-
         if (session != null)
         {
-            session.Status = "Exporting";
+            LogDebug($"ExportAllAsync: Starting new export task for {suffix}. Setting status to {exportingStatus}");
+            session.Status = exportingStatus;
             await _db.SaveChangesAsync();
         }
 
@@ -831,9 +868,42 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None))
                     using (var archive = new ZipArchive(fs, ZipArchiveMode.Create, true))
                     {
-                        LogDebug("Starting recursive folder export...");
-                        ExportFolderRecursive(pst, pst.RootFolder, "", format, archive, filter, excludeEmptyFolders, token);
-                        LogDebug("ExportFolderRecursive complete.");
+                        if (entryIds != null && entryIds.Count > 0)
+                        {
+                            LogDebug($"ExportAllAsync: Processing {entryIds.Count} selected entryIds");
+                            int index = 0;
+                            foreach (var entryId in entryIds)
+                            {
+                                token.ThrowIfCancellationRequested();
+                                try
+                                {
+                                    using var msg = pst.ExtractMessage(entryId);
+                                    if (msg == null)
+                                    {
+                                        LogDebug($"ExportAllAsync: ExtractMessage returned null for {entryId}");
+                                        continue;
+                                    }
+                                    index++;
+                                    var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}");
+                                    using var es = entry.Open();
+                                    SaveMessageToStream(msg, es, format);
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogDebug($"ExportAllAsync: Error extracting {entryId}: {ex.Message}");
+                                    continue;
+                                }
+                            }
+                            LogDebug($"ExportAllAsync: Successfully extracted {index} messages");
+                        }
+                        else
+                        {
+                            var root = string.IsNullOrEmpty(folderId) ? pst.RootFolder : pst.GetFolderById(folderId);
+                            if (root != null)
+                            {
+                                ExportFolderRecursive(pst, root, "", format, archive, filter, excludeEmptyFolders, token);
+                            }
+                        }
                     }
                     return Task.FromResult(true);
                 }, password);
@@ -843,18 +913,15 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 var s = await updateDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
                 if (s != null && !token.IsCancellationRequested)
                 {
-                    s.Status = "Uploaded";
+                    LogDebug($"ExportAllAsync: Background task complete for {suffix}. Setting status to {readyStatus}");
+                    s.Status = readyStatus;
                     await updateDb.SaveChangesAsync();
                 }
-                Console.WriteLine($"[EXPORT] Background export complete for {sessionId}");
             }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine($"[EXPORT] Background export CANCELLED for {sessionId}");
-                TryDelete(tempZipPath);
-            }
+            catch (OperationCanceledException) { TryDelete(tempZipPath); }
             catch (Exception ex)
             {
+                LogDebug($"ExportAllAsync: Background exception for {suffix}: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 if (!token.IsCancellationRequested)
                 {
                     _logger.LogError(ex, "Background export failed for session {SessionId}", sessionId);
@@ -881,16 +948,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private static void ExportFolderRecursive(PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter = null, bool excludeEmpty = false, CancellationToken token = default)
     {
         token.ThrowIfCancellationRequested();
-        if (excludeEmpty)
-        {
-            var totalMessages = GetTotalMessageCount(folder, filter);
-            if (totalMessages == 0) return;
-        }
+        if (excludeEmpty && GetTotalMessageCount(folder, filter) == 0) return;
 
-        if (!string.IsNullOrEmpty(path))
-        {
-            archive.CreateEntry(path + "/");
-        }
+        if (!string.IsNullOrEmpty(path)) archive.CreateEntry(path + "/");
 
         int index = 0;
         foreach (var msgInfo in folder.GetContents())
@@ -902,7 +962,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             using var msg = pst.ExtractMessage(msgInfo.EntryIdString);
             index++;
             var name = $"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}";
-            var entry = archive.CreateEntry($"{path}/{name}");
+            var entry = archive.CreateEntry(string.IsNullOrEmpty(path) ? name : $"{path}/{name}");
             using var es = entry.Open();
             SaveMessageToStream(msg, es, format);
         }
@@ -915,134 +975,36 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     private static int GetTotalMessageCount(FolderInfo folder, MessageDateFilter? filter)
     {
-        if (filter == null || filter.IsEmpty())
-        {
-            return GetTotalMessageCount(folder);
-        }
-
+        if (filter == null || filter.IsEmpty()) return GetTotalMessageCount(folder);
         int count = 0;
         foreach (var msgInfo in folder.GetContents())
         {
             DateTime date = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME].GetDateTime() : DateTime.MinValue;
             if (filter.Matches(date)) count++;
         }
-
-        foreach (var sub in folder.GetSubFolders())
-        {
-            count += GetTotalMessageCount(sub, filter);
-        }
+        foreach (var sub in folder.GetSubFolders()) count += GetTotalMessageCount(sub, filter);
         return count;
-    }
-
-    private static void SaveMessageToStream(MapiMessage msg, Stream stream, ExportFormat format)
-    {
-        var options = new MailConversionOptions();
-        using var ms = new MemoryStream();
-        switch (format)
-        {
-            case ExportFormat.Eml:
-                using (var emlMsg = msg.ToMailMessage(options))
-                {
-                    emlMsg.Save(ms, Aspose.Email.SaveOptions.DefaultEml);
-                }
-                break;
-            case ExportFormat.Msg:
-                msg.Save(ms);
-                break;
-            case ExportFormat.Html:
-                using (var htmlMsg = msg.ToMailMessage(options))
-                {
-                    htmlMsg.Save(ms, Aspose.Email.SaveOptions.DefaultHtml);
-                }
-                break;
-            case ExportFormat.Mhtml:
-                using (var mhtmlMsg = msg.ToMailMessage(options))
-                {
-                    mhtmlMsg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
-                }
-                break;
-            default:
-                throw new ArgumentException($"Unsupported format: {format}");
-        }
-        ms.Position = 0;
-        ms.CopyTo(stream);
-    }
-
-    public async Task<string> ExportSelectedMessagesAsync(string sessionId, string userId, List<string> entryIds, ExportFormat format)
-    {
-        var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
-        var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{Guid.NewGuid():N}.zip");
-        Console.WriteLine($"[EXPORT] Selected messages export started: Session={sessionId}, Count={entryIds.Count}, Format={format}");
-
-        await _pool.AccessAsync(sessionId, filePath, pst =>
-        {
-            using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None))
-            using (var archive = new ZipArchive(fs, ZipArchiveMode.Create, true))
-            {
-                int index = 0;
-                foreach (var entryId in entryIds)
-                {
-                    try
-                    {
-                        using var msg = pst.ExtractMessage(entryId);
-                        if (msg == null) continue;
-                        index++;
-                        var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}");
-                        using var es = entry.Open();
-                        SaveMessageToStream(msg, es, format);
-                    }
-                    catch { continue; }
-                }
-            }
-            return Task.FromResult(true);
-        }, password);
-
-        Console.WriteLine($"[EXPORT] File created at: {Path.GetFullPath(tempZipPath)}");
-        return tempZipPath;
     }
 
     public async Task CleanUpAsync(string sessionId)
     {
-        if (_conversionCts.TryRemove(sessionId, out var cts))
-        {
-            if (_logger.IsEnabled(LogLevel.Information))
-            {
-                _logger.LogInformation("Cancelling background task for session {SessionId}", sessionId);
-            }
-            cts.Cancel();
-            cts.Dispose();
-        }
-
+        if (_conversionCts.TryRemove(sessionId, out var cts)) { cts.Cancel(); cts.Dispose(); }
         await _pool.RemoveAsync(sessionId);
         foreach (var ext in (string[])[".pst", ".ost"])
         {
-            var path = Path.Combine(_uploadDir, $"{sessionId}{ext}");
-            TryDelete(path);
-
-            var convertedPath = Path.Combine(_uploadDir, $"{sessionId}_converted{ext}");
-            TryDelete(convertedPath);
+            TryDelete(Path.Combine(_uploadDir, $"{sessionId}{ext}"));
+            TryDelete(Path.Combine(_uploadDir, $"{sessionId}_converted{ext}"));
         }
-
-        // Clean up any remaining zip exports for this session
         var zipFiles = Directory.GetFiles(_uploadDir, $"export_{sessionId}_*.zip");
-        foreach (var zip in zipFiles)
-        {
-            TryDelete(zip);
-        }
+        foreach (var zip in zipFiles) TryDelete(zip);
     }
 
     public async Task CancelBackgroundTaskAsync(string sessionId)
     {
         if (_conversionCts.TryRemove(sessionId, out var cts))
         {
-            if (_logger.IsEnabled(LogLevel.Information))
-            {
-                _logger.LogInformation("Cancellation requested for background task in session {SessionId}", sessionId);
-            }
             cts.Cancel();
             cts.Dispose();
-
-            // Update status back to a neutral state if it was in the middle of a process
             var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
             if (session != null && (session.Status == "Converting" || session.Status == "Exporting" || session.Status == "Assembling"))
             {
@@ -1052,12 +1014,46 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
     }
 
+    private static void SaveMessageToStream(MapiMessage msg, Stream stream, ExportFormat format)
+    {
+        using var ms = new MemoryStream();
+        switch (format)
+        {
+            case ExportFormat.Eml:
+                msg.Save(ms, Aspose.Email.SaveOptions.DefaultEml);
+                break;
+            case ExportFormat.Msg:
+            case ExportFormat.Oft:
+                msg.Save(ms, Aspose.Email.SaveOptions.DefaultMsgUnicode);
+                break;
+            case ExportFormat.Html:
+                msg.Save(ms, Aspose.Email.SaveOptions.DefaultHtml);
+                break;
+            case ExportFormat.Mhtml:
+                msg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
+                break;
+            case ExportFormat.Mbox:
+                using (var mailMsg = msg.ToMailMessage(new MailConversionOptions()))
+                using (var writer = new Aspose.Email.Storage.Mbox.MboxrdStorageWriter(ms, new Aspose.Email.Storage.Mbox.MboxSaveOptions()))
+                {
+                    writer.WriteMessage(mailMsg);
+                }
+                break;
+            default:
+                throw new ArgumentException($"Unsupported format: {format}");
+        }
+        ms.Position = 0;
+        ms.CopyTo(stream);
+    }
+
     private static string GetFileExtension(ExportFormat format) => format switch
     {
         ExportFormat.Eml => ".eml",
         ExportFormat.Msg => ".msg",
         ExportFormat.Html => ".html",
         ExportFormat.Mhtml => ".mhtml",
+        ExportFormat.Mbox => ".mbox",
+        ExportFormat.Oft => ".oft",
         _ => ".eml"
     };
 
@@ -1068,40 +1064,32 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return string.IsNullOrWhiteSpace(sanitized) ? "message" : sanitized.Trim();
     }
 
-    private string ExtractStoreGuid(string filePath)
+    private static string ExtractStoreGuid(string filePath)
     {
         try
         {
-            // Fingerprint: SHA-256 of first 1MB + File Size (Matches frontend)
             using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var buffer = new byte[1024 * 1024]; // 1MB
+            var buffer = new byte[1024 * 1024];
             var read = fs.Read(buffer, 0, buffer.Length);
             var hashBytes = System.Security.Cryptography.SHA256.HashData(buffer.AsSpan(0, read));
-            var headerHash = Convert.ToHexString(hashBytes).ToLowerInvariant();
-            return $"{headerHash}_{fs.Length}";
+            return $"{Convert.ToHexString(hashBytes).ToLowerInvariant()}_{fs.Length}";
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning("Fingerprint extraction failed for {File}: {Msg}", Path.GetFileName(filePath), ex.Message);
-            return string.Empty;
-        }
+        catch { return string.Empty; }
+    }
+
+    private static string GetStableHash(string input)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexString(bytes).ToLowerInvariant()[..8];
     }
 
     private static void TryDelete(string path)
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
-
         for (int i = 0; i < 3; i++)
         {
-            try
-            {
-                File.Delete(path);
-                return;
-            }
-            catch (IOException)
-            {
-                if (i < 2) Thread.Sleep(500);
-            }
+            try { File.Delete(path); return; }
+            catch (IOException) { if (i < 2) Thread.Sleep(500); }
             catch { return; }
         }
     }

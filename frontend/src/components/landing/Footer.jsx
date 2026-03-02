@@ -1,8 +1,22 @@
 import React from "react";
-import { Github, Twitter } from "lucide-react";
 import logo from "@/assets/logo.png";
+import facebookIcon from "@/assets/svg/facebook.svg";
+import twitterXIcon from "@/assets/svg/twitter-x.svg";
+import linkedinIcon from "@/assets/svg/linkedin.svg";
+import instagramIcon from "@/assets/svg/instagram.svg";
+import youtubeIcon from "@/assets/svg/youtube.svg";
+import envelopeIcon from "@/assets/svg/envelope-fill.svg";
 
 const Footer = () => {
+  const socialLinks = [
+    { icon: facebookIcon, label: "Facebook", href: "#" },
+    { icon: twitterXIcon, label: "Twitter X", href: "#" },
+    { icon: linkedinIcon, label: "LinkedIn", href: "#" },
+    { icon: instagramIcon, label: "Instagram", href: "#" },
+    { icon: youtubeIcon, label: "YouTube", href: "#" },
+    { icon: envelopeIcon, label: "Email", href: "mailto:support@osttopst.us" },
+  ];
+
   return (
     <footer className="bg-slate-50 border-t border-slate-200 py-12 px-6 lg:px-12">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
@@ -28,13 +42,21 @@ const Footer = () => {
           </a>
         </div>
 
-        <div className="flex gap-4">
-          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-100 hover:text-emerald-600 transition-colors cursor-pointer">
-            <Twitter className="w-4 h-4" />
-          </div>
-          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-100 hover:text-emerald-600 transition-colors cursor-pointer">
-            <Github className="w-4 h-4" />
-          </div>
+        <div className="flex gap-3">
+          {socialLinks.map((social, index) => (
+            <a
+              key={index}
+              href={social.href}
+              className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-100 hover:text-emerald-600 transition-all duration-300 cursor-pointer group"
+              aria-label={social.label}
+            >
+              <img
+                src={social.icon}
+                alt={social.label}
+                className="w-4 h-4 object-contain opacity-60 group-hover:opacity-100 transition-opacity"
+              />
+            </a>
+          ))}
         </div>
       </div>
     </footer>

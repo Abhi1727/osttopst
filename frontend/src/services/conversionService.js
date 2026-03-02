@@ -23,21 +23,27 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
 
       if (checkRes.ok) {
         const status = await checkRes.json();
+        const s = (status.status || "").toLowerCase();
         const isReady =
-          (suggestedName.endsWith(".zip") && status.status === "Uploaded") ||
-          (suggestedName.endsWith(".pst") && status.isConverted) ||
-          (suggestedName.endsWith(".ost") && status.isConverted);
+          (suggestedName.endsWith(".zip") &&
+            (s === "uploaded" || s.startsWith("ready"))) ||
+          (suggestedName.endsWith(".pst") &&
+            (status.isConverted || s.startsWith("ready"))) ||
+          (suggestedName.endsWith(".ost") &&
+            (status.isConverted || s.startsWith("ready")));
 
         if (isReady) {
-          console.log(`[Download] File is ready, starting actual download...`);
+          console.log(
+            `[Download] File is ready (status: ${status.status}), starting actual download...`,
+          );
           return true;
         }
 
-        if (
-          status.status === "ConversionFailed" ||
-          status.status === "ExportFailed"
-        ) {
-          throw new Error("Conversion or export failed on the server.");
+        if (s.includes("failed")) {
+          console.error("[Download] Backend reported failure:", status);
+          throw new Error(
+            `Conversion or export failed on the server: ${status.status}`,
+          );
         }
       }
 
@@ -132,8 +138,28 @@ export const conversionService = {
     return await downloadFile(url, "converted.ost", token, onProgress, signal);
   },
 
-  async exportAll(sessionId, format, excludeEmpty, token, onProgress, signal) {
-    const url = `${API_BASE_URL}/file-details/${sessionId}/export?format=${format}&excludeEmptyFolders=${excludeEmpty}`;
+  async exportAll(
+    sessionId,
+    format,
+    excludeEmpty,
+    token,
+    onProgress,
+    signal,
+    options = {},
+  ) {
+    const params = new URLSearchParams({
+      format,
+      excludeEmptyFolders: excludeEmpty,
+    });
+    if (options.folderId) params.append("folderId", options.folderId);
+    if (options.entryIds && options.entryIds.length > 0)
+      params.append("entryIds", options.entryIds.join(","));
+    if (options.year) params.append("year", options.year);
+    if (options.month) params.append("month", options.month);
+    if (options.startDate) params.append("startDate", options.startDate);
+    if (options.endDate) params.append("endDate", options.endDate);
+
+    const url = `${API_BASE_URL}/file-details/${sessionId}/export?${params.toString()}`;
     return await downloadFile(
       url,
       `export_${format.toLowerCase()}.zip`,

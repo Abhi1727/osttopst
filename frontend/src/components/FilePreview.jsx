@@ -120,6 +120,10 @@ const FilePreview = ({ session, onReset }) => {
   const [isConverting, setIsConverting] = useState(false);
   const [hideEmpty, setHideEmpty] = useState(true);
   const [isGuardOpen, setIsGuardOpen] = useState(false);
+  const [selectedMessages, setSelectedMessages] = useState(new Set());
+  const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [filter, setFilter] = useState({ year: null, month: null });
   const timerRef = useRef(null);
 
   const resetTimer = useCallback(() => {
@@ -257,8 +261,14 @@ const FilePreview = ({ session, onReset }) => {
     }
   }, [hideEmpty, session?.sessionId]);
 
-  const handleFolderSelect = async (folder) => {
+  const handleFolderSelect = async (
+    folder,
+    currentSortBy = sortBy,
+    currentSortOrder = sortOrder,
+    currentFilter = filter,
+  ) => {
     setSelectedFolder(folder);
+    setSelectedMessages(new Set()); // Reset selection when folder changes
     try {
       setLoadingMessages(true);
       const token = await getToken();
@@ -266,6 +276,9 @@ const FilePreview = ({ session, onReset }) => {
         session.sessionId,
         folder.folderId,
         token,
+        currentFilter,
+        currentSortBy,
+        currentSortOrder,
       );
       setMessages(data || []);
     } catch (err) {
@@ -273,6 +286,41 @@ const FilePreview = ({ session, onReset }) => {
       console.error(err);
     } finally {
       setLoadingMessages(false);
+    }
+  };
+
+  const handleSort = (newSortBy) => {
+    const newOrder =
+      sortBy === newSortBy && sortOrder === "desc" ? "asc" : "desc";
+    setSortBy(newSortBy);
+    setSortOrder(newOrder);
+    if (selectedFolder) {
+      handleFolderSelect(selectedFolder, newSortBy, newOrder, filter);
+    }
+  };
+
+  const handleFilterChange = (key, value) => {
+    const newFilter = { ...filter, [key]: value };
+    setFilter(newFilter);
+    if (selectedFolder) {
+      handleFolderSelect(selectedFolder, sortBy, sortOrder, newFilter);
+    }
+  };
+
+  const toggleMessageSelection = (entryId) => {
+    setSelectedMessages((prev) => {
+      const next = new Set(prev);
+      if (next.has(entryId)) next.delete(entryId);
+      else next.add(entryId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedMessages.size === filteredMessages.length) {
+      setSelectedMessages(new Set());
+    } else {
+      setSelectedMessages(new Set(filteredMessages.map((m) => m.entryId)));
     }
   };
 
@@ -572,17 +620,72 @@ const FilePreview = ({ session, onReset }) => {
                     )}
                   </h2>
                 </div>
-                <div className="relative group w-[400px]">
-                  <Search
-                    className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors group-focus-within:text-emerald-500"
-                    size={20}
-                  />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search subject or sender..."
-                    className="pl-14 h-14 bg-zinc-50/80 border-none rounded-2xl focus-visible:ring-2 focus-visible:ring-emerald-100 transition-all font-bold text-zinc-700 placeholder:text-zinc-400 placeholder:font-bold"
-                  />
+                <div className="flex items-center gap-4">
+                  <div className="relative group w-[300px]">
+                    <Search
+                      className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400"
+                      size={18}
+                    />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search messages..."
+                      className="pl-12 h-12 bg-zinc-50 border-none rounded-xl font-bold"
+                    />
+                  </div>
+
+                  {/* Date Filters */}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={filter.year || ""}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "year",
+                          e.target.value ? parseInt(e.target.value) : null,
+                        )
+                      }
+                      className="h-12 px-4 rounded-xl border-none bg-zinc-50 font-bold text-sm text-zinc-600 focus:ring-2 focus:ring-emerald-500/20"
+                    >
+                      <option value="">Year</option>
+                      {Array.from({ length: 25 }, (_, i) => 2025 - i).map(
+                        (y) => (
+                          <option key={y} value={y}>
+                            {y}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                    <select
+                      value={filter.month || ""}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "month",
+                          e.target.value ? parseInt(e.target.value) : null,
+                        )
+                      }
+                      className="h-12 px-4 rounded-xl border-none bg-zinc-50 font-bold text-sm text-zinc-600 focus:ring-2 focus:ring-emerald-500/20"
+                    >
+                      <option value="">Month</option>
+                      {[
+                        "Jan",
+                        "Feb",
+                        "Mar",
+                        "Apr",
+                        "May",
+                        "Jun",
+                        "Jul",
+                        "Aug",
+                        "Sep",
+                        "Oct",
+                        "Nov",
+                        "Dec",
+                      ].map((m, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -615,14 +718,72 @@ const FilePreview = ({ session, onReset }) => {
                     <table className="w-full text-left border-collapse">
                       <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
                         <tr className="border-b border-zinc-100">
-                          <th className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest">
-                            From
+                          <th className="px-6 py-5 w-12">
+                            <button
+                              onClick={toggleSelectAll}
+                              className={cn(
+                                "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                                selectedMessages.size ===
+                                  filteredMessages.length &&
+                                  filteredMessages.length > 0
+                                  ? "bg-emerald-500 border-emerald-500 text-white"
+                                  : "border-zinc-200 hover:border-emerald-500",
+                              )}
+                            >
+                              {selectedMessages.size ===
+                                filteredMessages.length &&
+                                filteredMessages.length > 0 && (
+                                  <Check size={12} strokeWidth={4} />
+                                )}
+                            </button>
                           </th>
-                          <th className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest">
-                            Subject
+                          <th
+                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer hover:text-emerald-600 transition-colors"
+                            onClick={() => handleSort("from")}
+                          >
+                            <div className="flex items-center gap-1">
+                              From
+                              {sortBy === "from" && (
+                                <ChevronDown
+                                  className={cn(
+                                    "w-3 h-3 transition-transform",
+                                    sortOrder === "asc" && "rotate-180",
+                                  )}
+                                />
+                              )}
+                            </div>
                           </th>
-                          <th className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest text-right whitespace-nowrap">
-                            Date
+                          <th
+                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer hover:text-emerald-600 transition-colors"
+                            onClick={() => handleSort("subject")}
+                          >
+                            <div className="flex items-center gap-1">
+                              Subject
+                              {sortBy === "subject" && (
+                                <ChevronDown
+                                  className={cn(
+                                    "w-3 h-3 transition-transform",
+                                    sortOrder === "asc" && "rotate-180",
+                                  )}
+                                />
+                              )}
+                            </div>
+                          </th>
+                          <th
+                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest text-right whitespace-nowrap cursor-pointer hover:text-emerald-600 transition-colors"
+                            onClick={() => handleSort("date")}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              Date
+                              {sortBy === "date" && (
+                                <ChevronDown
+                                  className={cn(
+                                    "w-3 h-3 transition-transform",
+                                    sortOrder === "asc" && "rotate-180",
+                                  )}
+                                />
+                              )}
+                            </div>
                           </th>
                         </tr>
                       </thead>
@@ -630,8 +791,27 @@ const FilePreview = ({ session, onReset }) => {
                         {filteredMessages.map((msg) => (
                           <tr
                             key={msg.entryId}
-                            className="group hover:bg-zinc-50/80 transition-all cursor-pointer relative"
+                            onClick={() => toggleMessageSelection(msg.entryId)}
+                            className={cn(
+                              "group hover:bg-zinc-50/80 transition-all cursor-pointer relative",
+                              selectedMessages.has(msg.entryId) &&
+                                "bg-emerald-50/30",
+                            )}
                           >
+                            <td className="px-6 py-6 w-12">
+                              <div
+                                className={cn(
+                                  "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                                  selectedMessages.has(msg.entryId)
+                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                    : "border-zinc-200 group-hover:border-emerald-500",
+                                )}
+                              >
+                                {selectedMessages.has(msg.entryId) && (
+                                  <Check size={12} strokeWidth={4} />
+                                )}
+                              </div>
+                            </td>
                             <td className="px-10 py-6 min-w-[250px]">
                               <div className="flex items-center gap-4">
                                 <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-transparent group-hover:bg-emerald-200 transition-colors" />
@@ -720,6 +900,14 @@ const FilePreview = ({ session, onReset }) => {
         open={isExportDialogOpen}
         session={session}
         onClose={() => setIsExportDialogOpen(false)}
+        options={{
+          folderId: selectedFolder?.folderId,
+          entryIds:
+            selectedMessages.size > 0 ? Array.from(selectedMessages) : null,
+          year: filter.year,
+          month: filter.month,
+          excludeEmptyFolders: hideEmpty,
+        }}
       />
 
       <SessionGuardModal

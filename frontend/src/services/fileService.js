@@ -488,9 +488,26 @@ export const fileService = {
     return await response.json();
   },
 
-  async getMessages(sessionId, folderId, token) {
+  async getMessages(
+    sessionId,
+    folderId,
+    token,
+    filter = {},
+    sortBy = "date",
+    sortOrder = "desc",
+  ) {
+    const params = new URLSearchParams({
+      folderId,
+      sortBy,
+      sortOrder,
+    });
+    if (filter.year) params.append("year", filter.year);
+    if (filter.month) params.append("month", filter.month);
+    if (filter.startDate) params.append("startDate", filter.startDate);
+    if (filter.endDate) params.append("endDate", filter.endDate);
+
     const response = await fetch(
-      `${API_BASE_URL}/file-details/${sessionId}/messages?folderId=${encodeURIComponent(folderId)}`,
+      `${API_BASE_URL}/file-details/${sessionId}/messages?${params.toString()}`,
       {
         headers: getHeaders(token),
       },

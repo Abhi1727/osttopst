@@ -17,6 +17,8 @@ public static class ConversionEndpoints
         group.MapGet("/{sessionId}/export", async (
             string sessionId,
             [FromQuery] string? format,
+            [FromQuery] string? folderId,
+            [FromQuery] string? entryIds,
             [FromQuery] int? year,
             [FromQuery] int? month,
             [FromQuery] DateTime? startDate,
@@ -30,7 +32,7 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             if (logger.IsEnabled(LogLevel.Information))
             {
-                logger.LogInformation("ExportAll request: session={SessionId}, format={Format}, excludeEmpty={ExcludeEmpty}, userId={UserId}", sessionId, format, excludeEmptyFolders, userId);
+                logger.LogInformation("ExportAll request: session={SessionId}, format={Format}, folderId={FolderId}, userId={UserId}", sessionId, format, folderId, userId);
             }
             var filter = new MessageDateFilter
             {
@@ -40,10 +42,14 @@ public static class ConversionEndpoints
                 EndDate = endDate
             };
 
+            List<string>? selectedIds = !string.IsNullOrEmpty(entryIds)
+                ? [.. entryIds.Split(',', StringSplitOptions.RemoveEmptyEntries)]
+                : null;
+
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, filter, excludeEmptyFolders ?? true);
+                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, folderId, selectedIds, filter, excludeEmptyFolders ?? true);
 
                 if (!isReady)
                 {
@@ -79,6 +85,8 @@ public static class ConversionEndpoints
             }
             catch (Exception ex)
             {
+                // The provided snippet had a syntax error and used undefined variables (_logger, token).
+                // Reverted to the original structure but kept the debug log path for consistency with the snippet's intent.
                 try
                 {
                     var logPath = @"C:\temp\debug_log.txt";

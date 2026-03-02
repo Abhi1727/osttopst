@@ -7,4 +7,8 @@ public enum ExportFormat
     Html,
     Mhtml,
     Mbox,
+    Pdf,
+    Xps,
+    Tiff,
+    Oft
 }

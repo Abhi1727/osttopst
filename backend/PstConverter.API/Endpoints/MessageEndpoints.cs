@@ -18,6 +18,8 @@ public static class MessageEndpoints
             [FromQuery] int? month,
             [FromQuery] DateTime? startDate,
             [FromQuery] DateTime? endDate,
+            [FromQuery] string? sortBy,
+            [FromQuery] string? sortOrder,
             PstService pstService,
             ClaimsPrincipal user,
             ILogger<Program> logger) =>
@@ -33,7 +35,7 @@ public static class MessageEndpoints
 
             try
             {
-                return Results.Ok(await pstService.GetMessagesAsync(sessionId, userId, folderId, filter));
+                return Results.Ok(await pstService.GetMessagesAsync(sessionId, userId, folderId, filter, sortBy, sortOrder));
             }
             catch (UnauthorizedAccessException)
             {
@@ -159,7 +161,13 @@ public static class MessageEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                var filePath = await pstService.ExportSelectedMessagesAsync(sessionId, userId, request.EntryIds, exportFormat);
+                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, entryIds: request.EntryIds);
+
+                if (!isReady)
+                {
+                    return Results.Accepted();
+                }
+
                 return Results.File(filePath, "application/zip", "selected_messages_export.zip");
             }
             catch (UnauthorizedAccessException)

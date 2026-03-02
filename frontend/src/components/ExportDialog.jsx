@@ -53,9 +53,25 @@ const EXPORT_FORMATS = [
     color: "from-amber-500/20 to-amber-600/10 border-amber-500/30",
     iconColor: "text-amber-400",
   },
+  {
+    id: "MBox",
+    label: "MBox",
+    description: "Unix mailbox",
+    icon: FolderX,
+    color: "from-rose-500/20 to-rose-600/10 border-rose-500/30",
+    iconColor: "text-rose-400",
+  },
+  {
+    id: "OFT",
+    label: "OFT",
+    description: "Outlook template",
+    icon: FileText,
+    color: "from-indigo-500/20 to-indigo-600/10 border-indigo-500/30",
+    iconColor: "text-indigo-400",
+  },
 ];
 
-const ExportDialog = ({ open, session, onClose }) => {
+const ExportDialog = ({ open, session, onClose, options = {} }) => {
   const [format, setFormat] = useState("EML");
   const [isExporting, setIsExporting] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
@@ -100,10 +116,18 @@ const ExportDialog = ({ open, session, onClose }) => {
       const savedName = await conversionService.exportAll(
         session.sessionId,
         format,
-        true, // Default to excluding empty folders
+        options.excludeEmptyFolders ?? true,
         token,
         (p) => setProgress(p),
         abortControllerRef.current.signal,
+        {
+          folderId: options.folderId,
+          entryIds: options.entryIds,
+          year: options.year,
+          month: options.month,
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
       );
       if (savedName) {
         toast.success(`Export saved as: ${savedName}`);

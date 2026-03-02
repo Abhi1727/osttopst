@@ -17,7 +17,7 @@ public class ConversionSession
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-    [MaxLength(20)]
+    [MaxLength(128)]
     public string Status { get; set; } = "Uploaded";
 
     [Required]

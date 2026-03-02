@@ -13,6 +13,10 @@ public static class ExportFormatHelpers
             "html" => ExportFormat.Html,
             "mhtml" => ExportFormat.Mhtml,
             "mbox" => ExportFormat.Mbox,
+            "pdf" => ExportFormat.Pdf,
+            "xps" => ExportFormat.Xps,
+            "tiff" => ExportFormat.Tiff,
+            "oft" => ExportFormat.Oft,
             _ => ExportFormat.Eml
         };
     }
@@ -26,6 +30,10 @@ public static class ExportFormatHelpers
             ExportFormat.Html => "text/html",
             ExportFormat.Mhtml => "message/rfc822",
             ExportFormat.Mbox => "application/mbox",
+            ExportFormat.Pdf => "application/pdf",
+            ExportFormat.Xps => "application/oxps",
+            ExportFormat.Tiff => "image/tiff",
+            ExportFormat.Oft => "application/vnd.ms-outlook",
             _ => "application/octet-stream"
         };
     }
@@ -39,6 +47,10 @@ public static class ExportFormatHelpers
             ExportFormat.Html => ".html",
             ExportFormat.Mhtml => ".mhtml",
             ExportFormat.Mbox => ".mbox",
+            ExportFormat.Pdf => ".pdf",
+            ExportFormat.Xps => ".xps",
+            ExportFormat.Tiff => ".tiff",
+            ExportFormat.Oft => ".oft",
             _ => ".eml"
         };
     }
