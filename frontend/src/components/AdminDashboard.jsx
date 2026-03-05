@@ -32,6 +32,7 @@ const AdminDashboard = () => {
   });
   const [thumbnailFile, setThumbnailFile] = useState(null); // File to upload
   const [thumbnailPreview, setThumbnailPreview] = useState(imgMigration); // Preview image
+  const [isManualThumbnail, setIsManualThumbnail] = useState(false); // Track if user manually uploaded
 
   // Load posts on mount from API
   React.useEffect(() => {
@@ -49,6 +50,7 @@ const AdminDashboard = () => {
         return;
       }
       setThumbnailFile(selectedFile); // Store the actual file for FormData
+      setIsManualThumbnail(true); // Mark as manual override
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -94,17 +96,29 @@ const AdminDashboard = () => {
         file.type === "application/msword"
       ) {
         // Handle Word Upload with Image Support
+        let firstImage = null;
         const options = {
           convertImage: mammoth.images.imgElement((image) => {
             return image.read("base64").then((imageBuffer) => {
+              const base64Data =
+                "data:" + image.contentType + ";base64," + imageBuffer;
+              if (!firstImage) {
+                firstImage = base64Data;
+              }
               return {
-                src: "data:" + image.contentType + ";base64," + imageBuffer,
+                src: base64Data,
               };
             });
           }),
         };
         const result = await mammoth.convertToHtml({ arrayBuffer }, options);
         content = DOMPurify.sanitize(result.value);
+
+        // Use first image as thumbnail if not manually set
+        if (firstImage && !isManualThumbnail) {
+          setThumbnailPreview(firstImage);
+          toast.info("Auto-extracted first image from document as thumbnail.");
+        }
         // Basic extraction for excerpt (first 160 chars)
         const plainText = result.value.replace(/<[^>]*>/g, "");
         excerpt = plainText.substring(0, 160) + "...";
@@ -218,6 +232,7 @@ const AdminDashboard = () => {
       });
       setThumbnailFile(null);
       setThumbnailPreview(imgMigration);
+      setIsManualThumbnail(false);
     } catch (error) {
       console.error("Publish error:", error);
       toast.error("Error publishing blog to local file system.");

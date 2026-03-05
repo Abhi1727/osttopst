@@ -88,10 +88,47 @@ namespace PstConverter.Controllers
                 }
                 else
                 {
-                    // Fallback to a default string if provided, else use the migration image
-                    thumbnailRelativePath = string.IsNullOrEmpty(formData["defaultImage"])
-                        ? "/assets/blog/blog_email_migration_1772432378369.png"
-                        : formData["defaultImage"].ToString();
+                    var defaultImage = formData["defaultImage"].ToString();
+                    if (!string.IsNullOrEmpty(defaultImage) && defaultImage.StartsWith("data:image/"))
+                    {
+                        // Handle base64 image (auto-extracted or manually pasted if supported)
+                        try
+                        {
+                            var commaIndex = defaultImage.IndexOf(',');
+                            if (commaIndex >= 0)
+                            {
+                                var base64Data = defaultImage.Substring(commaIndex + 1);
+                                var contentType = defaultImage.Substring(5, commaIndex - 5).Split(';')[0];
+                                var extension = contentType switch
+                                {
+                                    "image/jpeg" => ".jpg",
+                                    "image/png" => ".png",
+                                    "image/gif" => ".gif",
+                                    "image/webp" => ".webp",
+                                    _ => ".png"
+                                };
+
+                                var bytes = Convert.FromBase64String(base64Data);
+                                var newFileName = $"thumb_{id}{extension}";
+                                var savePath = Path.Combine(_blogsDirectory, "media", newFileName);
+
+                                await System.IO.File.WriteAllBytesAsync(savePath, bytes);
+                                thumbnailRelativePath = $"/blogs/media/{newFileName}";
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // Fallback if base64 parsing fails
+                            thumbnailRelativePath = "/assets/blog/blog_email_migration_1772432378369.png";
+                        }
+                    }
+                    else
+                    {
+                        // Fallback to a default string if provided, else use the migration image
+                        thumbnailRelativePath = string.IsNullOrEmpty(defaultImage)
+                            ? "/assets/blog/blog_email_migration_1772432378369.png"
+                            : defaultImage;
+                    }
                 }
 
                 // 3. Construct new Blog Object
