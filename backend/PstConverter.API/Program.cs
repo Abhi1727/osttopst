@@ -1,4 +1,5 @@
 using System.Text;
+using System.Security.Claims;
 using Aspose.Email;
 using PstConverter.Endpoints; // This is for endpoints
 using PstConverter.Services; // This is for services
@@ -40,7 +41,11 @@ catch (Exception ex)
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
-builder.Services.AddControllers();// This is for controllers
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddMemoryCache();// This is for memory cache
 builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();// This is for storage pool
 builder.Services.AddScoped<PstService>();// This is for pst service
@@ -240,6 +245,14 @@ app.MapGet("/api/license/test", async (LicenseApiClient licenseClient, IConfigur
     var result = await licenseClient.GetLicenceStatus(userId, toolId);
     return Results.Ok(new { userId, toolId, response = result });
 });
+
+app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsPrincipal user) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+    var status = await licenseClient.GetDetailedLicenseStatusAsync(userId);
+    return Results.Ok(status);
+});
+
 
 app.MapFileEndpoints();
 app.MapFolderEndpoints();

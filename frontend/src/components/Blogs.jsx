@@ -27,75 +27,6 @@ const CATEGORIES = [
   "Troubleshooting",
 ];
 
-const BLOG_POSTS = [
-  {
-    id: 1,
-    title: "How to Convert OST to PST Files Safely Without Data Loss",
-    summary:
-      "Learn the best practices for converting OST files to PST format while maintaining data integrity and ensuring all your emails, contacts, and calendar items are preserved.",
-    category: "Data Migration",
-    author: "Sarah Johnson",
-    date: "Feb 28, 2026",
-    readTime: "5 min read",
-    image: imgMigration,
-  },
-  {
-    id: 2,
-    title: "Understanding Email Data Security: Protecting Your Outlook Files",
-    summary:
-      "Discover essential security measures to protect your Outlook data files from unauthorized access, corruption, and potential data breaches.",
-    category: "Security",
-    author: "Michael Chen",
-    date: "Feb 25, 2026",
-    readTime: "7 min read",
-    image: imgSecurity,
-  },
-  {
-    id: 3,
-    title: "10 Tips for Managing Large PST Files in Microsoft Outlook",
-    summary:
-      "Effective strategies to organize, maintain, and optimize large PST files for better performance and easier email management in Outlook.",
-    category: "Best Practices",
-    author: "Emily Rodriguez",
-    date: "Feb 22, 2026",
-    readTime: "6 min read",
-    image: imgCloud, // Using cloud image for variety
-  },
-  {
-    id: 4,
-    title: "Migrating from Outlook Desktop to Cloud: What You Need to Know",
-    summary:
-      "A comprehensive guide to transitioning from traditional Outlook desktop files to cloud-based email solutions while preserving your data.",
-    category: "Cloud Solutions",
-    author: "David Park",
-    date: "Feb 20, 2026",
-    readTime: "8 min read",
-    image: imgCloud,
-  },
-  {
-    id: 5,
-    title: "Boosting Team Productivity with Efficient Email Data Management",
-    summary:
-      "Learn how proper email file management and conversion tools can significantly improve team collaboration and workplace productivity.",
-    category: "Productivity",
-    author: "Jessica Williams",
-    date: "Feb 18, 2026",
-    readTime: "5 min read",
-    image: imgMigration, // Reusing migration for mock
-  },
-  {
-    id: 6,
-    title: "Common OST File Errors and How to Fix Them",
-    summary:
-      "Troubleshoot common OST file errors with our step-by-step guide to resolving synchronization issues, corruption, and access problems.",
-    category: "Troubleshooting",
-    author: "Robert Anderson",
-    date: "Feb 15, 2026",
-    readTime: "9 min read",
-    image: imgTrouble,
-  },
-];
-
 const CategoryPill = ({ label, active, onClick }) => (
   <button
     onClick={onClick}
@@ -160,20 +91,27 @@ const Blogs = () => {
   const [activeCategory, setActiveCategory] = useState("All Posts");
   const [searchQuery, setSearchQuery] = useState("");
   const [email, setEmail] = useState("");
+  const [visibleCount, setVisibleCount] = useState(6);
   const navigate = useNavigate();
 
-  // Load dynamic posts from local file system API and combine with static posts
-  const [allPosts, setAllPosts] = useState([...BLOG_POSTS]);
+  // Load dynamic posts from local file system API
+  const [allPosts, setAllPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   React.useEffect(() => {
+    setLoading(true);
     fetch("/api/blogs")
       .then((res) => res.json())
       .then((data) => {
         // Safe check in case data hasn't been created yet
         const dynamicPosts = Array.isArray(data) ? data : [];
-        setAllPosts([...dynamicPosts, ...BLOG_POSTS]);
+        setAllPosts(dynamicPosts);
+        setLoading(false);
       })
-      .catch((err) => console.error("Error loading live blogs:", err));
+      .catch((err) => {
+        console.error("Error loading live blogs:", err);
+        setLoading(false);
+      });
   }, []);
 
   const filteredPosts = allPosts.filter((post) => {
@@ -184,6 +122,12 @@ const Blogs = () => {
       post.summary.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const visiblePosts = filteredPosts.slice(0, visibleCount);
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 6);
+  };
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -243,15 +187,21 @@ const Blogs = () => {
 
       {/* Blog Grid */}
       <div className="container mx-auto px-4 mb-20 max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {filteredPosts.map((post) => (
-            <BlogCard
-              key={post.id}
-              post={post}
-              onClick={() => navigate(`/blogs/${post.id}`)}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="col-span-full text-center py-20 text-slate-500 font-medium">
+            Loading articles...
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            {visiblePosts.map((post) => (
+              <BlogCard
+                key={post.id}
+                post={post}
+                onClick={() => navigate(`/blogs/${post.id}`)}
+              />
+            ))}
+          </div>
+        )}
 
         {filteredPosts.length === 0 && (
           <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
@@ -261,9 +211,12 @@ const Blogs = () => {
           </div>
         )}
 
-        {filteredPosts.length > 0 && (
+        {filteredPosts.length > visibleCount && (
           <div className="mt-20 text-center">
-            <button className="bg-emerald-600 text-white font-black px-12 py-5 rounded-full hover:bg-emerald-700 transition-all hover:shadow-2xl hover:shadow-emerald-200 hover:-translate-y-1 active:translate-y-0 shadow-lg shadow-emerald-100">
+            <button
+              onClick={handleLoadMore}
+              className="bg-emerald-600 text-white font-black px-12 py-5 rounded-full hover:bg-emerald-700 transition-all hover:shadow-2xl hover:shadow-emerald-200 hover:-translate-y-1 active:translate-y-0 shadow-lg shadow-emerald-100"
+            >
               Load More Articles
             </button>
           </div>

@@ -16,7 +16,7 @@ namespace PstConverter.Services
         public LicenseAuthService(IConfiguration configuration)
         {
             _configuration = configuration;
-            _baseUrl = _configuration["LicenseApi:BaseUrl"] ?? "https://192.168.0.200:49416/";
+            _baseUrl = _configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("CRITICAL: LicenseApi:BaseUrl is missing in appsettings.json!");
             var options = new RestClientOptions(_baseUrl)
             {
                 RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true

@@ -1,22 +1,31 @@
 import { API_BASE_URL, getHeaders } from "./api";
 
-const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
+const downloadFile = async (
+  url,
+  suggestedName,
+  getToken,
+  onProgress,
+  signal,
+) => {
   console.log(
     `[Download] Initiating download for: ${suggestedName} from ${url}`,
   );
 
   const pollForDownload = async () => {
     let attempts = 0;
-    const maxAttempts = 120; // 10 minutes (5s intervals)
+    const maxAttempts = 1440; // 2 hours (5s intervals)
     const sessionId = url.split("/file-details/")[1].split("/")[0];
 
     while (attempts < maxAttempts) {
       if (signal?.aborted) throw new Error("AbortError");
 
+      // Refresh token for each poll to avoid expiration during 2-hour window
+      const currentToken = await getToken();
+
       const checkRes = await fetch(
         `${API_BASE_URL}/sessions/${sessionId}/check`,
         {
-          headers: getHeaders(token),
+          headers: getHeaders(currentToken),
           signal: signal,
         },
       );
@@ -52,7 +61,7 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
         onProgress({
           phase: "processing",
           percent: Math.min(99, 5 + attempts * 0.5),
-          detail: `Processing large file... (Attempt ${attempts})`,
+          detail: `Preparing your file for download... (Polling for completion, Attempt ${attempts}). Large files may take several minutes.`,
         });
       }
 
@@ -69,8 +78,9 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
   };
 
   // 1. First trigger the conversion/export
+  const initialToken = await getToken();
   const triggerRes = await fetch(url, {
-    headers: getHeaders(token),
+    headers: getHeaders(initialToken),
     signal: signal,
   });
 
@@ -102,9 +112,10 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
   }
 
   console.log("[Download] Using fallback <a> tag download method.");
+  const downloadToken = await getToken();
   const fullUrl = url.includes("?")
-    ? `${url}&token=${token}`
-    : `${url}?token=${token}`;
+    ? `${url}&token=${downloadToken}`
+    : `${url}?token=${downloadToken}`;
 
   const a = document.createElement("a");
   a.href = fullUrl;
@@ -118,31 +129,43 @@ const downloadFile = async (url, suggestedName, token, onProgress, signal) => {
 export const conversionService = {
   async convertToPst(
     sessionId,
-    token,
+    getToken,
     excludeEmpty = true,
     onProgress,
     signal,
   ) {
     const url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-pst?excludeEmptyFolders=${excludeEmpty}`;
-    return await downloadFile(url, "converted.pst", token, onProgress, signal);
+    return await downloadFile(
+      url,
+      "converted.pst",
+      getToken,
+      onProgress,
+      signal,
+    );
   },
 
   async convertToOst(
     sessionId,
-    token,
+    getToken,
     excludeEmpty = true,
     onProgress,
     signal,
   ) {
     const url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-ost?excludeEmptyFolders=${excludeEmpty}`;
-    return await downloadFile(url, "converted.ost", token, onProgress, signal);
+    return await downloadFile(
+      url,
+      "converted.ost",
+      getToken,
+      onProgress,
+      signal,
+    );
   },
 
   async exportAll(
     sessionId,
     format,
     excludeEmpty,
-    token,
+    getToken,
     onProgress,
     signal,
     options = {},
@@ -163,7 +186,7 @@ export const conversionService = {
     return await downloadFile(
       url,
       `export_${format.toLowerCase()}.zip`,
-      token,
+      getToken,
       onProgress,
       signal,
     );

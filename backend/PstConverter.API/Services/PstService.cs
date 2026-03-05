@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace PstConverter.Services;
 
-public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbContext db, ILogger<PstService> logger, IServiceScopeFactory scopeFactory)
+public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbContext db, ILogger<PstService> logger, IServiceScopeFactory scopeFactory, LicenseApiClient licenseClient)
 {
     private readonly string _uploadDir = StorageConstants.UploadDir;
     private readonly IPstStoragePool _pool = pool;
@@ -21,6 +21,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private readonly AppDbContext _db = db;
     private readonly ILogger<PstService> _logger = logger;
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly LicenseApiClient _licenseClient = licenseClient;
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _uploadLocks = new();
     private static readonly ConcurrentDictionary<string, CancellationTokenSource> _conversionCts = new();
 
@@ -830,6 +831,15 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
 
+        // --- NEW: LICENSE CHECK BEFORE STARTING EXPORT ---
+        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(userId);
+        if (!licenseStatus.CanConvert)
+        {
+            throw new InvalidOperationException($"License check failed: {licenseStatus.Message}");
+        }
+        int exportLimit = licenseStatus.ExportFileLimit;
+        // --------------------------------------------------
+
         // Per-task status check
         string exportingStatus = $"Exporting{suffix}";
         string readyStatus = $"Ready{suffix}";
@@ -901,7 +911,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             var root = string.IsNullOrEmpty(folderId) ? pst.RootFolder : pst.GetFolderById(folderId);
                             if (root != null)
                             {
-                                ExportFolderRecursive(pst, root, "", format, archive, filter, excludeEmptyFolders, token);
+                                int currentCount = 0;
+                                ExportFolderRecursive(pst, root, "", format, archive, filter, excludeEmptyFolders, token, exportLimit, ref currentCount);
                             }
                         }
                     }
@@ -945,7 +956,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return (tempZipPath, false);
     }
 
-    private static void ExportFolderRecursive(PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter = null, bool excludeEmpty = false, CancellationToken token = default)
+    private static void ExportFolderRecursive(PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter, bool excludeEmpty, CancellationToken token, int limit, ref int totalExported)
     {
         token.ThrowIfCancellationRequested();
         if (excludeEmpty && GetTotalMessageCount(folder, filter) == 0) return;
@@ -956,11 +967,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         foreach (var msgInfo in folder.GetContents())
         {
             token.ThrowIfCancellationRequested();
+
+            // Check License Limit
+            if (limit > 0 && totalExported >= limit) break;
+
             DateTime date = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME].GetDateTime() : DateTime.MinValue;
             if (filter != null && !filter.IsEmpty() && !filter.Matches(date)) continue;
 
             using var msg = pst.ExtractMessage(msgInfo.EntryIdString);
             index++;
+            totalExported++;
             var name = $"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}";
             var entry = archive.CreateEntry(string.IsNullOrEmpty(path) ? name : $"{path}/{name}");
             using var es = entry.Open();
@@ -969,7 +985,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         foreach (var sub in folder.GetSubFolders())
         {
-            ExportFolderRecursive(pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, token);
+            if (limit > 0 && totalExported >= limit) break;
+            ExportFolderRecursive(pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, token, limit, ref totalExported);
         }
     }
 

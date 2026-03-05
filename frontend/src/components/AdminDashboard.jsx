@@ -513,7 +513,7 @@ const AdminDashboard = () => {
                   )}
                 </div>
 
-                <div className="bg-slate-50 rounded-3xl p-8 min-h-[300px] border border-slate-100 prose prose-slate max-w-none">
+                <div className="bg-slate-50 rounded-3xl p-8 min-h-[300px] border border-slate-100 blog-content-rich">
                   {extractedData ? (
                     <div
                       dangerouslySetInnerHTML={{

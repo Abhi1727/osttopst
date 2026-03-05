@@ -109,7 +109,6 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      const token = await getToken();
 
       abortControllerRef.current = new AbortController();
 
@@ -117,7 +116,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
         session.sessionId,
         format,
         options.excludeEmptyFolders ?? true,
-        token,
+        getToken,
         (p) => setProgress(p),
         abortControllerRef.current.signal,
         {
@@ -149,7 +148,6 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
   const handleConvert = async () => {
     try {
       setIsConverting(true);
-      const token = await getToken();
       const filename = session.originalFileName || session.fileName || "";
       const ext = filename.split(".").pop().toLowerCase();
 
@@ -158,7 +156,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
       if (ext === "ost") {
         const savedName = await conversionService.convertToPst(
           session.sessionId,
-          token,
+          getToken,
           true, // Default to excluding empty folders
           (p) => setProgress(p),
           abortControllerRef.current.signal,
@@ -169,7 +167,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
       } else {
         const savedName = await conversionService.convertToOst(
           session.sessionId,
-          token,
+          getToken,
           true, // Default to excluding empty folders
           (p) => setProgress(p),
           abortControllerRef.current.signal,

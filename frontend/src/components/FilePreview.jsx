@@ -215,17 +215,16 @@ const FilePreview = ({ session, onReset }) => {
   const handleConversion = async () => {
     try {
       setIsConverting(true);
-      const token = await getToken();
       const ext = (session.originalFileName || session.fileName || "")
         .split(".")
         .pop()
         .toLowerCase();
 
       if (ext === "ost") {
-        await conversionService.convertToPst(session.sessionId, token);
+        await conversionService.convertToPst(session.sessionId, getToken);
         toast.success("Starting PST conversion...");
       } else {
-        await conversionService.convertToOst(session.sessionId, token);
+        await conversionService.convertToOst(session.sessionId, getToken);
         toast.success("Starting OST conversion...");
       }
     } catch (err) {

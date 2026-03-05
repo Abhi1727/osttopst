@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/sheet";
 
 import SessionGuardModal from "./SessionGuardModal";
+import LicenseBadge from "./LicenseBadge";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
 
@@ -169,6 +170,8 @@ const UnifiedHeader = ({ session, onReset }) => {
             </SheetContent>
           </Sheet>
         </div>
+
+        <LicenseBadge />
 
         <SignedOut>
           <SignInButton mode="modal">
