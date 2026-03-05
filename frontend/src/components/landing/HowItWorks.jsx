@@ -70,7 +70,10 @@ const Step = ({
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-20 bg-white overflow-hidden">
+    <section
+      id="how-it-works"
+      className="py-20 bg-white overflow-hidden scroll-mt-20"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-20 space-y-4">
           <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">

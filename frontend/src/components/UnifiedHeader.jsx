@@ -15,6 +15,7 @@ import {
   SheetContent,
   SheetTrigger,
   SheetTitle,
+  SheetClose,
 } from "@/components/ui/sheet";
 
 import SessionGuardModal from "./SessionGuardModal";
@@ -61,21 +62,12 @@ const UnifiedHeader = ({ session, onReset }) => {
       </div>
 
       <nav className="hidden lg:flex items-center gap-8">
-        {["Home", "Our Plan", "How Its Work", "Blogs", "Contact Us"].map(
+        {["Home", "Our Plan", "How It Works", "Blogs", "Contact Us"].map(
           (item) => {
             let path = "/";
             if (item === "Home") path = "/";
             if (item === "Our Plan") path = "/our-plans";
-            if (item === "How Its Work") {
-              if (location.pathname === "/") {
-                const el = document.getElementById("how-it-works");
-                if (el) {
-                  el.scrollIntoView({ behavior: "smooth" });
-                  return null; // Don't navigate if scrolling
-                }
-              }
-              path = "/#how-it-works";
-            }
+            if (item === "How It Works") path = "/#how-it-works";
             if (item === "Blogs") path = "/blogs";
             if (item === "Contact Us") path = "/support";
 
@@ -85,7 +77,7 @@ const UnifiedHeader = ({ session, onReset }) => {
               <span
                 key={item}
                 onClick={() => {
-                  if (item === "How Its Work" && location.pathname === "/") {
+                  if (item === "How It Works" && location.pathname === "/") {
                     const el = document.getElementById("how-it-works");
                     if (el) {
                       el.scrollIntoView({ behavior: "smooth" });
@@ -131,41 +123,42 @@ const UnifiedHeader = ({ session, onReset }) => {
                 {[
                   "Home",
                   "Our Plan",
-                  "How Its Work",
+                  "How It Works",
                   "Blogs",
                   "Contact Us",
                 ].map((item) => {
                   let path = "/";
                   if (item === "Home") path = "/";
                   if (item === "Our Plan") path = "/our-plans";
-                  if (item === "How Its Work") path = "/#how-it-works";
+                  if (item === "How It Works") path = "/#how-it-works";
                   if (item === "Blogs") path = "/blogs";
                   if (item === "Contact Us") path = "/support";
 
                   return (
-                    <span
-                      key={item}
-                      onClick={() => {
-                        if (
-                          item === "How Its Work" &&
-                          location.pathname === "/"
-                        ) {
-                          const el = document.getElementById("how-it-works");
-                          if (el) {
-                            el.scrollIntoView({ behavior: "smooth" });
-                            return;
+                    <SheetClose key={item} asChild>
+                      <span
+                        onClick={() => {
+                          if (
+                            item === "How It Works" &&
+                            location.pathname === "/"
+                          ) {
+                            const el = document.getElementById("how-it-works");
+                            if (el) {
+                              el.scrollIntoView({ behavior: "smooth" });
+                              return;
+                            }
                           }
-                        }
-                        handleNavigation(path);
-                      }}
-                      className={`text-lg font-semibold cursor-pointer ${
-                        location.pathname === path
-                          ? "text-emerald-600"
-                          : "text-slate-600"
-                      }`}
-                    >
-                      {item}
-                    </span>
+                          handleNavigation(path);
+                        }}
+                        className={`text-lg font-semibold cursor-pointer ${
+                          location.pathname === path
+                            ? "text-emerald-600"
+                            : "text-slate-600"
+                        }`}
+                      >
+                        {item}
+                      </span>
+                    </SheetClose>
                   );
                 })}
               </nav>

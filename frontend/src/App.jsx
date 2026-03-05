@@ -76,8 +76,10 @@ function App() {
 
   // Scroll to top on route change
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+    if (!location.hash) {
+      window.scrollTo(0, 0);
+    }
+  }, [location.pathname, location.hash]);
 
   // No automatic redirection - allow user to see landing page/history
   // even if a session is in localStorage. Navigation to /preview happens

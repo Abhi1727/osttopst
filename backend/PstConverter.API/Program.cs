@@ -58,7 +58,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         sqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorNumbersToAdd: null)));
+            errorNumbersToAdd: null))
+    .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 // Clerk Authentication
 var clerkConfig = builder.Configuration.GetSection("Clerk");
