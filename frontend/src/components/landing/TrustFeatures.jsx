@@ -8,6 +8,10 @@ import {
   Zap,
   FolderTree,
   Smartphone,
+  Scissors,
+  CloudUpload,
+  Database,
+  Boxes,
 } from "lucide-react";
 
 const TrustFeatureCard = ({ icon: Icon, title, description }) => (
@@ -71,6 +75,30 @@ const TrustFeatures = () => {
       title: "User Friendly UI",
       description:
         "Intuitive interface designed for touch, making file management effortless on any mobile device.",
+    },
+    {
+      icon: Database,
+      title: "Supports Outlook 2021",
+      description:
+        "Compatible With Outlook 2021 And Earlier Versions Compatible with all versions of outlook 2021 and below. ",
+    },
+    {
+      icon: Boxes,
+      title: "Batch Conversion",
+      description:
+        "Convert multiple OST files simultaneously to save time and effort.",
+    },
+    {
+      icon: Scissors,
+      title: "Split Large PST",
+      description:
+        "Automatically split oversized PST files for better Outlook performance.",
+    },
+    {
+      icon: CloudUpload,
+      title: "Direct Migration",
+      description:
+        "Migrate OST directly to Gmail, Outlook.com, and Yahoo accounts.",
     },
   ];
 

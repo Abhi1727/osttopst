@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import ExportDialog from "./ExportDialog";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { fileService } from "../services/fileService";
+import licenseService from "../services/licenseService";
 import { toast } from "sonner";
 import SessionGuardModal from "./SessionGuardModal";
 import logo from "@/assets/logo.png";
@@ -125,7 +126,27 @@ const FilePreview = ({ session, onReset }) => {
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
   const [filter, setFilter] = useState({ year: null, month: null });
+  const [licenseLimit, setLicenseLimit] = useState(-1);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    const fetchLicense = async () => {
+      if (!user) return;
+      try {
+        const token = await getToken();
+        const email = user?.primaryEmailAddress?.emailAddress;
+        const data = await licenseService.getLicenseStatus(token, email);
+        if (data && data.exportFileLimit !== undefined) {
+          setLicenseLimit(data.exportFileLimit);
+        } else if (data && data.ExportFileLimit !== undefined) {
+          setLicenseLimit(data.ExportFileLimit);
+        }
+      } catch (err) {
+        console.error("Failed to fetch license", err);
+      }
+    };
+    fetchLicense();
+  }, [getToken, user]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -324,17 +345,45 @@ const FilePreview = ({ session, onReset }) => {
   const toggleMessageSelection = (entryId) => {
     setSelectedMessages((prev) => {
       const next = new Set(prev);
-      if (next.has(entryId)) next.delete(entryId);
-      else next.add(entryId);
+      if (next.has(entryId)) {
+        next.delete(entryId);
+      } else {
+        if (licenseLimit !== -1 && next.size >= licenseLimit) {
+          toast.error(
+            `Selection limit reached. Your license allows exporting up to ${licenseLimit} items.`,
+          );
+          return prev;
+        }
+        next.add(entryId);
+      }
       return next;
     });
   };
 
   const toggleSelectAll = () => {
-    if (selectedMessages.size === filteredMessages.length) {
+    if (
+      selectedMessages.size > 0 &&
+      (selectedMessages.size === filteredMessages.length ||
+        (licenseLimit !== -1 && selectedMessages.size >= licenseLimit))
+    ) {
       setSelectedMessages(new Set());
     } else {
-      setSelectedMessages(new Set(filteredMessages.map((m) => m.entryId)));
+      let next = new Set(selectedMessages);
+      let toAdd = [];
+      for (const m of filteredMessages) {
+        if (!next.has(m.entryId)) toAdd.push(m.entryId);
+      }
+
+      for (const id of toAdd) {
+        if (licenseLimit !== -1 && next.size >= licenseLimit) {
+          toast.info(
+            `Selection limited to ${licenseLimit} items due to your license.`,
+          );
+          break;
+        }
+        next.add(id);
+      }
+      setSelectedMessages(next);
     }
   };
 

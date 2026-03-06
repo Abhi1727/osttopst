@@ -41,3 +41,4 @@ test/frontend/.vite/deps/
 *.cursorrules
 
 *.svg
+*.txt

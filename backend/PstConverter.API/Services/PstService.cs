@@ -445,15 +445,25 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     public record FinalizationResult(string SessionId, string FileName, long Size, string FileType);
 
-    public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders);
-    public async Task<(string FilePath, string FileName, bool isReady)> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders);
+    public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders, userEmail);
+    public async Task<(string FilePath, string FileName, bool isReady)> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders, userEmail);
 
-    private async Task<(string FilePath, string FileName, bool isReady)> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false)
+    private async Task<(string FilePath, string FileName, bool isReady)> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false, string? userEmail = null)
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
 
+        // --- NEW: LICENSE CHECK BEFORE DEFINING PATHS ---
+        var licenseId = userEmail ?? userId;
+        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
+        if (!licenseStatus.CanConvert)
+        {
+            throw new InvalidOperationException($"License check failed: {licenseStatus.Message}");
+        }
+        int exportLimit = licenseStatus.ExportFileLimit;
+        // --------------------------------------------------
+
         string ext = format == FileFormat.Ost ? ".ost" : ".pst";
-        var outputPath = Path.Combine(_uploadDir, $"{sessionId}_converted{ext}");
+        var outputPath = Path.Combine(_uploadDir, $"{sessionId}_converted_{exportLimit}{ext}");
 
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
         var baseName = session != null
@@ -493,7 +503,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                     using (var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode))
                     {
-                        CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders, token);
+                        int totalExported = 0;
+                        CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders, exportLimit, ref totalExported, token);
                     }
                     return Task.FromResult(true);
                 }, password);
@@ -538,11 +549,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return (outputPath, fileName, false);
     }
 
-    private static void CopyFolders(FolderInfo source, FolderInfo destParent, PersonalStorage srcPst, bool excludeEmptyFolders = false, CancellationToken token = default)
+    private static void CopyFolders(FolderInfo source, FolderInfo destParent, PersonalStorage srcPst, bool excludeEmptyFolders, int limit, ref int totalExported, CancellationToken token = default)
     {
         foreach (var srcFolder in source.GetSubFolders())
         {
             token.ThrowIfCancellationRequested();
+            if (limit > -1 && totalExported >= limit) break;
+
             if (excludeEmptyFolders)
             {
                 var totalMessages = GetTotalMessageCount(srcFolder);
@@ -553,13 +566,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             foreach (var msgInfo in srcFolder.GetContents())
             {
                 token.ThrowIfCancellationRequested();
+                if (limit > -1 && totalExported >= limit) break;
+
                 using var msg = srcPst.ExtractMessage(msgInfo.EntryIdString);
                 if (msg != null)
                 {
                     newFolder.AddMessage(msg);
+                    totalExported++;
                 }
             }
-            CopyFolders(srcFolder, newFolder, srcPst, excludeEmptyFolders, token);
+            CopyFolders(srcFolder, newFolder, srcPst, excludeEmptyFolders, limit, ref totalExported, token);
         }
     }
 
@@ -814,7 +830,22 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     public async Task<(string FilePath, bool isReady)> ExportAllAsync(string sessionId, string userId, ExportFormat format, string? folderId = null, List<string>? entryIds = null, MessageDateFilter? filter = null, bool excludeEmptyFolders = false, string? userEmail = null)
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
+
+        // --- NEW: LICENSE CHECK BEFORE STARTING EXPORT ---
         var licenseId = userEmail ?? userId;
+        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
+        if (!licenseStatus.CanConvert)
+        {
+            throw new InvalidOperationException($"License check failed: {licenseStatus.Message}");
+        }
+        int exportLimit = licenseStatus.ExportFileLimit;
+
+        if (exportLimit > -1 && entryIds != null && entryIds.Count > exportLimit)
+        {
+            throw new InvalidOperationException($"Selection limit exceeded. Your license allows exporting up to {exportLimit} items. Please upgrade to a Professional plan.");
+        }
+        // --------------------------------------------------
+
         string suffix = "";
         if (!string.IsNullOrEmpty(folderId)) suffix += $"_f_{folderId}";
         if (entryIds != null && entryIds.Count > 0)
@@ -827,19 +858,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         {
             suffix += $"_fltr_{filter.Year}_{filter.Month}";
         }
+        if (exportLimit > -1)
+        {
+            suffix += $"_lmt_{exportLimit}";
+        }
 
         var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{format}{suffix}_{excludeEmptyFolders}.zip");
 
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-
-        // --- NEW: LICENSE CHECK BEFORE STARTING EXPORT ---
-        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
-        if (!licenseStatus.CanConvert)
-        {
-            throw new InvalidOperationException($"License check failed: {licenseStatus.Message}");
-        }
-        int exportLimit = licenseStatus.ExportFileLimit;
-        // --------------------------------------------------
 
         // Per-task status check
         string exportingStatus = $"Exporting{suffix}";
@@ -913,7 +939,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             if (root != null)
                             {
                                 int currentCount = 0;
-                                ExportFolderRecursive(pst, root, "", format, archive, filter, excludeEmptyFolders, token, exportLimit, ref currentCount);
+                                ExportFolderRecursive(pst, root, "", format, archive, filter, excludeEmptyFolders, exportLimit, ref currentCount, token);
                             }
                         }
                     }
@@ -957,7 +983,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return (tempZipPath, false);
     }
 
-    private static void ExportFolderRecursive(PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter, bool excludeEmpty, CancellationToken token, int limit, ref int totalExported)
+    private static void ExportFolderRecursive(PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter, bool excludeEmpty, int limit, ref int totalExported, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         if (excludeEmpty && GetTotalMessageCount(folder, filter) == 0) return;
@@ -987,7 +1013,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         foreach (var sub in folder.GetSubFolders())
         {
             if (limit > 0 && totalExported >= limit) break;
-            ExportFolderRecursive(pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, token, limit, ref totalExported);
+            ExportFolderRecursive(pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, limit, ref totalExported, token);
         }
     }
 
@@ -1052,7 +1078,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 break;
             case ExportFormat.Mbox:
                 using (var mailMsg = msg.ToMailMessage(new MailConversionOptions()))
-                using (var writer = new Aspose.Email.Storage.Mbox.MboxrdStorageWriter(ms, new Aspose.Email.Storage.Mbox.MboxSaveOptions()))
+                using (var writer = new Aspose.Email.Storage.Mbox.MboxrdStorageWriter(ms, new Aspose.Email.Storage.Mbox.MboxSaveOptions { LeaveOpen = true }))
                 {
                     writer.WriteMessage(mailMsg);
                 }

@@ -116,8 +116,8 @@ builder.Services.AddRateLimiter(options =>
             factory: partition => new FixedWindowRateLimiterOptions
             {
                 AutoReplenishment = true,
-                PermitLimit = 100,
-                QueueLimit = 20,
+                PermitLimit = 5000,
+                QueueLimit = 100,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 Window = TimeSpan.FromMinutes(1)
             }));
@@ -256,9 +256,12 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
                  ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
                  ?? "anonymous";
 
-    logger.LogInformation("[LICENSE REQ] Using License ID: {LicenseId} (Source: {Source})",
-        licenseId,
-        email != null ? "QueryParam" : (user.FindFirstValue(ClaimTypes.Email) != null ? "ClaimTypes.Email" : "Fallback"));
+    if (logger.IsEnabled(LogLevel.Information))
+    {
+        logger.LogInformation("[LICENSE REQ] Using License ID: {LicenseId} (Source: {Source})",
+            licenseId,
+            email != null ? "QueryParam" : (user.FindFirstValue(ClaimTypes.Email) != null ? "ClaimTypes.Email" : "Fallback"));
+    }
 
     var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId);
     return Results.Ok(status);

@@ -6,19 +6,12 @@ using RestSharp;
 
 namespace PstConverter.Services
 {
-    public class LicenseAuthService
+    public class LicenseAuthService(IConfiguration configuration)
     {
-        private readonly string _baseUrl;
-        private readonly string _username;
-        private readonly string _password;
+        private readonly string _baseUrl = configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("LicenseApi:BaseUrl missing");
+        private readonly string _username = configuration["LicenseApi:Username"] ?? "admin";
+        private readonly string _password = configuration["LicenseApi:Password"] ?? "1234";
         private readonly ConcurrentDictionary<string, string> _tokenCache = new();
-
-        public LicenseAuthService(IConfiguration configuration)
-        {
-            _baseUrl = configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("LicenseApi:BaseUrl missing");
-            _username = configuration["LicenseApi:Username"] ?? "admin";
-            _password = configuration["LicenseApi:Password"] ?? "1234";
-        }
 
         public async Task<string?> GetTokenAsync(string licenseId, string toolId)
         {
