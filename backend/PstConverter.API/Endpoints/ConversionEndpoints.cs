@@ -24,12 +24,26 @@ public static class ConversionEndpoints
             [FromQuery] DateTime? startDate,
             [FromQuery] DateTime? endDate,
             [FromQuery] bool? excludeEmptyFolders,
+            [FromQuery] string? email,
             PstService pstService,
+            LicenseApiClient licenseClient,
             AppDbContext db,
             ClaimsPrincipal user,
             ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+
+            // License Check
+            var license = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+            if (!license.CanConvert)
+            {
+                return Results.Json(new { error = license.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            // Track usage
+            _ = licenseClient.TrackUsageAsync(userEmail);
+
             if (logger.IsEnabled(LogLevel.Information))
             {
                 logger.LogInformation("ExportAll request: session={SessionId}, format={Format}, folderId={FolderId}, userId={UserId}", sessionId, format, folderId, userId);
@@ -49,7 +63,7 @@ public static class ConversionEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, folderId, selectedIds, filter, excludeEmptyFolders ?? true);
+                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, folderId, selectedIds, filter, excludeEmptyFolders ?? true, userEmail);
 
                 if (!isReady)
                 {
@@ -102,12 +116,24 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+
+            // License Check
+            var license = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+            if (!license.CanConvert)
+            {
+                return Results.Json(new { error = license.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            // Track usage
+            _ = licenseClient.TrackUsageAsync(userEmail);
+
             try
             {
-                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? true);
+                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail);
 
                 if (!isReady)
                 {
@@ -146,12 +172,24 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+
+            // License Check
+            var license = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+            if (!license.CanConvert)
+            {
+                return Results.Json(new { error = license.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            // Track usage
+            _ = licenseClient.TrackUsageAsync(userEmail);
+
             try
             {
-                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? true);
+                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail);
 
                 if (!isReady)
                 {

@@ -133,8 +133,10 @@ export const conversionService = {
     excludeEmpty = true,
     onProgress,
     signal,
+    email = null,
   ) {
-    const url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-pst?excludeEmptyFolders=${excludeEmpty}`;
+    let url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-pst?excludeEmptyFolders=${excludeEmpty}`;
+    if (email) url += `&email=${encodeURIComponent(email)}`;
     return await downloadFile(
       url,
       "converted.pst",
@@ -150,8 +152,10 @@ export const conversionService = {
     excludeEmpty = true,
     onProgress,
     signal,
+    email = null,
   ) {
-    const url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-ost?excludeEmptyFolders=${excludeEmpty}`;
+    let url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-ost?excludeEmptyFolders=${excludeEmpty}`;
+    if (email) url += `&email=${encodeURIComponent(email)}`;
     return await downloadFile(
       url,
       "converted.ost",
@@ -181,6 +185,7 @@ export const conversionService = {
     if (options.month) params.append("month", options.month);
     if (options.startDate) params.append("startDate", options.startDate);
     if (options.endDate) params.append("endDate", options.endDate);
+    if (options.email) params.append("email", options.email);
 
     const url = `${API_BASE_URL}/file-details/${sessionId}/export?${params.toString()}`;
     return await downloadFile(

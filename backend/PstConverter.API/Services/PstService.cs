@@ -445,8 +445,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     public record FinalizationResult(string SessionId, string FileName, long Size, string FileType);
 
-    public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders);
-    public async Task<(string FilePath, string FileName, bool isReady)> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders);
+    public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders);
+    public async Task<(string FilePath, string FileName, bool isReady)> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders);
 
     private async Task<(string FilePath, string FileName, bool isReady)> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false)
     {
@@ -811,9 +811,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return tempZipPath;
     }
 
-    public async Task<(string FilePath, bool isReady)> ExportAllAsync(string sessionId, string userId, ExportFormat format, string? folderId = null, List<string>? entryIds = null, MessageDateFilter? filter = null, bool excludeEmptyFolders = false)
+    public async Task<(string FilePath, bool isReady)> ExportAllAsync(string sessionId, string userId, ExportFormat format, string? folderId = null, List<string>? entryIds = null, MessageDateFilter? filter = null, bool excludeEmptyFolders = false, string? userEmail = null)
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
+        var licenseId = userEmail ?? userId;
         string suffix = "";
         if (!string.IsNullOrEmpty(folderId)) suffix += $"_f_{folderId}";
         if (entryIds != null && entryIds.Count > 0)
@@ -832,7 +833,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
 
         // --- NEW: LICENSE CHECK BEFORE STARTING EXPORT ---
-        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(userId);
+        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
         if (!licenseStatus.CanConvert)
         {
             throw new InvalidOperationException($"License check failed: {licenseStatus.Message}");

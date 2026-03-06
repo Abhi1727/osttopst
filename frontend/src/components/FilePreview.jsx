@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import ExportDialog from "./ExportDialog";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { fileService } from "../services/fileService";
 import { toast } from "sonner";
 import SessionGuardModal from "./SessionGuardModal";
@@ -110,6 +110,7 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
 
 const FilePreview = ({ session, onReset }) => {
   const { getToken } = useAuth();
+  const { user } = useUser();
   const [folders, setFolders] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState(null);
@@ -221,10 +222,24 @@ const FilePreview = ({ session, onReset }) => {
         .toLowerCase();
 
       if (ext === "ost") {
-        await conversionService.convertToPst(session.sessionId, getToken);
+        await conversionService.convertToPst(
+          session.sessionId,
+          getToken,
+          true,
+          null,
+          null,
+          user?.primaryEmailAddress?.emailAddress,
+        );
         toast.success("Starting PST conversion...");
       } else {
-        await conversionService.convertToOst(session.sessionId, getToken);
+        await conversionService.convertToOst(
+          session.sessionId,
+          getToken,
+          true,
+          null,
+          null,
+          user?.primaryEmailAddress?.emailAddress,
+        );
         toast.success("Starting OST conversion...");
       }
     } catch (err) {
@@ -327,7 +342,13 @@ const FilePreview = ({ session, onReset }) => {
     try {
       const toastId = toast.loading(`Preparing ${format} export...`);
       const token = await getToken();
-      await fileService.exportAll(session.sessionId, format, true, token);
+      await fileService.exportAll(
+        session.sessionId,
+        format,
+        true,
+        token,
+        user?.primaryEmailAddress?.emailAddress,
+      );
       toast.dismiss(toastId);
       toast.success("Export successful!");
     } catch (err) {

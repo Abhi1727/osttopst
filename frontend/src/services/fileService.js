@@ -549,12 +549,15 @@ export const fileService = {
     }
   },
 
-  async exportAll(sessionId, format, excludeEmpty, token) {
+  async exportAll(sessionId, format, excludeEmpty, token, email = null) {
     return await conversionService.exportAll(
       sessionId,
       format,
       excludeEmpty,
       token,
+      null, // onProgress
+      null, // signal
+      { email },
     );
   },
 };

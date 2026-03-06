@@ -1,61 +1,74 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using PstConverter.Models;
 using RestSharp;
 
 namespace PstConverter.Services
 {
     public class LicenseAuthService
     {
-        private readonly RestClient _restClient;
-        private readonly IConfiguration _configuration;
-        private LicenseToken? _currentToken;
         private readonly string _baseUrl;
+        private readonly string _username;
+        private readonly string _password;
+        private readonly ConcurrentDictionary<string, string> _tokenCache = new();
 
         public LicenseAuthService(IConfiguration configuration)
         {
-            _configuration = configuration;
-            _baseUrl = _configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("CRITICAL: LicenseApi:BaseUrl is missing in appsettings.json!");
-            var options = new RestClientOptions(_baseUrl)
-            {
-                RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true
-            };
-            _restClient = new RestClient(options);
+            _baseUrl = configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("LicenseApi:BaseUrl missing");
+            _username = configuration["LicenseApi:Username"] ?? "admin";
+            _password = configuration["LicenseApi:Password"] ?? "1234";
         }
 
-        public async Task<string> GetTokenAsync(string userId, string toolId)
+        public async Task<string?> GetTokenAsync(string licenseId, string toolId)
         {
-            if (_currentToken == null || _currentToken.IsExpired)
+            var cacheKey = $"{licenseId}_{toolId}";
+            if (_tokenCache.TryGetValue(cacheKey, out var token))
             {
-                await RefreshTokenAsync(userId, toolId);
+                return token;
             }
 
-            return _currentToken?.Token ?? string.Empty;
-        }
-
-        private async Task RefreshTokenAsync(string userId, string toolId)
-        {
-            var request = new RestRequest("Auth/login", Method.Post);
-            request.AddJsonBody(new LoginRequest
+            try
             {
-                UserId = userId,
-                ToolId = toolId
-            });
-
-            var response = await _restClient.ExecuteAsync<LoginResponse>(request);
-
-            if (response.IsSuccessful && response.Data != null)
-            {
-                if (!string.IsNullOrEmpty(response.Data.Token))
+                var options = new RestClientOptions(_baseUrl)
                 {
-                    _currentToken = new LicenseToken(response.Data.Token);
+                    RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true
+                };
+                var client = new RestClient(options);
+                var request = new RestRequest("Auth/login", Method.Post);
+
+                // Use configured credentials
+                request.AddJsonBody(new
+                {
+                    Username = _username,
+                    Password = _password,
+                    userId = licenseId, // The license server expects 'userId' as the field name
+                    toolId
+                });
+
+                Console.WriteLine($"[LICENSE AUTH] Attempting login for License ID (Email): {licenseId} at {_baseUrl}Auth/login");
+                var response = await client.ExecuteAsync<TokenResponse>(request);
+
+                if (response.IsSuccessful && response.Data != null)
+                {
+                    var newToken = response.Data.Token;
+                    _tokenCache.TryAdd(cacheKey, newToken);
+                    return newToken;
                 }
+
+                Console.WriteLine($"[LICENSE AUTH ERROR] {response.StatusCode} - {response.ErrorMessage}");
+                return null;
             }
-            else
+            catch (Exception ex)
             {
-                throw new Exception($"Failed to authenticate with license server: {response.ErrorMessage ?? response.Content}");
+                Console.WriteLine($"[LICENSE AUTH CRITICAL] {ex.Message}");
+                return null;
             }
+        }
+
+        private class TokenResponse
+        {
+            public string Token { get; set; } = string.Empty;
         }
     }
 }

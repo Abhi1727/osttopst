@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { conversionService } from "../services/conversionService";
 import { deleteSession } from "../services/api";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { toast } from "sonner";
 
 const EXPORT_FORMATS = [
@@ -77,6 +77,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
   const [isConverting, setIsConverting] = useState(false);
   const [progress, setProgress] = useState(null);
   const { getToken } = useAuth();
+  const { user } = useUser();
   const abortControllerRef = useRef(null);
 
   // Clean up on unmount
@@ -126,6 +127,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
           month: options.month,
           startDate: options.startDate,
           endDate: options.endDate,
+          email: user?.primaryEmailAddress?.emailAddress,
         },
       );
       if (savedName) {
@@ -160,6 +162,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
           true, // Default to excluding empty folders
           (p) => setProgress(p),
           abortControllerRef.current.signal,
+          user?.primaryEmailAddress?.emailAddress,
         );
         if (savedName) {
           toast.success(`Converted file saved as: ${savedName}`);
@@ -171,6 +174,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
           true, // Default to excluding empty folders
           (p) => setProgress(p),
           abortControllerRef.current.signal,
+          user?.primaryEmailAddress?.emailAddress,
         );
         if (savedName) {
           toast.success(`Converted file saved as: ${savedName}`);

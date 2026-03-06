@@ -37,23 +37,22 @@ namespace PstConverter.Models
                 };
             }
 
-            // Normalize for comparison and handle potential JSON outer characters
-            string status = backendResponse.Trim().ToLowerInvariant();
+            // Normalize for comparison
+            string status = backendResponse.Trim().ToLowerInvariant().Replace("\"", "");
 
-            // Check for keywords regardless of whether they are wrapped in JSON or plain text
             if (status.Contains("professional"))
             {
                 return CreateProfessional();
             }
 
-            if (status.Contains("expired"))
+            if (status.Contains("demoexpired"))
             {
                 return new LicenseStatus
                 {
                     Tier = LicenseTier.DemoExpired,
                     CanConvert = false,
                     ExportFileLimit = 0,
-                    Message = "Demo expired. Please purchase a plan."
+                    Message = "License expired. Please purchase a professional plan."
                 };
             }
 
@@ -64,7 +63,7 @@ namespace PstConverter.Models
                     Tier = LicenseTier.Demo,
                     CanConvert = true,
                     ExportFileLimit = 50,
-                    Message = "7-day free trial active (50 files per folder limit)."
+                    Message = "Demo license active (limit 50 items)."
                 };
             }
 

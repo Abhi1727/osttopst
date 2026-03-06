@@ -6,9 +6,13 @@ const licenseService = {
    * @param {string} token - Optional auth token for private license checks
    * @returns {Promise<Object>} The license status object.
    */
-  getLicenseStatus: async (token) => {
+  getLicenseStatus: async (token, email) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/license/status`, {
+      const url = email
+        ? `${API_BASE_URL}/license/status?email=${encodeURIComponent(email)}`
+        : `${API_BASE_URL}/license/status`;
+
+      const res = await fetch(url, {
         headers: getHeaders(token),
       });
       return await handleResponse(res);

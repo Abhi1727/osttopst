@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Check,
   X,
@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import licenseService from "@/services/licenseService";
 
 const comparisonFeatures = [
   {
@@ -90,10 +92,16 @@ const PricingCard = ({
   features,
   recommended,
   ctaText = "Buy Now",
+  isActive = false,
 }) => (
   <div
-    className={`relative flex flex-col h-full p-8 bg-white rounded-xl shadow-lg border border-gray-200 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:border-emerald-500/50 ${recommended ? "ring-2 ring-yellow-400 z-10" : ""}`}
+    className={`relative flex flex-col h-full p-8 bg-white rounded-xl shadow-lg border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${isActive ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-gray-200"} ${recommended ? "ring-2 ring-yellow-400 z-10" : ""}`}
   >
+    {isActive && (
+      <div className="absolute -top-4 right-4 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg animate-bounce">
+        Current Plan
+      </div>
+    )}
     {recommended && (
       <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-black text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider shadow-sm">
         Most Popular
@@ -159,9 +167,10 @@ const PricingCard = ({
     </ul>
 
     <Button
-      className={`w-full py-6 font-bold text-md rounded-md transition-colors ${recommended ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
+      disabled={isActive}
+      className={`w-full py-6 font-bold text-md rounded-md transition-colors ${isActive ? "bg-emerald-100 text-emerald-600 border-emerald-200 cursor-default" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
     >
-      {ctaText}
+      {isActive ? "Active Plan" : ctaText}
     </Button>
   </div>
 );
@@ -186,6 +195,27 @@ const FooterColumn = ({ title, links }) => (
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const { getToken, isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
+  const [status, setStatus] = useState(null);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      if (!isLoaded || !isSignedIn) return;
+      try {
+        const token = await getToken();
+        const email = user?.primaryEmailAddress?.emailAddress;
+        const data = await licenseService.getLicenseStatus(token, email);
+        setStatus(data);
+      } catch (error) {
+        console.error("Failed to load license in Pricing", error);
+      }
+    };
+    fetchStatus();
+  }, [isLoaded, isSignedIn, getToken, user]);
+
+  const tierLower = String(status?.tier ?? status?.Tier ?? "").toLowerCase();
+  const isProfessional = tierLower === "professional" || tierLower === "2";
 
   const faqs = [
     {
@@ -255,12 +285,13 @@ const Pricing = () => {
             ]}
           />
 
-          {/* Corporate Plan */}
+          {/* Corporate Plan - Mapped to 'Professional' in simple license API for now */}
           <PricingCard
             title="Corporate"
             price="199"
             description="Ideal for small to medium businesses and corporate offices."
             recommended={true}
+            isActive={isProfessional}
             features={[
               { text: "Advanced conversion & filters", included: true },
               { text: "Multiple licenses (up to 10)", included: true },
@@ -343,7 +374,8 @@ const Pricing = () => {
         <div className="max-w-4xl mx-auto">
           <div className=" rounded-t-lg py-10 px-4">
             <h2 className="text-5xl font-bold text-slate-800 text-center mb-2 tracking-tight">
-              Compare All Plans <span className="text-emerald-600">Side by Side</span>
+              Compare All Plans{" "}
+              <span className="text-emerald-600">Side by Side</span>
             </h2>
             <p className="text-gray-500 text-sm text-center max-w-xl mx-auto">
               Not sure which OST to PST converter license is right for you?

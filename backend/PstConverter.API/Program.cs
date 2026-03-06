@@ -7,6 +7,7 @@ using PstConverter.Data; // This is for data
 using Microsoft.EntityFrameworkCore; // This is for database
 using System.Threading.RateLimiting; // This is for rate limiting
 using Microsoft.Extensions.DependencyInjection; // This is for dependency injection
+using Microsoft.AspNetCore.Mvc; // This is for [FromQuery] and other MVC attributes
 
 // Initialize Aspose.Email License
 try
@@ -240,16 +241,26 @@ app.MapGet("/api/status", () => Results.Ok(new { status = "API is running", time
 // License server connectivity test
 app.MapGet("/api/license/test", async (LicenseApiClient licenseClient, IConfiguration config) =>
 {
-    var userId = config["LicenseApi:UserId"]!;
-    var toolId = config["LicenseApi:ToolId"]!;
+    var userId = config["LicenseApi:UserId"] ?? "test";
+    var toolId = config["LicenseApi:ToolId"] ?? "1";
     var result = await licenseClient.GetLicenceStatus(userId, toolId);
     return Results.Ok(new { userId, toolId, response = result });
 });
 
-app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsPrincipal user) =>
+app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsPrincipal user, [FromQuery] string? email, ILogger<Program> logger) =>
 {
-    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-    var status = await licenseClient.GetDetailedLicenseStatusAsync(userId);
+    // Prioritize email address passed from frontend, otherwise fallback to JWT claims
+    var licenseId = email
+                 ?? user.FindFirstValue(ClaimTypes.Email)
+                 ?? user.FindFirstValue("email")
+                 ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
+                 ?? "anonymous";
+
+    logger.LogInformation("[LICENSE REQ] Using License ID: {LicenseId} (Source: {Source})",
+        licenseId,
+        email != null ? "QueryParam" : (user.FindFirstValue(ClaimTypes.Email) != null ? "ClaimTypes.Email" : "Fallback"));
+
+    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId);
     return Results.Ok(status);
 });
 
