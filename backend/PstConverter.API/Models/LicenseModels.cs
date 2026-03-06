@@ -121,4 +121,19 @@ namespace PstConverter.Models
     {
         public string Token { get; set; } = string.Empty;
     }
+
+    public class ProfessionalLicenseItem
+    {
+        public string FileName { get; set; } = string.Empty;
+        public long FileSizeInBytes { get; set; }
+        public string ItemId => $"{FileName}{FileSizeInBytes}";
+    }
+
+    public class ProfessionalUsageLimits
+    {
+        public bool HitTimePeriodLimit { get; set; }
+        public bool HitSizeLimit { get; set; }
+        public bool HitFileCountLimit { get; set; }
+        public bool IsUsageRestricted => HitTimePeriodLimit || HitSizeLimit || HitFileCountLimit;
+    }
 }

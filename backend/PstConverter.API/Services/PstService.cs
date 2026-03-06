@@ -503,8 +503,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                     using (var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode))
                     {
-                        int totalExported = 0;
-                        CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders, exportLimit, ref totalExported, token);
+                        CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders, exportLimit, token);
                     }
                     return Task.FromResult(true);
                 }, password);
@@ -549,12 +548,11 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return (outputPath, fileName, false);
     }
 
-    private static void CopyFolders(FolderInfo source, FolderInfo destParent, PersonalStorage srcPst, bool excludeEmptyFolders, int limit, ref int totalExported, CancellationToken token = default)
+    private static void CopyFolders(FolderInfo source, FolderInfo destParent, PersonalStorage srcPst, bool excludeEmptyFolders, int limit, CancellationToken token = default)
     {
         foreach (var srcFolder in source.GetSubFolders())
         {
             token.ThrowIfCancellationRequested();
-            if (limit > -1 && totalExported >= limit) break;
 
             if (excludeEmptyFolders)
             {
@@ -563,19 +561,20 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             }
 
             var newFolder = destParent.AddSubFolder(srcFolder.DisplayName);
+            int folderExportedCount = 0;
             foreach (var msgInfo in srcFolder.GetContents())
             {
                 token.ThrowIfCancellationRequested();
-                if (limit > -1 && totalExported >= limit) break;
+                if (limit > -1 && folderExportedCount >= limit) break;
 
                 using var msg = srcPst.ExtractMessage(msgInfo.EntryIdString);
                 if (msg != null)
                 {
                     newFolder.AddMessage(msg);
-                    totalExported++;
+                    folderExportedCount++;
                 }
             }
-            CopyFolders(srcFolder, newFolder, srcPst, excludeEmptyFolders, limit, ref totalExported, token);
+            CopyFolders(srcFolder, newFolder, srcPst, excludeEmptyFolders, limit, token);
         }
     }
 
@@ -847,7 +846,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         // --------------------------------------------------
 
         string suffix = "";
-        if (!string.IsNullOrEmpty(folderId)) suffix += $"_f_{folderId}";
+        if (!string.IsNullOrEmpty(folderId)) suffix += $"_f_{GetStableHash(folderId)}";
         if (entryIds != null && entryIds.Count > 0)
         {
             // Use a stable hash of sorted IDs to ensure consistent filenames across restarts
@@ -938,8 +937,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             var root = string.IsNullOrEmpty(folderId) ? pst.RootFolder : pst.GetFolderById(folderId);
                             if (root != null)
                             {
-                                int currentCount = 0;
-                                ExportFolderRecursive(pst, root, "", format, archive, filter, excludeEmptyFolders, exportLimit, ref currentCount, token);
+                                ExportFolderRecursive(pst, root, "", format, archive, filter, excludeEmptyFolders, exportLimit, token);
                             }
                         }
                     }
@@ -983,7 +981,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return (tempZipPath, false);
     }
 
-    private static void ExportFolderRecursive(PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter, bool excludeEmpty, int limit, ref int totalExported, CancellationToken token)
+    private static void ExportFolderRecursive(PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         if (excludeEmpty && GetTotalMessageCount(folder, filter) == 0) return;
@@ -991,19 +989,20 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         if (!string.IsNullOrEmpty(path)) archive.CreateEntry(path + "/");
 
         int index = 0;
+        int folderExportedCount = 0;
         foreach (var msgInfo in folder.GetContents())
         {
             token.ThrowIfCancellationRequested();
 
             // Check License Limit
-            if (limit > 0 && totalExported >= limit) break;
+            if (limit > -1 && folderExportedCount >= limit) break;
 
             DateTime date = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME].GetDateTime() : DateTime.MinValue;
             if (filter != null && !filter.IsEmpty() && !filter.Matches(date)) continue;
 
             using var msg = pst.ExtractMessage(msgInfo.EntryIdString);
             index++;
-            totalExported++;
+            folderExportedCount++;
             var name = $"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}";
             var entry = archive.CreateEntry(string.IsNullOrEmpty(path) ? name : $"{path}/{name}");
             using var es = entry.Open();
@@ -1012,8 +1011,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         foreach (var sub in folder.GetSubFolders())
         {
-            if (limit > 0 && totalExported >= limit) break;
-            ExportFolderRecursive(pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, limit, ref totalExported, token);
+            ExportFolderRecursive(pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, limit, token);
         }
     }
 
