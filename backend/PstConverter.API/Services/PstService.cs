@@ -1500,6 +1500,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 // var storageTracker = new BatchStorageTracker(licenseId, _licenseClient, itemName);
                 // if (itemStatus == ItemStatus.Exist) storageTracker.IsEnabled = false;
 
+                var emailOrId = userEmail;
+                var ToolId = _config["LicenseApi:ToolId"] ?? "1";
+                var ModuleId = _config["LicenseApi:ModuleId"] ?? "1";
+
                 bool bResult = await _licenseClient.UpdateItemStorageAsync(emailOrId,
                                                                            ToolId,
                                                                            ModuleId,
@@ -1554,15 +1558,15 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                                     ? msg.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong()
                                                     : 0;
 
-                                                if (storageTracker != null)
-                                                {
-                                                    if (!await storageTracker.UpdateAsync(msgSize))
-                                                    {
-                                                        limitReached = true;
-                                                        limitCts.Cancel();
-                                                        return;
-                                                    }
-                                                }
+                                                // if (storageTracker != null)
+                                                // {
+                                                //     if (!await storageTracker.UpdateAsync(msgSize))
+                                                //     {
+                                                //         limitReached = true;
+                                                //         limitCts.Cancel();
+                                                //         return;
+                                                //     }
+                                                // }
 
                                                 var ext = GetFileExtension(format);
                                                 var sanitizedSubject = SanitizeFileName(msg.Subject ?? $"msg_{currentMsgIndex}");
@@ -1605,10 +1609,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             if (root != null)
                             {
                                 var archiveLock = new object();
-                                await ExportFolderRecursive(licenseId, pst, root, "", format, archive, archiveLock, filter, excludeEmptyFolders, exportLimit, token, storageTracker);
+                                await ExportFolderRecursive(licenseId, pst, root, "", format, archive, archiveLock, filter, excludeEmptyFolders, exportLimit, token );
                             }
                         }
-                        await storageTracker.FlushAsync();
+                        // await.FlushAsync();
                     }
                     return true;
                 }, password);

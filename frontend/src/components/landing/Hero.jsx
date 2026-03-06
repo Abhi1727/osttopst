@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  lazy,
+  Suspense,
+} from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
@@ -205,43 +212,45 @@ const Hero = ({ onUploadComplete, onRestore }) => {
       <div className="max-w-[1440px] mx-auto relative z-10 w-full lg:grid lg:grid-cols-[1fr_1.3fr] lg:gap-10 items-center">
         {/* Left Column: Heading & Benefits */}
         <div className="text-left py-4 md:py-8 lg:py-4 flex flex-col md:items-center lg:items-start md:text-center lg:text-left">
-          <h1 className="mb-4 text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold text-slate-800 tracking-tight leading-tight">
+          <h1 className="mb-3 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 tracking-tighter leading-tight">
             Convert{" "}
-            <span className="text-brand-500 font-extrabold uppercase tracking-tight">
-              OST to PST
+            <span className="text-brand-500 font-bold uppercase">
+             &nbsp; OST &nbsp; TO &nbsp; PST
             </span>{" "}
-            Online
+            <br />Online - Fast & Secure
           </h1>
-          <p className="mb-8 text-base sm:text-lg text-slate-600 font-medium max-w-sm md:max-w-xl lg:max-w-sm leading-relaxed">
-            Drag, Upload, Preview, and Export your outlook data safely from any
-            browser
+          <p className="mb-6 text-base text-slate-600 font-medium max-w-sm md:max-w-lg leading-relaxed">
+            Instantly convert Outlook OST files to PST format in your browser.
+            Preview and export your data safely without any software installation.
           </p>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-y-6 gap-x-6 sm:gap-x-8 max-w-sm sm:max-w-2xl lg:max-w-sm mt-4 md:mt-8 lg:mt-4">
-            <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
-              <Shield size={32} className="sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
-              <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
-                Secure
+          <div className="grid grid-cols-2 sm:grid-cols-2 gap-y-4 gap-x-8 max-w-lg mt-4 md:mt-6">
+            <div className="flex items-center gap-2">
+              <Shield size={20} className="text-slate-900 shrink-0" />
+              <span className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
+                256-bit SSL encryption
               </span>
             </div>
-            <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
-              <Hexagon size={32} className="sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
-              <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
-                Instant
+            <div className="flex items-center gap-2">
+              <Hexagon size={20} className="text-slate-900 shrink-0" />
+              <span className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
+                Instant conversion
               </span>
             </div>
-            <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
-              <Clock size={32} className="sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
-              <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
-                24/7 Tech
+            <div className="flex items-center gap-2">
+              <Clock size={20} className="text-slate-900 shrink-0" />
+              <span className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
+                24/7 expert support
               </span>
             </div>
-            <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
-              <Crown size={32} className="sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
-              <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
-                Upgrade
+            <div className="flex items-center gap-2">
+              <Crown size={20} className="text-slate-900 shrink-0" />
+              <span className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
+                Zero data storage
               </span>
             </div>
+          </div>
+          <div className="mt-6 text-sm text-slate-500 font-medium">
+            Trusted by 500,000+ users worldwide · Works with all Outlook versions
           </div>
         </div>
 
@@ -257,7 +266,10 @@ const Hero = ({ onUploadComplete, onRestore }) => {
 
                 <div className="flex flex-col items-center gap-6 sm:gap-8 lg:gap-6">
                   <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-24 lg:h-24 flex items-center justify-center">
-                    <CloudUpload size={96} className="w-full h-full text-slate-900 stroke-[1.2]" />
+                    <CloudUpload
+                      size={96}
+                      className="w-full h-full text-slate-900 stroke-[1.2]"
+                    />
                   </div>
 
                   <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-bold text-slate-900 tracking-tight mb-1">
@@ -333,9 +345,9 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-4 flex flex-col gap-3">
-                      <p className="text-xs sm:text-sm text-slate-400 font-medium tracking-tight">
-                        Some upload file size limit apply
+                    <div className=" flex flex-col gap-3">
+                      <p className="text-xs font-bold sm:text-sm  font-bold tracking-tight">
+                        Supports .ost files · Max 5GB · Unlimited with desktop app
                       </p>
                       <p className="text-xs sm:text-sm md:text-base text-slate-900 font-medium sm:whitespace-nowrap px-2">
                         Agreed to{" "}

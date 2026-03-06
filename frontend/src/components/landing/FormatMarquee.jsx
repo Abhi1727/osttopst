@@ -117,7 +117,7 @@ const FormatMarquee = () => {
         <div className="mb-12">
           <h2 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tight leading-relaxed">
             Convert OST files to{" "}
-            <span className="text-brand-600">17+ Popular Formats</span>{" "}
+            <span className="text-brand-600">16+ Popular Formats</span>{" "}
             effortlessly
           </h2>
         </div>
@@ -147,7 +147,7 @@ const FormatMarquee = () => {
                 </div>
                 <div className="flex flex-col gap-1">
                   <p className="text-slate-600 text-[13px] md:text-sm leading-relaxed font-normal">
-                    <span className="font-bold text-slate-800">{item.ext}</span>{" "}
+                   
                     {item.description}
                   </p>
                 </div>

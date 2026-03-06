@@ -150,12 +150,13 @@ const FaqItem = ({ q, a }) => {
 
 const OstViewerLanding = ({ onSessionReady }) => {
   const whyItems = [
-    { icon: Monitor, title: "No Installation Needed", desc: "Bypass the trouble of installing software. We work fully online, saving your time and system resources." },
-    { icon: Globe, title: "Access from Any Device", desc: "Open and see your OST files from desktops, laptops, tablets, and mobiles — anytime, anywhere." },
-    { icon: Zap, title: "Process Directly in Browser", desc: "No additional tools needed. Upload the OST file and begin viewing it instantly within your browser." },
-    { icon: WifiOff, title: "Open OST without Outlook", desc: "Access OST files without requiring Outlook or an Exchange Server — perfect when setup is unavailable." },
-    { icon: Eye, title: "Quick Preview of Mailbox Data", desc: "Instantly preview emails, attachments, contacts, calendars, and folder structures without any delay." },
-  ];
+    { icon: Monitor, title: "Secure and Reliable", desc: "Our OST Viewer makes sure entire data safety through the process. Files get processed in a safe environment, without storing any data." },
+    { icon: Globe, title: "24x7 Accessibility Support", desc: "We offer 24/7 accessibility support anytime and anywhere without any limitations. Our tool guides you to see the data quickly." },
+    { icon: Zap, title: "No File Size Limitation", desc: "Our OST Viewer tool permits you to upload and see OST files of any size. It does not matter if it is a small file or a large file; we manage effectively." },
+    { icon: WifiOff, title: "Supports in multiple browsers", desc: "We provide a web-based OST viewer that works on all the major browsers like Chrome, Edge, Firefox, and Safari." },
+    { icon: Eye, title: "Open OST File without Outlook", desc: "Simply access OST files without requiring Outlook or an Exchange Server, which makes it easy when the setup is not available." },
+    { icon: Eye, title: "Quick preview of Mailbox Data", desc: "Fastly see emails, attachments, contacts, calendars, and folder formats without any kind of delay." },
+    ];
 
   const features = [
     { icon: Upload, title: "Quickly Open OST Files", desc: "Upload your OST file and begin viewing data immediately. Our platform processes the file safely and displays all mailbox content in a structured way." },
@@ -348,13 +349,14 @@ const OstViewerLanding = ({ onSessionReady }) => {
             {reviews.map((r, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
                 className="p-6 rounded-2xl bg-white border border-slate-200 hover:shadow-lg transition-all flex flex-col gap-4">
-                <div className="flex gap-0.5">
-                  {Array.from({ length: r.stars }).map((_, j) => <Star key={j} size={14} className="fill-amber-400 text-amber-400" />)}
-                </div>
-                <p className="text-sm text-slate-600 font-medium leading-relaxed flex-1">"{r.text}"</p>
+               
                 <div>
                   <div className="font-bold text-slate-900 text-sm">{r.name}</div>
                   <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">{r.role}</div>
+                </div>
+                <p className="text-sm text-slate-600 font-medium leading-relaxed flex-1">"{r.text}"</p>
+                <div className="flex gap-0.5">
+                  {Array.from({ length: r.stars }).map((_, j) => <Star key={j} size={14} className="fill-amber-400 text-amber-400" />)}
                 </div>
               </motion.div>
             ))}
