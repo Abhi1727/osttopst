@@ -10,5 +10,18 @@ public enum ExportFormat
     Pdf,
     Xps,
     Tiff,
-    Oft
+    Oft,
+    Olm,
+    Emlx,
+    Doc,
+    Docx,
+    Txt,
+    Rtf,
+    Csv,
+    Xml,
+    Json,
+    Vcf,
+    Ics,
+    Zip,
+    SevenZip
 }

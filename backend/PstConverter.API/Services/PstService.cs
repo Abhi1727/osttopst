@@ -1,6 +1,5 @@
 using System.IO;
 using System.IO.Compression;
-using Aspose.Email.Mapi;
 using Aspose.Email.Storage.Pst;
 using PstConverter.Models;
 using Microsoft.Extensions.Caching.Distributed;
@@ -11,6 +10,12 @@ using Aspose.Email;
 using Aspose.Email.Tools.Search;
 using System.Collections.Concurrent;
 using System.Threading;
+using Task = System.Threading.Tasks.Task;
+using Aspose.Words;
+using Aspose.Zip;
+using Aspose.Zip.SevenZip;
+using Aspose.Email.Calendar;
+using Aspose.Email.Mapi;
 
 namespace PstConverter.Services;
 
@@ -25,6 +30,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private readonly LicenseApiClient _licenseClient = licenseClient;
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _uploadLocks = new();
     private static readonly ConcurrentDictionary<string, CancellationTokenSource> _conversionCts = new();
+    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
     private static void LogDebug(string msg)
     {
@@ -980,7 +986,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 await _pool.AccessAsync(sessionId, filePath, pst =>
                 {
                     using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 4 * 1024 * 1024))
-                    using (var archive = new ZipArchive(fs, ZipArchiveMode.Create, true))
+                    using (var archive = new System.IO.Compression.ZipArchive(fs, ZipArchiveMode.Create, true))
                     {
                         if (entryIds != null && entryIds.Count > 0)
                         {
@@ -1097,9 +1103,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 ? $"{SanitizeFileName(msg.Subject ?? "msg")}_{folderExportedCount}{GetFileExtension(format)}"
                 : $"{path}/{SanitizeFileName(msg.Subject ?? "msg")}_{folderExportedCount}{GetFileExtension(format)}";
 
-            var entry = archive.CreateEntry(entryName, CompressionLevel.NoCompression);
-            using var es = entry.Open();
-            SaveMessageToStream(msg, es, format);
+            try
+            {
+                var entry = archive.CreateEntry(entryName, CompressionLevel.NoCompression);
+                using var es = entry.Open();
+                SaveMessageToStream(msg, es, format);
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"ExportFolderRecursive: Error saving message {msgInfo.EntryIdString} to {format}: {ex.Message}");
+            }
         }
 
         foreach (var sub in folder.GetSubFolders())
@@ -1190,42 +1203,159 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private static void SaveMessageToStream(MapiMessage msg, Stream stream, ExportFormat format)
     {
         using var ms = new MemoryStream();
-        switch (format)
+        try
         {
-            case ExportFormat.Eml:
-                msg.Save(ms, Aspose.Email.SaveOptions.DefaultEml);
-                break;
-            case ExportFormat.Msg:
-            case ExportFormat.Oft:
-                msg.Save(ms, Aspose.Email.SaveOptions.DefaultMsgUnicode);
-                break;
-            case ExportFormat.Html:
-                using (var mailMsg = msg.ToMailMessage(new MailConversionOptions()))
-                {
-                    var htmlOptions = new Aspose.Email.HtmlSaveOptions
+            switch (format)
+            {
+                case ExportFormat.Eml:
+                    msg.Save(ms, Aspose.Email.SaveOptions.DefaultEml);
+                    break;
+                case ExportFormat.Msg:
+                case ExportFormat.Oft:
+                    msg.Save(ms, Aspose.Email.SaveOptions.DefaultMsgUnicode);
+                    break;
+                case ExportFormat.Html:
+                    using (var mailMsg = msg.ToMailMessage(new MailConversionOptions()))
                     {
-                        HtmlFormatOptions = Aspose.Email.HtmlFormatOptions.WriteHeader | Aspose.Email.HtmlFormatOptions.WriteCompleteEmailAddress
-                    };
-                    mailMsg.Save(ms, htmlOptions);
-                }
-                break;
-            case ExportFormat.Mhtml:
-                msg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
-                break;
-            case ExportFormat.Mbox:
-                using (var mailMsg = msg.ToMailMessage(new MailConversionOptions()))
-                using (var writer = new Aspose.Email.Storage.Mbox.MboxrdStorageWriter(ms, new Aspose.Email.Storage.Mbox.MboxSaveOptions { LeaveOpen = true }))
-                {
-                    writer.WriteMessage(mailMsg);
-                }
-                break;
-            default:
-                // Fallback to MHTML for unknown formats or throw if truly unsupported
-                msg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
-                break;
+                        var htmlOptions = new Aspose.Email.HtmlSaveOptions
+                        {
+                            HtmlFormatOptions = Aspose.Email.HtmlFormatOptions.WriteHeader | Aspose.Email.HtmlFormatOptions.WriteCompleteEmailAddress
+                        };
+                        mailMsg.Save(ms, htmlOptions);
+                    }
+                    break;
+                case ExportFormat.Pdf:
+                case ExportFormat.Doc:
+                case ExportFormat.Docx:
+                case ExportFormat.Rtf:
+                case ExportFormat.Txt:
+                    using (var mailMsg = msg.ToMailMessage(new MailConversionOptions()))
+                    {
+                        mailMsg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
+                        ms.Position = 0;
+                        var doc = new Aspose.Words.Document(ms);
+                        var wordsSaveFormat = format switch
+                        {
+                            ExportFormat.Pdf => Aspose.Words.SaveFormat.Pdf,
+                            ExportFormat.Doc => Aspose.Words.SaveFormat.Doc,
+                            ExportFormat.Docx => Aspose.Words.SaveFormat.Docx,
+                            ExportFormat.Rtf => Aspose.Words.SaveFormat.Rtf,
+                            ExportFormat.Txt => Aspose.Words.SaveFormat.Text,
+                            _ => Aspose.Words.SaveFormat.Pdf
+                        };
+                        doc.Save(stream, wordsSaveFormat);
+                        return; // Already copied to stream via doc.Save
+                    }
+                case ExportFormat.Vcf:
+                    {
+                        var item = msg.ToMapiMessageItem();
+                        if (item is MapiContact contact)
+                        {
+                            contact.Save(ms, ContactSaveFormat.VCard);
+                        }
+                        else
+                        {
+                            LogDebug("VCF Export: Message is not a contact, skipping.");
+                        }
+                    }
+                    break;
+                case ExportFormat.Ics:
+                    {
+                        var item = msg.ToMapiMessageItem();
+                        if (item is MapiCalendar calendar)
+                        {
+                            calendar.Save(ms, AppointmentSaveFormat.Ics);
+                        }
+                        else
+                        {
+                            LogDebug("ICS Export: Message is not a calendar item, skipping.");
+                        }
+                    }
+                    break;
+                case ExportFormat.Emlx:
+                    msg.Save(ms, Aspose.Email.SaveOptions.DefaultEmlx);
+                    break;
+                case ExportFormat.Csv:
+                case ExportFormat.Xml:
+                case ExportFormat.Json:
+                    {
+                        var metadata = new
+                        {
+                            msg.Subject,
+                            From = msg.SenderEmailAddress,
+                            To = msg.DisplayTo,
+                            Cc = msg.DisplayCc,
+                            Date = msg.DeliveryTime,
+                            msg.Body
+                        };
+                        if (format == ExportFormat.Json)
+                        {
+                            JsonSerializer.Serialize(ms, metadata, _jsonOptions);
+                        }
+                        else if (format == ExportFormat.Xml)
+                        {
+                            var xmlSerializer = new System.Xml.Serialization.XmlSerializer(metadata.GetType());
+                            xmlSerializer.Serialize(ms, metadata);
+                        }
+                        else // CSV
+                        {
+                            using var writer = new StreamWriter(ms, leaveOpen: true);
+                            writer.WriteLine("Subject,From,To,Cc,Date,Body");
+                            writer.WriteLine($"\"{metadata.Subject?.Replace("\"", "\"\"")}\",\"{metadata.From?.Replace("\"", "\"\"")}\",\"{metadata.To?.Replace("\"", "\"\"")}\",\"{metadata.Cc?.Replace("\"", "\"\"")}\",\"{metadata.Date}\",\"{metadata.Body?.Replace("\"", "\"\"")}\"");
+                        }
+                    }
+                    break;
+                case ExportFormat.Zip:
+                    {
+                        msg.Save(ms, Aspose.Email.SaveOptions.DefaultEml);
+                        ms.Position = 0;
+                        using var nestedMs = new MemoryStream();
+                        using (var archive = new System.IO.Compression.ZipArchive(nestedMs, ZipArchiveMode.Create, true))
+                        {
+                            var entry = archive.CreateEntry("message.eml", CompressionLevel.Optimal);
+                            using var entryStream = entry.Open();
+                            ms.CopyTo(entryStream);
+                        }
+                        nestedMs.Position = 0;
+                        nestedMs.CopyTo(stream);
+                        return;
+                    }
+                case ExportFormat.SevenZip:
+                    {
+                        msg.Save(ms, Aspose.Email.SaveOptions.DefaultEml);
+                        ms.Position = 0;
+                        using var archive = new SevenZipArchive();
+                        archive.CreateEntry("message.eml", ms);
+                        archive.Save(stream);
+                        return;
+                    }
+                case ExportFormat.Mhtml:
+                    msg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
+                    break;
+                case ExportFormat.Mbox:
+                    using (var mailMsg = msg.ToMailMessage(new MailConversionOptions()))
+                    using (var writer = new Aspose.Email.Storage.Mbox.MboxrdStorageWriter(ms, new Aspose.Email.Storage.Mbox.MboxSaveOptions { LeaveOpen = true }))
+                    {
+                        writer.WriteMessage(mailMsg);
+                    }
+                    break;
+                default:
+                    // Fallback to MHTML for unknown formats or throw if truly unsupported
+                    msg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
+                    break;
+            }
+
+            if (ms.Length > 0)
+            {
+                ms.Position = 0;
+                ms.CopyTo(stream);
+            }
         }
-        ms.Position = 0;
-        ms.CopyTo(stream);
+        catch (Exception ex)
+        {
+            LogDebug($"SaveMessageToStream: Error during {format} export: {ex.Message}");
+            throw;
+        }
     }
 
     private static string GetFileExtension(ExportFormat format) => format switch
@@ -1236,6 +1366,20 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         ExportFormat.Mhtml => ".mhtml",
         ExportFormat.Mbox => ".mbox",
         ExportFormat.Oft => ".oft",
+        ExportFormat.Olm => ".olm",
+        ExportFormat.Emlx => ".emlx",
+        ExportFormat.Doc => ".doc",
+        ExportFormat.Docx => ".docx",
+        ExportFormat.Txt => ".txt",
+        ExportFormat.Rtf => ".rtf",
+        ExportFormat.Csv => ".csv",
+        ExportFormat.Xml => ".xml",
+        ExportFormat.Json => ".json",
+        ExportFormat.Vcf => ".vcf",
+        ExportFormat.Ics => ".ics",
+        ExportFormat.Zip => ".zip",
+        ExportFormat.SevenZip => ".7z",
+        ExportFormat.Pdf => ".pdf",
         _ => ".eml"
     };
 
