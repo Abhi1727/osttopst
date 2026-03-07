@@ -805,7 +805,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         await _pool.AccessAsync(sessionId, filePath, pst =>
         {
             var folder = pst.GetFolderById(folderId) ?? throw new FileNotFoundException("Folder not found");
-            using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024))
             using (var archive = new ZipArchive(fs, ZipArchiveMode.Create, true))
             {
                 int index = 0;
@@ -816,7 +816,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                     using var msg = pst.ExtractMessage(msgInfo.EntryIdString);
                     index++;
-                    var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}");
+                    var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}", CompressionLevel.NoCompression);
                     using var es = entry.Open();
                     SaveMessageToStream(msg, es, format);
                 }
@@ -901,7 +901,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             {
                 await _pool.AccessAsync(sessionId, filePath, pst =>
                 {
-                    using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                    using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024))
                     using (var archive = new ZipArchive(fs, ZipArchiveMode.Create, true))
                     {
                         if (entryIds != null && entryIds.Count > 0)
@@ -920,7 +920,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                         continue;
                                     }
                                     index++;
-                                    var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}");
+                                    var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}", CompressionLevel.NoCompression);
                                     using var es = entry.Open();
                                     SaveMessageToStream(msg, es, format);
                                 }
@@ -1004,7 +1004,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             index++;
             folderExportedCount++;
             var name = $"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}";
-            var entry = archive.CreateEntry(string.IsNullOrEmpty(path) ? name : $"{path}/{name}");
+            var entry = archive.CreateEntry(string.IsNullOrEmpty(path) ? name : $"{path}/{name}", CompressionLevel.NoCompression);
             using var es = entry.Open();
             SaveMessageToStream(msg, es, format);
         }

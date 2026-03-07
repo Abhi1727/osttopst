@@ -96,9 +96,13 @@ public static class SessionEndpoints
             var convertedPstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}_converted.pst"));
             var convertedOstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}_converted.ost"));
 
-            // Update LastAccessedAt
-            session.LastAccessedAt = DateTime.UtcNow;
-            await db.SaveChangesAsync();
+            // Rate-limit LastAccessedAt updates to once per 60s — the check endpoint is polled
+            // every few seconds during downloads and previously generated a DB write on every poll.
+            if ((DateTime.UtcNow - session.LastAccessedAt).TotalSeconds > 60)
+            {
+                session.LastAccessedAt = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+            }
 
             return Results.Ok(new
             {

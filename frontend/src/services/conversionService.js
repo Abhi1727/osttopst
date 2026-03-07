@@ -13,7 +13,8 @@ const downloadFile = async (
 
   const pollForDownload = async () => {
     let attempts = 0;
-    const maxAttempts = 1440; // 2 hours (5s intervals)
+    const pollIntervalMs = 3000; // 3s polling for faster responsiveness
+    const maxAttempts = 3600; // 3 hours (3s intervals)
     const sessionId = url.split("/file-details/")[1].split("/")[0];
 
     while (attempts < maxAttempts) {
@@ -58,23 +59,31 @@ const downloadFile = async (
 
       attempts++;
       if (onProgress) {
+        const elapsedSec = Math.round((attempts * pollIntervalMs) / 1000);
+        const elapsedStr =
+          elapsedSec < 60
+            ? `${elapsedSec}s`
+            : `${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`;
         onProgress({
           phase: "processing",
-          percent: Math.min(99, 5 + attempts * 0.5),
-          detail: `Preparing your file for download... (Polling for completion, Attempt ${attempts}). Large files may take several minutes.`,
+          percent: Math.min(99, 5 + (attempts / maxAttempts) * 94),
+          detail: `Processing your file... (${elapsedStr} elapsed). Large files may take several minutes.`,
         });
       }
 
-      // Wait 5s but check signal
+      // Wait pollIntervalMs but check signal
       await new Promise((resolve, reject) => {
-        const timer = setTimeout(resolve, 5000);
+        const timer = setTimeout(resolve, pollIntervalMs);
         signal?.addEventListener("abort", () => {
           clearTimeout(timer);
           reject(new Error("AbortError"));
         });
       });
     }
-    throw new Error("Timed out waiting for file conversion.");
+    const totalMin = Math.round((maxAttempts * pollIntervalMs) / 60000);
+    throw new Error(
+      `Timed out after ${totalMin} minutes waiting for file conversion. Please try again.`,
+    );
   };
 
   // 1. First trigger the conversion/export
