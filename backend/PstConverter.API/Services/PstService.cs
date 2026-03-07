@@ -1069,7 +1069,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 msg.Save(ms, Aspose.Email.SaveOptions.DefaultMsgUnicode);
                 break;
             case ExportFormat.Html:
-                msg.Save(ms, Aspose.Email.SaveOptions.DefaultHtml);
+                using (var mailMsg = msg.ToMailMessage(new MailConversionOptions()))
+                {
+                    var htmlOptions = new Aspose.Email.HtmlSaveOptions
+                    {
+                        HtmlFormatOptions = Aspose.Email.HtmlFormatOptions.WriteHeader | Aspose.Email.HtmlFormatOptions.WriteCompleteEmailAddress
+                    };
+                    mailMsg.Save(ms, htmlOptions);
+                }
                 break;
             case ExportFormat.Mhtml:
                 msg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
@@ -1082,7 +1089,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 }
                 break;
             default:
-                throw new ArgumentException($"Unsupported format: {format}");
+                // Fallback to MHTML for unknown formats or throw if truly unsupported
+                msg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
+                break;
         }
         ms.Position = 0;
         ms.CopyTo(stream);

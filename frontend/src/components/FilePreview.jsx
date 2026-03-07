@@ -716,7 +716,7 @@ const FilePreview = ({ session, onReset }) => {
                       className="h-12 px-4 rounded-xl border-none bg-zinc-50 font-bold text-sm text-zinc-600 focus:ring-2 focus:ring-emerald-500/20"
                     >
                       <option value="">Year</option>
-                      {Array.from({ length: 25 }, (_, i) => 2025 - i).map(
+                      {Array.from({ length: 25 }, (_, i) => 2026 - i).map(
                         (y) => (
                           <option key={y} value={y}>
                             {y}
