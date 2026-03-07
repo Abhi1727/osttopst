@@ -72,12 +72,35 @@ namespace PstConverter.Services
         public async Task<string> ModuleActivated(string licenseId, string toolId, string moduleId)
         {
             var client = await GetClientAsync(licenseId, toolId);
-            var request = new RestRequest("ModuleStatus");
-            request.AddQueryParameter("userId", licenseId);
-            request.AddQueryParameter("toolId", toolId);
-            request.AddQueryParameter("moduleId", moduleId);
-            Console.WriteLine($"[LICENSE API] Checking Module: {moduleId} for License ID (Email): {licenseId}");
+            var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}";
+            var request = new RestRequest(path, Method.Get);
+
+            Console.WriteLine($"[LICENSE API] Checking Module activation: {path}");
             var response = await client.ExecuteAsync(request);
+
+            if (!response.IsSuccessful)
+            {
+                Console.WriteLine($"[MODULE ACTIVATED ERROR] {response.StatusCode} - {response.ErrorMessage ?? response.Content}");
+            }
+
+            return response.Content ?? string.Empty;
+        }
+
+        public async Task<string> UpdateStorageAsync(string licenseId, string toolId, string moduleId, string itemId, long ostFileSizeBytes)
+        {
+            var client = await GetClientAsync(licenseId, toolId);
+            var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}/AddStorage";
+            var request = new RestRequest(path, Method.Patch);
+            request.AddJsonBody(new { AddStorage = ostFileSizeBytes });
+
+            Console.WriteLine($"[LICENSE API] UpdateStorage: {path}, Size: {ostFileSizeBytes} bytes");
+            var response = await client.ExecuteAsync(request);
+
+            if (!response.IsSuccessful)
+            {
+                Console.WriteLine($"[UPDATE STORAGE ERROR] {response.StatusCode} - {response.ErrorMessage ?? response.Content}");
+            }
+
             return response.Content ?? string.Empty;
         }
 
