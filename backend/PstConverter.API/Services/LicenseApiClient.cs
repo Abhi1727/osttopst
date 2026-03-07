@@ -44,6 +44,14 @@ namespace PstConverter.Services
             Console.WriteLine($"[LICENSE API] Requesting status for License ID (Email): {licenseId}, Tool: {toolId} from {_baseUrl}{path}");
             var response = await client.ExecuteAsync(request);
 
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Console.WriteLine($"[LICENSE API] Map request Unauthorized. Invalidating token and retrying...");
+                _authService.InvalidateToken(licenseId, toolId);
+                client = await GetClientAsync(licenseId, toolId);
+                response = await client.ExecuteAsync(request);
+            }
+
             if (!response.IsSuccessful)
             {
                 throw new Exception($"License server returned error: {response.StatusCode} - {response.ErrorMessage ?? response.Content}");

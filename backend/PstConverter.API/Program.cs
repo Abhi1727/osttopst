@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore; // This is for database
 using System.Threading.RateLimiting; // This is for rate limiting
 using Microsoft.Extensions.DependencyInjection; // This is for dependency injection
 using Microsoft.AspNetCore.Mvc; // This is for [FromQuery] and other MVC attributes
+using Microsoft.AspNetCore.ResponseCompression;
 
 // Initialize Aspose.Email License
 try
@@ -56,6 +57,19 @@ builder.Services.AddSingleton<LicenseApiClient>();// License API wrapper
 builder.Services.AddEndpointsApiExplorer();// This is for endpoints api explorer
 builder.Services.AddSwaggerGen();// This is for swagger gen
 builder.Services.AddOpenApi();// This is for open api
+
+// Configure Response Compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    // We EXCLUDE large binary formats like PST/OST/ZIP from compression 
+    // because compressing 10GB+ files on-the-fly crushes server CPU and slows down transfer rates.
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes;
+});
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 // SQL Server Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -175,6 +189,10 @@ builder.WebHost.ConfigureKestrel(options =>
     options.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(30);
     options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(30);
     options.Limits.MinRequestBodyDataRate = null; // Disable minimum data rate for slow uploads
+
+    // Performance tuning for large file downloads
+    options.Limits.MaxResponseBufferSize = 1024 * 1024; // 1MB buffer
+    options.Limits.MinResponseDataRate = null; // Don't kill slow connections
 });
 
 var app = builder.Build();
@@ -187,6 +205,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseResponseCompression();
 app.UseCors("AllowReactApp");
 
 // Middleware to support token in query string for downloads

@@ -78,7 +78,7 @@ public static class ConversionEndpoints
                     await db.SaveChangesAsync();
                 }
 
-                return Results.File(filePath, "application/zip", "pst_export.zip");
+                return Results.File(filePath, "application/zip", "pst_export.zip", enableRangeProcessing: true);
             }
             catch (InvalidOperationException ex)
             {
@@ -99,8 +99,6 @@ public static class ConversionEndpoints
             }
             catch (Exception ex)
             {
-                // The provided snippet had a syntax error and used undefined variables (_logger, token).
-                // Reverted to the original structure but kept the debug log path for consistency with the snippet's intent.
                 try
                 {
                     var logPath = @"C:\temp\debug_log.txt";
@@ -116,7 +114,7 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] bool? deduplicate, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
@@ -133,7 +131,7 @@ public static class ConversionEndpoints
 
             try
             {
-                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail);
+                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail, deduplicate ?? false);
 
                 if (!isReady)
                 {
@@ -148,7 +146,7 @@ public static class ConversionEndpoints
                     await db.SaveChangesAsync();
                 }
 
-                return Results.File(filePath, "application/vnd.ms-outlook", fileName);
+                return Results.File(filePath, "application/vnd.ms-outlook", fileName, enableRangeProcessing: true);
             }
             catch (FileNotFoundException)
             {
@@ -172,7 +170,7 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] bool? deduplicate, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
@@ -189,7 +187,7 @@ public static class ConversionEndpoints
 
             try
             {
-                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail);
+                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail, deduplicate ?? false);
 
                 if (!isReady)
                 {
@@ -204,7 +202,7 @@ public static class ConversionEndpoints
                     await db.SaveChangesAsync();
                 }
 
-                return Results.File(filePath, "application/vnd.ms-outlook", fileName);
+                return Results.File(filePath, "application/vnd.ms-outlook", fileName, enableRangeProcessing: true);
             }
             catch (FileNotFoundException)
             {

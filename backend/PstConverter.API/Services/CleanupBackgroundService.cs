@@ -16,9 +16,9 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ILogger<CleanupBackgroundService> _logger = logger;
     private readonly string _uploadDir = StorageConstants.UploadDir;
-    private readonly TimeSpan _cleanupInterval = TimeSpan.FromHours(6);
+    private readonly TimeSpan _cleanupInterval = TimeSpan.FromHours(1);
     private readonly TimeSpan _initialDelay = TimeSpan.FromMinutes(30);  // wait before first cleanup
-    private readonly TimeSpan _maxFileAge = TimeSpan.FromHours(24);      // sessions live for 24h
+    private readonly TimeSpan _maxFileAge = TimeSpan.FromHours(6);      // sessions live for 6h
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

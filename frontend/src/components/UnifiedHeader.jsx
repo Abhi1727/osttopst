@@ -63,12 +63,13 @@ const UnifiedHeader = ({ session, onReset }) => {
       </div>
 
       <nav className="hidden lg:flex items-center gap-8">
-        {["Home", "Our Plan", "How It Works", "Blogs", "Contact Us"].map(
+        {["Home", "Our Plan", "How It Works", "FAQ", "Blogs", "Contact Us"].map(
           (item) => {
             let path = "/";
             if (item === "Home") path = "/";
             if (item === "Our Plan") path = "/our-plans";
             if (item === "How It Works") path = "/#how-it-works";
+            if (item === "FAQ") path = "/faq";
             if (item === "Blogs") path = "/blogs";
             if (item === "Contact Us") path = "/support";
 
@@ -125,6 +126,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                   "Home",
                   "Our Plan",
                   "How It Works",
+                  "FAQ",
                   "Blogs",
                   "Contact Us",
                 ].map((item) => {
@@ -132,6 +134,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                   if (item === "Home") path = "/";
                   if (item === "Our Plan") path = "/our-plans";
                   if (item === "How It Works") path = "/#how-it-works";
+                  if (item === "FAQ") path = "/faq";
                   if (item === "Blogs") path = "/blogs";
                   if (item === "Contact Us") path = "/support";
 

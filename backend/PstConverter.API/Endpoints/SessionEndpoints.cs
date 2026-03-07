@@ -88,16 +88,16 @@ public static class SessionEndpoints
                 }
             }
 
-            // Check if file still exists on disk using standardized path
+            // 1. Check if original files exist on disk
             var pstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}.pst"));
             var ostExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}.ost"));
 
-            // Check for converted files too
-            var convertedPstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}_converted.pst"));
-            var convertedOstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{session.SessionId}_converted.ost"));
+            // 2. The session.Status is the primary source of truth for conversion/export readiness. 
+            // Files are named sessionId_converted_... or export_sessionId_... which vary by license/filter.
+            // If the status starts with "Ready", the background task has definitely finished the file.
+            var isSessionReady = (session.Status ?? "").StartsWith("Ready", StringComparison.OrdinalIgnoreCase);
 
-            // Rate-limit LastAccessedAt updates to once per 60s — the check endpoint is polled
-            // every few seconds during downloads and previously generated a DB write on every poll.
+            // Rate-limit LastAccessedAt updates to once per 60s
             if ((DateTime.UtcNow - session.LastAccessedAt).TotalSeconds > 60)
             {
                 session.LastAccessedAt = DateTime.UtcNow;
@@ -109,8 +109,8 @@ public static class SessionEndpoints
                 sessionId = session.SessionId,
                 originalFileName = session.OriginalFileName,
                 status = session.Status,
-                exists = pstExists || ostExists,
-                isConverted = (convertedPstExists || convertedOstExists) && session.Status != "Converting",
+                exists = pstExists || ostExists || isSessionReady,
+                isConverted = isSessionReady,
                 size = session.Size,
                 fileType = session.FileType,
                 createdAt = session.CreatedAt,

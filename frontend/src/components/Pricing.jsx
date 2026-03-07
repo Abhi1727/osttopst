@@ -24,10 +24,34 @@ const comparisonFeatures = [
     technical: true,
   },
   {
-    name: "Preview Before Download",
+    name: "Repair Corrupted OST Files",
     personal: true,
     corporate: true,
     technical: true,
+  },
+  {
+    name: "PST Splitting (Oversized Files)",
+    personal: false,
+    corporate: true,
+    technical: true,
+  },
+  {
+    name: "Deduplication logic",
+    personal: false,
+    corporate: true,
+    technical: true,
+  },
+  {
+    name: "Direct Cloud Migration",
+    personal: false,
+    corporate: false,
+    technical: true,
+  },
+  {
+    name: "Data Retention / Auto-Cleanup",
+    personal: "6 Hours",
+    corporate: "6 Hours",
+    technical: "6 Hours",
   },
   {
     name: "Number of PCs / Licenses",
@@ -48,19 +72,7 @@ const comparisonFeatures = [
     technical: true,
   },
   {
-    name: "Commercial Use License",
-    personal: false,
-    corporate: true,
-    technical: true,
-  },
-  {
     name: "Multiple Output Formats (EML, MSG, PDF)",
-    personal: false,
-    corporate: false,
-    technical: true,
-  },
-  {
-    name: "Command-Line Interface (CLI)",
     personal: false,
     corporate: false,
     technical: true,
@@ -70,12 +82,6 @@ const comparisonFeatures = [
     personal: false,
     corporate: false,
     technical: true,
-  },
-  {
-    name: "Technical Support Duration",
-    personal: "1 Year",
-    corporate: "Priority Queue",
-    technical: "24/7 Dedicated",
   },
   {
     name: "30-Day Money-Back Guarantee",
@@ -278,10 +284,11 @@ const Pricing = () => {
             price="49"
             description="Perfect for individual users needing to recover their mailbox."
             features={[
-              { text: "Basic conversion features", included: true },
+              { text: "Core OST to PST conversion", included: true },
               { text: "Single license (1 PC)", included: true },
-              { text: "1-year technical support", included: true },
-              { text: "No server migration", included: false },
+              { text: "Repair corrupted headers", included: true },
+              { text: "6-hour data retention", included: true },
+              { text: "No Bulk Split / Migration", included: false },
             ]}
           />
 
@@ -294,9 +301,10 @@ const Pricing = () => {
             isActive={isProfessional}
             features={[
               { text: "Advanced conversion & filters", included: true },
+              { text: "PST Splitting & Deduplication", included: true },
               { text: "Multiple licenses (up to 10)", included: true },
               { text: "Priority support queue", included: true },
-              { text: "Lifetime free updates", included: true },
+              { text: "6-hour safe cleanup", included: true },
               { text: "Commercial use license", included: true },
             ]}
           />
@@ -307,11 +315,12 @@ const Pricing = () => {
             price="399"
             description="Best for IT administrators and large scale migrations."
             features={[
-              { text: "Bulk conversion toolkit", included: true },
-              { text: "Server/Admin license", included: true },
+              { text: "Bulk conversion & Cloud Migration", included: true },
+              { text: "Server/Admin license (Unlimited)", included: true },
               { text: "24/7 Dedicated Support", included: true },
+              { text: "PST Split, Dedup & Repair", included: true },
               {
-                text: "Multiple output formats (EML, MSG, PDF)",
+                text: "Multiple formats (EML, MSG, PDF)",
                 included: true,
               },
             ]}

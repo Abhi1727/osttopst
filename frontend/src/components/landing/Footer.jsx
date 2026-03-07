@@ -34,6 +34,9 @@ const Footer = () => {
           <a href="#" className="hover:text-emerald-600 transition-colors">
             Terms & Conditions
           </a>
+          <a href="/faq" className="hover:text-emerald-600 transition-colors">
+            FAQ
+          </a>
           <a
             href="/support"
             className="hover:text-emerald-600 transition-colors"

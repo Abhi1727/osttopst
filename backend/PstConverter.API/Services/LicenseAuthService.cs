@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using RestSharp;
+using PstConverter.Models;
 
 namespace PstConverter.Services
 {
@@ -11,14 +12,14 @@ namespace PstConverter.Services
         private readonly string _baseUrl = configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("LicenseApi:BaseUrl missing");
         private readonly string _username = configuration["LicenseApi:Username"] ?? "admin";
         private readonly string _password = configuration["LicenseApi:Password"] ?? "1234";
-        private readonly ConcurrentDictionary<string, string> _tokenCache = new();
+        private readonly ConcurrentDictionary<string, LicenseToken> _tokenCache = new();
 
         public async Task<string?> GetTokenAsync(string licenseId, string toolId)
         {
             var cacheKey = $"{licenseId}_{toolId}";
-            if (_tokenCache.TryGetValue(cacheKey, out var token))
+            if (_tokenCache.TryGetValue(cacheKey, out var cachedToken) && !cachedToken.IsExpired)
             {
-                return token;
+                return cachedToken.Token;
             }
 
             try
@@ -44,12 +45,13 @@ namespace PstConverter.Services
 
                 if (response.IsSuccessful && response.Data != null)
                 {
-                    var newToken = response.Data.Token;
-                    _tokenCache.TryAdd(cacheKey, newToken);
-                    return newToken;
+                    var newToken = new LicenseToken(response.Data.Token);
+                    _tokenCache[cacheKey] = newToken;
+                    return newToken.Token;
                 }
 
-                Console.WriteLine($"[LICENSE AUTH ERROR] {response.StatusCode} - {response.ErrorMessage}");
+                Console.WriteLine($"[LICENSE AUTH ERROR] {response.StatusCode} - {response.ErrorMessage ?? response.Content}");
+                _tokenCache.TryRemove(cacheKey, out _);
                 return null;
             }
             catch (Exception ex)
@@ -57,6 +59,13 @@ namespace PstConverter.Services
                 Console.WriteLine($"[LICENSE AUTH CRITICAL] {ex.Message}");
                 return null;
             }
+        }
+
+        public void InvalidateToken(string licenseId, string toolId)
+        {
+            var cacheKey = $"{licenseId}_{toolId}";
+            _tokenCache.TryRemove(cacheKey, out _);
+            Console.WriteLine($"[LICENSE AUTH] Token invalidated for {licenseId}");
         }
 
         private class TokenResponse
