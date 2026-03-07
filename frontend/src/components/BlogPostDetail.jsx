@@ -32,7 +32,6 @@ const BlogPostDetail = () => {
   const [allPosts, setAllPosts] = useState([]);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
     const fetchPost = async () => {
       setLoading(true);
       try {
@@ -234,7 +233,7 @@ const BlogPostDetail = () => {
                     {recommendedPosts.map((rec) => (
                       <div
                         key={rec.id}
-                        onClick={() => navigate(`/blog/${rec.id}`)}
+                        onClick={() => navigate(`/blogs/${rec.id}`)}
                         className="flex gap-4 group cursor-pointer"
                       >
                         <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 shadow-lg shadow-slate-200/50 group-hover:-translate-y-1 transition-all duration-300">

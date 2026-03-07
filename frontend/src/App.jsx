@@ -6,7 +6,13 @@ import {
   UserButton,
   useAuth,
 } from "@clerk/clerk-react";
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  useNavigationType,
+} from "react-router-dom";
 import LandingPage from "./components/landing/LandingPage";
 import FilePreview from "./components/FilePreview";
 import HowItWorks from "./components/HowItWorks";
@@ -71,15 +77,15 @@ function App() {
     navigate("/preview");
   };
 
-  const { getToken } = useAuth();
+  const navigationType = useNavigationType();
   const location = useLocation();
 
-  // Scroll to top on route change
+  // Scroll to top on route change, unless it's a browser Back/Forward (POP)
   useEffect(() => {
-    if (!location.hash) {
+    if (!location.hash && navigationType !== "POP") {
       window.scrollTo(0, 0);
     }
-  }, [location.pathname, location.hash]);
+  }, [location.pathname, location.hash, navigationType]);
 
   // No automatic redirection - allow user to see landing page/history
   // even if a session is in localStorage. Navigation to /preview happens

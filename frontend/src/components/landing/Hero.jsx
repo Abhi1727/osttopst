@@ -513,7 +513,7 @@ const Hero = ({ onUploadComplete }) => {
                   <div className="flex flex-col items-end shrink-0 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
                     {completedSession ? (
                       <span className="text-sm font-bold text-emerald-600 whitespace-nowrap">
-                        File Converted Successfully.
+                        File Uploaded Successfully.
                       </span>
                     ) : (
                       <div className="w-full md:w-48 flex flex-col items-end gap-1.5 shrink-0">
@@ -640,7 +640,7 @@ const Hero = ({ onUploadComplete }) => {
                 {completedSession ? (
                   <div className="text-center space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-700">
                     <h3 className="text-2xl md:text-3xl font-black text-slate-800 flex items-center justify-center gap-2">
-                      OST File Converted Successfully!!
+                      OST File Uploaded Successfully!!
                     </h3>
                     <p className="text-slate-600 text-sm md:text-[15px] font-medium leading-relaxed">
                       You can Download the converted file as per your
@@ -663,7 +663,7 @@ const Hero = ({ onUploadComplete }) => {
                         )}
                         {isDownloadingPst
                           ? "Preparing..."
-                          : "Download PST Directly"}
+                          : "Convert & Download PST"}
                       </Button>
                       <Button
                         onClick={(e) => {
@@ -673,7 +673,7 @@ const Hero = ({ onUploadComplete }) => {
                         }}
                         className="w-full sm:w-auto px-8 h-12 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:scale-[1.02] transition-all"
                       >
-                        Preview & Export
+                        Preview & Convert
                       </Button>
                     </div>
                   </div>
