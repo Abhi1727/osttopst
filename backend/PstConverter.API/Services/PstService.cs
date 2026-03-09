@@ -447,8 +447,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     public record FinalizationResult(string SessionId, string FileName, long Size, string FileType);
 
-    public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders, userEmail, deduplicate);
-    public async Task<(string FilePath, string FileName, bool isReady)> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders, userEmail, deduplicate);
+    public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false, long? splitSizeMb = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders, userEmail, deduplicate, splitSizeMb);
+    public async Task<(string FilePath, string FileName, bool isReady)> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false, long? splitSizeMb = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders, userEmail, deduplicate, splitSizeMb);
+
+    public string GetUploadDir() => _uploadDir;
 
     public async Task RepairStorageAsync(string sessionId, string userId)
     {
@@ -479,7 +481,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return outputPaths;
     }
 
-    private async Task<(string FilePath, string FileName, bool isReady)> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false)
+    private async Task<(string FilePath, string FileName, bool isReady)> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false, long? splitSizeMb = null)
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
 
@@ -547,9 +549,38 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                             CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, token);
                         }
+
+                        if (splitSizeMb > 0)
+                        {
+                            var tempDir = Path.Combine(_uploadDir, $"split_{sessionId}");
+                            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+                            Directory.CreateDirectory(tempDir);
+                            destStorage.SplitInto(splitSizeMb.Value * 1024 * 1024, tempDir);
+                        }
                     }
                     return Task.FromResult(true);
                 }, password);
+
+                List<string> splitFilenames = [];
+                if (splitSizeMb > 0)
+                {
+                    var tempDir = Path.Combine(_uploadDir, $"split_{sessionId}");
+                    if (Directory.Exists(tempDir))
+                    {
+                        var splitFiles = Directory.GetFiles(tempDir, $"*{(format == FileFormat.Ost ? ".ost" : ".pst")}");
+                        int partNum = 1;
+                        foreach (var sf in splitFiles)
+                        {
+                            string newFilename = $"{baseName}_converted_part{partNum}{ext}";
+                            string newPath = Path.Combine(_uploadDir, newFilename);
+                            File.Move(sf, newPath, true);
+                            splitFilenames.Add(newFilename);
+                            partNum++;
+                        }
+                        Directory.Delete(tempDir, true);
+                        TryDelete(outputPath); // Delete monolithic
+                    }
+                }
 
                 using var scope = _scopeFactory.CreateScope();
                 var updateDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -557,6 +588,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 if (s != null && !token.IsCancellationRequested)
                 {
                     s.Status = "Ready"; // Clearly mark as ready
+                    if (splitFilenames.Count > 0)
+                    {
+                        s.SplitFilesJson = System.Text.Json.JsonSerializer.Serialize(splitFilenames);
+                    }
                     await updateDb.SaveChangesAsync();
                 }
                 Console.WriteLine($"[CONVERT] Background conversion complete for {sessionId}");
@@ -565,6 +600,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             {
                 Console.WriteLine($"[CONVERT] Background conversion CANCELLED for {sessionId}");
                 TryDelete(outputPath);
+                var tempDir = Path.Combine(_uploadDir, $"split_{sessionId}");
+                if (Directory.Exists(tempDir)) try { Directory.Delete(tempDir, true); } catch { }
             }
             catch (Exception ex)
             {

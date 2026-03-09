@@ -171,6 +171,8 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
   const [format, setFormat] = useState("EML");
   const [isExporting, setIsExporting] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [splitSizeMb, setSplitSizeMb] = useState("");
+  const [splitFiles, setSplitFiles] = useState([]);
   const [progress, setProgress] = useState(null);
   const { getToken } = useAuth();
   const { user } = useUser();
@@ -259,8 +261,14 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
           (p) => setProgress(p),
           abortControllerRef.current.signal,
           user?.primaryEmailAddress?.emailAddress,
+          splitSizeMb ? Number(splitSizeMb) : null,
         );
-        if (savedName) {
+        if (Array.isArray(savedName)) {
+          setSplitFiles(savedName);
+          toast.success(
+            "File was split successfully! Please download the parts below.",
+          );
+        } else if (savedName) {
           toast.success(`Converted file saved as: ${savedName}`);
         }
       } else {
@@ -271,8 +279,14 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
           (p) => setProgress(p),
           abortControllerRef.current.signal,
           user?.primaryEmailAddress?.emailAddress,
+          splitSizeMb ? Number(splitSizeMb) : null,
         );
-        if (savedName) {
+        if (Array.isArray(savedName)) {
+          setSplitFiles(savedName);
+          toast.success(
+            "File was split successfully! Please download the parts below.",
+          );
+        } else if (savedName) {
           toast.success(`Converted file saved as: ${savedName}`);
         }
       }
@@ -324,7 +338,10 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={onClose}
+              onClick={() => {
+                setSplitFiles([]);
+                onClose();
+              }}
               className="rounded-xl hover:bg-zinc-100 text-zinc-400"
             >
               <X className="w-6 h-6" />
@@ -332,153 +349,213 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
           </div>
 
           <div className="p-8 space-y-8">
-            {/* Direct Export Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 text-emerald-600">
-                <Mail className="w-5 h-5" />
-                <h3 className="font-extrabold text-lg text-zinc-900">
-                  Direct Message Extraction
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {EXPORT_FORMATS.map((fmt) => {
-                  const Icon = fmt.icon;
-                  const isSelected = format === fmt.id;
-                  return (
-                    <button
-                      key={fmt.id}
-                      onClick={() => setFormat(fmt.id)}
-                      disabled={isExporting}
-                      className={cn(
-                        "relative p-4 rounded-2xl border-2 transition-all text-left flex items-start gap-4",
-                        isSelected
-                          ? "bg-emerald-50 border-emerald-500 shadow-md"
-                          : "bg-white border-zinc-100 hover:border-zinc-200",
-                      )}
+            {splitFiles.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-emerald-600 mb-6">
+                  <CheckCircle2 className="w-6 h-6" />
+                  <h3 className="font-extrabold text-xl text-zinc-900">
+                    Your Split Files Are Ready
+                  </h3>
+                </div>
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                  {splitFiles.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-100 rounded-2xl"
                     >
-                      <div
-                        className={cn(
-                          "p-2 rounded-xl shrink-0",
-                          isSelected
-                            ? "bg-emerald-600 text-white"
-                            : "bg-zinc-50 text-zinc-400",
-                        )}
-                      >
-                        <Icon className="w-5 h-5" />
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                          <FileText className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <span className="font-bold text-zinc-700 text-sm truncate max-w-[250px]">
+                          {file}
+                        </span>
                       </div>
-                      <div>
-                        <span
+                      <Button
+                        onClick={() =>
+                          conversionService.downloadSplitFile(
+                            session.sessionId,
+                            file,
+                            getToken,
+                          )
+                        }
+                        className="bg-zinc-200 hover:bg-emerald-100 text-zinc-700 hover:text-emerald-700 rounded-xl px-4 py-2 font-black transition-colors"
+                      >
+                        <Download className="w-4 h-4 mr-2" /> Download
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Direct Export Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 text-emerald-600">
+                    <Mail className="w-5 h-5" />
+                    <h3 className="font-extrabold text-lg text-zinc-900">
+                      Direct Message Extraction
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {EXPORT_FORMATS.map((fmt) => {
+                      const Icon = fmt.icon;
+                      const isSelected = format === fmt.id;
+                      return (
+                        <button
+                          key={fmt.id}
+                          onClick={() => setFormat(fmt.id)}
+                          disabled={isExporting}
                           className={cn(
-                            "text-sm font-black block tracking-tight",
-                            isSelected ? "text-emerald-900" : "text-zinc-900",
+                            "relative p-4 rounded-2xl border-2 transition-all text-left flex items-start gap-4",
+                            isSelected
+                              ? "bg-emerald-50 border-emerald-500 shadow-md"
+                              : "bg-white border-zinc-100 hover:border-zinc-200",
                           )}
                         >
-                          {fmt.label}
-                        </span>
-                        <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                          {fmt.description}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                          <div
+                            className={cn(
+                              "p-2 rounded-xl shrink-0",
+                              isSelected
+                                ? "bg-emerald-600 text-white"
+                                : "bg-zinc-50 text-zinc-400",
+                            )}
+                          >
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span
+                              className={cn(
+                                "text-sm font-black block tracking-tight",
+                                isSelected
+                                  ? "text-emerald-900"
+                                  : "text-zinc-900",
+                              )}
+                            >
+                              {fmt.label}
+                            </span>
+                            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                              {fmt.description}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-              <div className="space-y-2">
-                <Button
-                  onClick={handleExport}
-                  disabled={isExporting || isConverting}
-                  className="w-full h-16 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg shadow-xl shadow-emerald-200 transition-all active:scale-[0.98] gap-3"
-                >
-                  {isExporting ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      {progress && (
-                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-tight">
-                          {progress.detail}
-                        </span>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={handleExport}
+                      disabled={isExporting || isConverting}
+                      className="w-full h-16 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg shadow-xl shadow-emerald-200 transition-all active:scale-[0.98] gap-3"
+                    >
+                      {isExporting ? (
+                        <div className="flex flex-col items-center gap-1">
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          {progress && (
+                            <span className="text-[10px] font-bold opacity-80 uppercase tracking-tight">
+                              {progress.detail}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <Download className="w-6 h-6" />
+                          Download Zip File
+                        </>
                       )}
-                    </div>
-                  ) : (
-                    <>
-                      <Download className="w-6 h-6" />
-                      Download Zip File
-                    </>
-                  )}
-                </Button>
-                {isExporting && (
-                  <Button
-                    variant="ghost"
-                    onClick={handleCancel}
-                    className="w-full h-10 text-zinc-400 hover:text-red-500 font-bold text-xs uppercase tracking-widest gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Cancel Export
-                  </Button>
-                )}
-              </div>
-            </div>
+                    </Button>
+                    {isExporting && (
+                      <Button
+                        variant="ghost"
+                        onClick={handleCancel}
+                        className="w-full h-10 text-zinc-400 hover:text-red-500 font-bold text-xs uppercase tracking-widest gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        Cancel Export
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-zinc-100"></div>
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white px-4 text-xs font-black text-zinc-300 uppercase tracking-[0.3em]">
-                  OR
-                </span>
-              </div>
-            </div>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-zinc-100"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-white px-4 text-xs font-black text-zinc-300 uppercase tracking-[0.3em]">
+                      OR
+                    </span>
+                  </div>
+                </div>
 
-            {/* Full Conversion Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 text-zinc-900">
-                <Rocket className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-extrabold text-lg">
-                  Full Format Conversion
-                </h3>
-              </div>
-              <p className="text-sm font-bold text-zinc-500 leading-relaxed">
-                Download your entire data file fully converted to{" "}
-                <span className="text-emerald-600">{targetFormat}</span> format,
-                preserving all structure.
-              </p>
-              <div className="space-y-2">
-                <Button
-                  onClick={handleConvert}
-                  disabled={isConverting || isExporting}
-                  variant="outline"
-                  className="w-full h-16 rounded-2xl border-2 border-emerald-600 text-emerald-600 font-extrabold text-lg hover:bg-emerald-50 transition-all active:scale-[0.98] gap-3"
-                >
-                  {isConverting ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      {progress && (
-                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-tight">
-                          {progress.detail}
-                        </span>
+                {/* Full Conversion Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 text-zinc-900">
+                    <Rocket className="w-5 h-5 text-emerald-600" />
+                    <h3 className="font-extrabold text-lg">
+                      Full Format Conversion
+                    </h3>
+                  </div>
+                  <p className="text-sm font-bold text-zinc-500 leading-relaxed">
+                    Download your entire data file fully converted to{" "}
+                    <span className="text-emerald-600">{targetFormat}</span>{" "}
+                    format, preserving all structure.
+                  </p>
+                  <div className="flex flex-col gap-2 mb-4">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                      Split Large File (Optional)
+                    </label>
+                    <select
+                      value={splitSizeMb}
+                      onChange={(e) => setSplitSizeMb(e.target.value)}
+                      disabled={isConverting || isExporting}
+                      className="w-full h-12 px-4 rounded-xl border-2 border-zinc-100 bg-zinc-50 focus:bg-white text-zinc-900 font-bold focus:border-emerald-500 transition-all outline-none"
+                    >
+                      <option value="">Don't Split (Single File)</option>
+                      <option value="2000">Split into 2 GB chunks</option>
+                      <option value="5000">Split into 5 GB chunks</option>
+                      <option value="10000">Split into 10 GB chunks</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={handleConvert}
+                      disabled={isConverting || isExporting}
+                      variant="outline"
+                      className="w-full h-16 rounded-2xl border-2 border-emerald-600 text-emerald-600 font-extrabold text-lg hover:bg-emerald-50 transition-all active:scale-[0.98] gap-3"
+                    >
+                      {isConverting ? (
+                        <div className="flex flex-col items-center gap-1">
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          {progress && (
+                            <span className="text-[10px] font-bold opacity-80 uppercase tracking-tight">
+                              {progress.detail}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <Download className="w-6 h-6" />
+                          Download Full {targetFormat} File
+                        </>
                       )}
-                    </div>
-                  ) : (
-                    <>
-                      <Download className="w-6 h-6" />
-                      Download Full {targetFormat} File
-                    </>
-                  )}
-                </Button>
-                {isConverting && (
-                  <Button
-                    variant="ghost"
-                    onClick={handleCancel}
-                    className="w-full h-10 text-zinc-400 hover:text-red-500 font-bold text-xs uppercase tracking-widest gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Cancel Conversion
-                  </Button>
-                )}
-              </div>
-            </div>
+                    </Button>
+                    {isConverting && (
+                      <Button
+                        variant="ghost"
+                        onClick={handleCancel}
+                        className="w-full h-10 text-zinc-400 hover:text-red-500 font-bold text-xs uppercase tracking-widest gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        Cancel Conversion
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

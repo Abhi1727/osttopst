@@ -11,6 +11,7 @@ import {
   Search,
   Rocket,
   Trash2,
+  Minus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -358,50 +359,34 @@ const FilePreview = ({ session, onReset }) => {
   };
 
   const toggleMessageSelection = (entryId) => {
+    // Read the current set synchronously, outside the updater.
+    const isSelected = selectedMessages.has(entryId);
+
+    if (isSelected) {
+      // Deselection: always allowed, no toast.
+      setSelectedMessages((prev) => {
+        const next = new Set(prev);
+        next.delete(entryId);
+        return next;
+      });
+      return;
+    }
+
+    // Adding: check limit first, before touching state.
+    if (licenseLimit !== -1 && selectedMessages.size >= licenseLimit) {
+      const tierInfo = licenseTier ? ` (${licenseTier} plan)` : "";
+      toast.dismiss();
+      toast.error(
+        `You can only select ${licenseLimit} items ${tierInfo}. Please upgrade your plan to select more.`,
+      );
+      return;
+    }
+
     setSelectedMessages((prev) => {
       const next = new Set(prev);
-      if (next.has(entryId)) {
-        next.delete(entryId);
-      } else {
-        if (licenseLimit !== -1 && next.size >= licenseLimit) {
-          const tierInfo = licenseTier ? ` (${licenseTier} plan)` : "";
-          toast.error(
-            `you can only select ${licenseLimit} items in ${tierInfo}. Please upgrade your plan to select more items.`,
-          );
-          return prev;
-        }
-        next.add(entryId);
-      }
+      next.add(entryId);
       return next;
     });
-  };
-
-  const toggleSelectAll = () => {
-    if (
-      selectedMessages.size > 0 &&
-      (selectedMessages.size === filteredMessages.length ||
-        (licenseLimit !== -1 && selectedMessages.size >= licenseLimit))
-    ) {
-      setSelectedMessages(new Set());
-    } else {
-      let next = new Set(selectedMessages);
-      let toAdd = [];
-      for (const m of filteredMessages) {
-        if (!next.has(m.entryId)) toAdd.push(m.entryId);
-      }
-
-      for (const id of toAdd) {
-        if (licenseLimit !== -1 && next.size >= licenseLimit) {
-         const tierInfo = licenseTier ? ` (${licenseTier} plan)` : "";
-          toast.error(
-            `you can only select ${licenseLimit} items in ${tierInfo}. Please upgrade your plan to select more items.`,
-          );
-          break;
-        }
-        next.add(id);
-      }
-      setSelectedMessages(next);
-    }
   };
 
   const handleExport = async (format) => {
@@ -433,6 +418,55 @@ const FilePreview = ({ session, onReset }) => {
         m.to?.toLowerCase().includes(query),
     );
   }, [messages, searchQuery]);
+
+  const isAllSelectedInView =
+    filteredMessages.length > 0 &&
+    filteredMessages.every((m) => selectedMessages.has(m.entryId));
+
+  const hasAnySelectedInView =
+    filteredMessages.length > 0 &&
+    filteredMessages.some((m) => selectedMessages.has(m.entryId));
+
+  const toggleSelectAll = () => {
+    if (hasAnySelectedInView) {
+      // CLEAR Mode: remove all visible items — no limit check needed.
+      setSelectedMessages((prev) => {
+        const next = new Set(prev);
+        for (const m of filteredMessages) {
+          next.delete(m.entryId);
+        }
+        return next;
+      });
+    } else {
+      // SELECT Mode: check limit before adding.
+      if (licenseLimit !== -1) {
+        let newItemsCount = 0;
+        for (const m of filteredMessages) {
+          if (!selectedMessages.has(m.entryId)) newItemsCount++;
+        }
+
+        if (
+          filteredMessages.length > licenseLimit ||
+          selectedMessages.size + newItemsCount > licenseLimit
+        ) {
+          const tierInfo = licenseTier ? ` (${licenseTier} plan)` : "";
+          toast.dismiss();
+          toast.error(
+            `You can only select up to ${licenseLimit} items ${tierInfo}. Please manually select items or upgrade your plan.`,
+          );
+          return;
+        }
+      }
+
+      setSelectedMessages((prev) => {
+        const next = new Set(prev);
+        for (const m of filteredMessages) {
+          next.add(m.entryId);
+        }
+        return next;
+      });
+    }
+  };
 
   if (!session) {
     return (
@@ -700,8 +734,13 @@ const FilePreview = ({ session, onReset }) => {
                   <h2 className="text-2xl font-black text-zinc-900 flex items-center gap-3 tracking-tight">
                     {selectedFolder?.displayName || "Select a folder"}
                     {filteredMessages.length > 0 && (
-                      <span className="text-sm font-bold text-zinc-400 ml-1 bg-zinc-50 px-3 py-1 rounded-full border border-zinc-100">
+                      <span className="text-sm font-bold text-zinc-400 bg-zinc-50 px-3 py-1 rounded-full border border-zinc-100 shrink-0">
                         {filteredMessages.length} items
+                      </span>
+                    )}
+                    {selectedMessages.size > 0 && (
+                      <span className="text-sm font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 animate-in zoom-in-95 duration-200 shrink-0">
+                        {selectedMessages.size} selected
                       </span>
                     )}
                   </h2>
@@ -809,18 +848,18 @@ const FilePreview = ({ session, onReset }) => {
                               onClick={toggleSelectAll}
                               className={cn(
                                 "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
-                                selectedMessages.size ===
-                                  filteredMessages.length &&
-                                  filteredMessages.length > 0
+                                hasAnySelectedInView && isAllSelectedInView
                                   ? "bg-emerald-500 border-emerald-500 text-white"
-                                  : "border-zinc-200 hover:border-emerald-500",
+                                  : hasAnySelectedInView
+                                    ? "bg-emerald-100 border-emerald-500 text-emerald-600"
+                                    : "border-zinc-200 hover:border-emerald-500",
                               )}
                             >
-                              {selectedMessages.size ===
-                                filteredMessages.length &&
-                                filteredMessages.length > 0 && (
-                                  <Check size={12} strokeWidth={4} />
-                                )}
+                              {hasAnySelectedInView && isAllSelectedInView ? (
+                                <Check size={12} strokeWidth={4} />
+                              ) : hasAnySelectedInView ? (
+                                <Minus size={12} strokeWidth={4} />
+                              ) : null}
                             </button>
                           </th>
                           <th

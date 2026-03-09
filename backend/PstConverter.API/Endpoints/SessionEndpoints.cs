@@ -114,7 +114,8 @@ public static class SessionEndpoints
                 size = session.Size,
                 fileType = session.FileType,
                 createdAt = session.CreatedAt,
-                storeGuid = session.StoreGuid
+                storeGuid = session.StoreGuid,
+                splitFiles = string.IsNullOrEmpty(session.SplitFilesJson) ? null : System.Text.Json.JsonSerializer.Deserialize<string[]>(session.SplitFilesJson)
             });
         });
 

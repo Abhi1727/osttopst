@@ -46,6 +46,9 @@ const downloadFile = async (
           console.log(
             `[Download] File is ready (status: ${status.status}), starting actual download...`,
           );
+          if (status.splitFiles && status.splitFiles.length > 0) {
+            return status.splitFiles;
+          }
           return true;
         }
 
@@ -93,6 +96,7 @@ const downloadFile = async (
     signal: signal,
   });
 
+  let pollResult = true;
   if (triggerRes.status === 202) {
     if (onProgress) {
       onProgress({
@@ -101,17 +105,28 @@ const downloadFile = async (
         detail: "Starting background processing for large file...",
       });
     }
-    await pollForDownload();
+    pollResult = await pollForDownload();
   } else if (!triggerRes.ok) {
     const errorText = await triggerRes.text();
     throw new Error(`Request failed: ${triggerRes.statusText}`);
   }
 
+  if (signal?.aborted) return null;
+
+  if (Array.isArray(pollResult)) {
+    if (onProgress) {
+      onProgress({
+        phase: "downloading",
+        percent: 100,
+        detail: "Split files are ready for download.",
+      });
+    }
+    return pollResult;
+  }
+
   // 2. Now handle the actual file transmission
   // We use the browser's native download mechanisms to display progress bars
   // and handle massive files without piping arrays through memory or timing out.
-  if (signal?.aborted) return null;
-
   if (onProgress) {
     onProgress({
       phase: "downloading",
@@ -143,8 +158,10 @@ export const conversionService = {
     onProgress,
     signal,
     email = null,
+    splitSizeMb = null,
   ) {
     let url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-pst?excludeEmptyFolders=${excludeEmpty}`;
+    if (splitSizeMb) url += `&splitSizeMb=${splitSizeMb}`;
     if (email) url += `&email=${encodeURIComponent(email)}`;
     return await downloadFile(
       url,
@@ -162,8 +179,10 @@ export const conversionService = {
     onProgress,
     signal,
     email = null,
+    splitSizeMb = null,
   ) {
     let url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-ost?excludeEmptyFolders=${excludeEmpty}`;
+    if (splitSizeMb) url += `&splitSizeMb=${splitSizeMb}`;
     if (email) url += `&email=${encodeURIComponent(email)}`;
     return await downloadFile(
       url,
@@ -214,8 +233,18 @@ export const conversionService = {
       });
       return res.ok;
     } catch (err) {
-      console.warn("[ConversionService] Cancel failed:", err);
       return false;
     }
+  },
+
+  async downloadSplitFile(sessionId, fileName, getToken) {
+    const token = await getToken();
+    const url = `${API_BASE_URL}/file-details/${sessionId}/download/${encodeURIComponent(fileName)}?token=${token}`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 100);
   },
 };

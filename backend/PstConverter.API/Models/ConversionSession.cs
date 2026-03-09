@@ -36,4 +36,6 @@ public class ConversionSession
     public string? StoreGuid { get; set; }
 
     public bool IsPaid { get; set; } = false;
+
+    public string? SplitFilesJson { get; set; }
 }

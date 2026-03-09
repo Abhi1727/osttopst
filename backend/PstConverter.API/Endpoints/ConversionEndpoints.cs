@@ -114,7 +114,7 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] bool? deduplicate, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] bool? deduplicate, [FromQuery] long? splitSizeMb, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
@@ -131,7 +131,7 @@ public static class ConversionEndpoints
 
             try
             {
-                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail, deduplicate ?? false);
+                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail, deduplicate ?? false, splitSizeMb);
 
                 if (!isReady)
                 {
@@ -144,6 +144,13 @@ public static class ConversionEndpoints
                 {
                     session.IsPaid = true;
                     await db.SaveChangesAsync();
+                }
+
+                // If split files exist, return status indicating multiple files
+                if (!string.IsNullOrEmpty(session?.SplitFilesJson))
+                {
+                    // Frontend should use the /download/{fileName} endpoint instead of this return file
+                    return Results.Accepted();
                 }
 
                 return Results.File(filePath, "application/vnd.ms-outlook", fileName, enableRangeProcessing: true);
@@ -170,7 +177,7 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] bool? deduplicate, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] bool? deduplicate, [FromQuery] long? splitSizeMb, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
@@ -187,7 +194,7 @@ public static class ConversionEndpoints
 
             try
             {
-                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail, deduplicate ?? false);
+                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail, deduplicate ?? false, splitSizeMb);
 
                 if (!isReady)
                 {
@@ -200,6 +207,13 @@ public static class ConversionEndpoints
                 {
                     session.IsPaid = true;
                     await db.SaveChangesAsync();
+                }
+
+                // If split files exist, return status indicating multiple files
+                if (!string.IsNullOrEmpty(session?.SplitFilesJson))
+                {
+                    // Frontend should use the /download/{fileName} endpoint instead of this return file
+                    return Results.Accepted();
                 }
 
                 return Results.File(filePath, "application/vnd.ms-outlook", fileName, enableRangeProcessing: true);
@@ -223,6 +237,30 @@ public static class ConversionEndpoints
             }
         })
         .WithName("ConvertToOst")
+        .WithTags("Conversion Operations")
+        .RequireAuthorization();
+
+        group.MapGet("/{sessionId}/download/{fileName}", async (string sessionId, string fileName, PstService pstService, AppDbContext db, ClaimsPrincipal user) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+            if (session == null) return Results.NotFound();
+
+            if (session.SplitFilesJson != null)
+            {
+                var files = System.Text.Json.JsonSerializer.Deserialize<string[]>(session.SplitFilesJson);
+                if (files != null && files.Contains(fileName))
+                {
+                    var filePath = Path.Combine(pstService.GetUploadDir(), fileName);
+                    if (File.Exists(filePath))
+                    {
+                        return Results.File(filePath, "application/octet-stream", fileName, enableRangeProcessing: true);
+                    }
+                }
+            }
+            return Results.NotFound(new { error = "File not found" });
+        })
+        .WithName("DownloadSplitFile")
         .WithTags("Conversion Operations")
         .RequireAuthorization();
     }
