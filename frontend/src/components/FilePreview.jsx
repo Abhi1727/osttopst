@@ -127,6 +127,7 @@ const FilePreview = ({ session, onReset }) => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [filter, setFilter] = useState({ year: null, month: null });
   const [licenseLimit, setLicenseLimit] = useState(-1);
+  const [licenseTier, setLicenseTier] = useState("");
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -136,10 +137,24 @@ const FilePreview = ({ session, onReset }) => {
         const token = await getToken();
         const email = user?.primaryEmailAddress?.emailAddress;
         const data = await licenseService.getLicenseStatus(token, email);
-        if (data && data.exportFileLimit !== undefined) {
-          setLicenseLimit(data.exportFileLimit);
-        } else if (data && data.ExportFileLimit !== undefined) {
-          setLicenseLimit(data.ExportFileLimit);
+        if (data) {
+          let tierStr = "";
+          if (data.tier !== undefined) tierStr = String(data.tier);
+          else if (data.Tier !== undefined) tierStr = String(data.Tier);
+
+          if (tierStr === "0" || tierStr.toLowerCase() === "demo")
+            setLicenseTier("Demo");
+          else if (tierStr === "1" || tierStr.toLowerCase() === "demoexpired")
+            setLicenseTier("Demo Expired");
+          else if (tierStr === "2" || tierStr.toLowerCase() === "professional")
+            setLicenseTier("Professional");
+          else setLicenseTier(tierStr);
+
+          if (data.exportFileLimit !== undefined) {
+            setLicenseLimit(data.exportFileLimit);
+          } else if (data.ExportFileLimit !== undefined) {
+            setLicenseLimit(data.ExportFileLimit);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch license", err);
@@ -349,8 +364,9 @@ const FilePreview = ({ session, onReset }) => {
         next.delete(entryId);
       } else {
         if (licenseLimit !== -1 && next.size >= licenseLimit) {
+          const tierInfo = licenseTier ? ` (${licenseTier} plan)` : "";
           toast.error(
-            `Selection limit reached. Your license allows exporting up to ${licenseLimit} items.`,
+            `you can only select ${licenseLimit} items in ${tierInfo}. Please upgrade your plan to select more items.`,
           );
           return prev;
         }
@@ -376,8 +392,9 @@ const FilePreview = ({ session, onReset }) => {
 
       for (const id of toAdd) {
         if (licenseLimit !== -1 && next.size >= licenseLimit) {
-          toast.info(
-            `Selection limited to ${licenseLimit} items due to your license.`,
+         const tierInfo = licenseTier ? ` (${licenseTier} plan)` : "";
+          toast.error(
+            `you can only select ${licenseLimit} items in ${tierInfo}. Please upgrade your plan to select more items.`,
           );
           break;
         }

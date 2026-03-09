@@ -1,73 +1,112 @@
 import React from "react";
-import { Trash2, Monitor, ArrowRightLeft, Puzzle, Package } from "lucide-react";
+import { UserCircle, FolderUp, GraduationCap, Store } from "lucide-react";
 
 const ConversionMissions = () => {
-  const scenarios = [
+  const topAudiences = [
     {
-      icon: <div className="w-4 h-4 rounded-full bg-emerald-500 shrink-0" />,
-      title: "Exchange Server Crash or Failure",
-      description:
-        'When an Exchange server crashes, your OST file becomes "orphaned" and disconnected. Our free OST to PST conversion tool extracts all readable data from the OST file and saves it into a portable, accessible PST — your rescue lifeline.',
+      icon: (
+        <UserCircle className="w-10 h-10 text-emerald-600" strokeWidth={1.5} />
+      ),
+      title: "Outlook Users",
+      description: "Access mail when Exchange is offline",
     },
     {
-      icon: <Trash2 className="w-5 h-5 text-emerald-500 shrink-0" />,
-      title: "Deleted or Expired Office 365 Account",
-      description:
-        "Once an Office 365 or Exchange account is deleted or expires, the local OST file becomes inaccessible. Converting OST into PST before deletion — or after via our recovery engine — is the only way to retain your email history.",
+      icon: (
+        <FolderUp className="w-10 h-10 text-emerald-600" strokeWidth={1.5} />
+      ),
+      title: "IT Administrators",
+      description: "Manage entire organization migrations.",
     },
     {
-      icon: <Monitor className="w-5 h-5 text-emerald-500 shrink-0" />,
-      title: "New PC or Outlook Reinstall",
-      description:
-        "OST files are machine- and profile-specific. You cannot simply copy an OST to a new PC and open it. Converting OST to PST first gives you a fully portable file you can import on any machine.",
+      icon: (
+        <GraduationCap
+          className="w-10 h-10 text-emerald-600"
+          strokeWidth={1.5}
+        />
+      ),
+      title: "Data Migration Specialists",
+      description: "Zero data loss migration experts.",
     },
     {
-      icon: <ArrowRightLeft className="w-5 h-5 text-emerald-500 shrink-0" />,
-      title: "Email Platform Migration",
+      icon: <Store className="w-10 h-10 text-emerald-600" strokeWidth={1.5} />,
+      title: "Small to Large Businesses",
+      description: "Build for bulk mailbox demand.",
+    },
+  ];
+
+  const bottomAudiences = [
+    {
+      number: "1",
+      title: "Outlook Users",
       description:
-        "Moving from Exchange to Gmail, or from one Office 365 tenant to another? Converting your local OST file to PST is the cleanest way to extract and preserve your email data for re-importing into the new platform.",
+        "This product is useful for regular Outlook users whose mailbox cannot be accessed when the Exchange server is down or offline and need to have access, recovery or backup of their OST files.",
     },
     {
-      icon: <Puzzle className="w-5 h-5 text-emerald-500 shrink-0" />,
-      title: "Repairing a Corrupt OST File",
+      number: "2",
+      title: "IT Administrators",
       description:
-        "Sync failures, sudden shutdowns, and disk errors can corrupt OST files. Our free OST to PST converter includes automatic header and structure repair, extracting the maximum amount of recoverable data before it's lost forever.",
+        "Great for IT Administrators managing multiple user accounts; can quickly convert/move/restore all OSTs quickly and accurately across an organization.",
     },
     {
-      icon: <Package className="w-5 h-5 text-emerald-500 shrink-0" />,
-      title: "Long-Term Email Archiving",
+      number: "3",
+      title: "Data Migration Specialists",
       description:
-        "Unlike OST files which are volatile caches, PST files are permanent standalone archives. Converting your OST files to PST is the standard method for long-term email archiving, compliance, and legal hold purposes.",
+        "Great for data migration specialists who need to be able to easily migrate data from one mail platform/server to another with no data loss.",
+    },
+    {
+      number: "4",
+      title: "Small to Large Businesses",
+      description:
+        "Whether you are a growing startup business or a very large, established corporation, our converter is designed and built for you and keeps pace with the ever-increasing demand for bulk mailbox migrations and data recoveries quickly, reliably and cost efficiently.",
     },
   ];
 
   return (
     <section className="py-16 md:py-24 px-4 md:px-6 lg:px-12 bg-white">
-      <div className="max-w-7xl mx-auto space-y-12">
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl md:text-4xl font-black text-slate-900">
-            When Do You Need to Convert OST File to PST?
+      <div className="max-w-7xl mx-auto space-y-16">
+        <div className="text-center">
+          <h2 className="text-3xl md:text-3xl font-extrabold text-slate-900">
+            Who is our Converter useful for?
           </h2>
-          <p className="text-slate-500 max-w-3xl mx-auto text-lg leading-relaxed">
-            These are the most common real-world scenarios where users urgently
-            need a reliable free OST to PST converter.
-          </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {scenarios.map((scenario, idx) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {topAudiences.map((item, idx) => (
             <div
               key={idx}
-              className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all"
+              className="flex flex-col items-center text-center space-y-4 group"
             >
-              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3 mb-4">
-                <div className="p-2 bg-emerald-50 rounded-xl">
-                  {scenario.icon}
-                </div>
-                {scenario.title}
+              <div className="w-20 h-20 bg-emerald-50/50 rounded-full flex items-center justify-center mb-2 shadow-sm border border-emerald-100/50 group-hover:shadow-md group-hover:scale-105 transition-all">
+                {item.icon}
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                {item.title}
               </h3>
-              <p className="text-slate-500 leading-relaxed text-sm">
-                {scenario.description}
+              <p className="text-sm text-slate-500 italic w-full leading-relaxed">
+                {item.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto mt-16 space-y-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {bottomAudiences.map((item, idx) => (
+            <div
+              key={idx}
+              className="flex flex-col items-center text-center p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow group min-h-[300px]"
+            >
+              <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
+                <span className="text-emerald-600 font-bold text-lg">
+                  {item.number}
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-4 px-2">
+                {item.title}
+              </h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                {item.description}
               </p>
             </div>
           ))}

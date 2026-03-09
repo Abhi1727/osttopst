@@ -8,6 +8,7 @@ import ReviewSection from "./ReviewSection";
 import ConversionHistory from "../ConversionHistory";
 import HowItWorks from "./HowItWorks";
 import TrustFeatures from "./TrustFeatures";
+
 import { SignedIn } from "@clerk/clerk-react";
 
 const LandingPage = ({ onUploadComplete, onRestore }) => {

@@ -15,44 +15,44 @@ const Features = () => {
   const features = [
     {
       icon: Lock,
-      title: "Exchange server crash",
+      title: "Crash of Exchange Server",
       description:
-        "If an Exchange server crashes, the OST file will lose its connection to the Exchange server and become “orphaned.” Using our software to convert the OST to PST will allow you to recover all of the readable items in your OST file and save them into a viewable, portable PST file.",
+        "Crash of Exchange can cause orphaning of your OST files, so they won't be recognized or available. Our software will allow for conversion of your orphaned file to a portable, viewable PST file enabling you immediate access to your data again.",
       badgeColor: "bg-emerald-50",
     },
     {
       icon: FolderTree,
-      title: "You’ve deleted or expired your Office 365 Account",
+      title: "Deleted or Expired Office 365 Account",
       description:
-        "When your Office 365 or Exchange account has been deleted or expired, it causes the local OST file to lose its connection to the Exchange server. Therefore, converting an OST to a PST using our free software will allow you to preserve the contents of your email history before you delete the account or before it expires.",
+         "At the time of expiration of an Office 365 account, the link to the local OST file is effectively broken. You can use our converter to save the complete email history from your account and convert your data from OST to PST prior to getting rid of your account and losing access to your data.",
       badgeColor: "bg-emerald-50",
     },
     {
       icon: FileText,
-      title: "Expired Office 365 Account",
+      title: "Account Migration & Your Email",
       description:
-        "If your Office 365 account has expired, the local OST file will become disconnected. This means that the only way to keep your email history after you’ve deleted your Office 365 account (or after it expires) is to convert your OST to a PST, as described above.",
+          "OST files are linked to a specific computer and profile, making converting email data into PST format very important to be able to make the data portable. In this way, you will be able to import your converted data from PST back into Outlook on any new computer or laptop that has Outlook.",
       badgeColor: "bg-emerald-50",
     },
     {
       icon: FileText,
-      title: "You are setting up a new computer or reinstalling Outlook",
+      title: "Seamless Email Platform Migration",
       description:
-        "OST files are machine and profile dependent. You cannot copy the OST file from one computer to another computer and import it into Outlook. You must convert the OST into a PST before being able to import it into Outlook on another machine. Converting the OST to a PST beforehand makes the file fully portable, allowing you to import it into Outlook on any computer.",
+         "Are you migrating from Exchange to Gmail or any other 365 tenant? The best way to extract data from the existing email service is by converting the data stored in your OST file to PST format.",
       badgeColor: "bg-emerald-50",
     },
     {
       icon: FileText,
-      title: "Migration of Email Platforms",
+      title: "Repair Corrupt Files",
       description:
-        "Are you seeking a service to aid you in migrating your emails? If you're considering switching from Exchange to Gmail, or moving from one Office 365 tenant to another, the easiest method for migrating your email data is to extract your local OST file into PST format; this is an easy way to correctly separate your email data, so you may later import them back into the new emailing system.",
-      badgeColor: "bg-emerald-50",
+        "There are many occurrences of OST header damage due to power failure, syncing issues etc. The software has built-in repair functionality. It repairs the actual file structures throughout the conversion process for maximum recoverability.", 
+     badgeColor: "bg-emerald-50",
     },
     {
       icon: FileText,
-      title: "Repair the Corruption of Your OST File",
+      title: "Long-Term Email Archive",
       description:
-        "OST files sometimes experience corruption and stop being usable because of sync issues and power outages, as well as due to disk corruption. The OST-to-PST file converter provided by us has functionality built into it for automatically fixing the header (structure) of the file so you get as much data out of your corrupted file, prior to losing it completely.",
+         " OST files are temporary caches whereas PSTs are considered permanent archives. When converting existing email data from OST format to PST format for long-term retention, you will have a permanent and secure means to retain the email data for records retention purposes.",
       badgeColor: "bg-emerald-50",
     },
   ];
