@@ -37,6 +37,7 @@ public static class FileEndpoints
                 }
 
                 var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+                var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
                 if (logger.IsEnabled(LogLevel.Information))
                     logger.LogInformation("Processing file for user: {UserId}", userId);
 
@@ -46,7 +47,7 @@ public static class FileEndpoints
                     logger.LogWarning("Upload rejected: Invalid file signature for file {FileName} with extension {Extension}", file.FileName, ext);
                     return Results.BadRequest(new { error = $"The file '{file.FileName}' does not have a valid {ext.ToUpperInvariant().TrimStart('.')} signature." });
                 }
-                var sessionId = await pstService.SaveUploadedFileAsync(stream, file.FileName, userId, file.Length, password);
+                var sessionId = await pstService.SaveUploadedFileAsync(stream, file.FileName, userId, file.Length, userEmail, password);
 
                 if (logger.IsEnabled(LogLevel.Information))
                     logger.LogInformation("File uploaded successfully. SessionId: {SessionId}, FileName: {FileName}", sessionId, file.FileName);
@@ -204,7 +205,8 @@ public static class FileEndpoints
                 }
 
                 var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-                var result = await pstService.FinalizeChunkedUploadAsync(uploadId, userId);
+                var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+                var result = await pstService.FinalizeChunkedUploadAsync(uploadId, userId, userEmail);
 
                 if (logger.IsEnabled(LogLevel.Information))
                 {

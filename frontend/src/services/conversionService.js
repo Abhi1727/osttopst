@@ -172,27 +172,6 @@ export const conversionService = {
     );
   },
 
-  async convertToOst(
-    sessionId,
-    getToken,
-    excludeEmpty = true,
-    onProgress,
-    signal,
-    email = null,
-    splitSizeMb = null,
-  ) {
-    let url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-ost?excludeEmptyFolders=${excludeEmpty}`;
-    if (splitSizeMb) url += `&splitSizeMb=${splitSizeMb}`;
-    if (email) url += `&email=${encodeURIComponent(email)}`;
-    return await downloadFile(
-      url,
-      "converted.ost",
-      getToken,
-      onProgress,
-      signal,
-    );
-  },
-
   async exportAll(
     sessionId,
     format,

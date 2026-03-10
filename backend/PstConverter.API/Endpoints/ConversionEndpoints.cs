@@ -177,68 +177,6 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-ost", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] bool? deduplicate, [FromQuery] long? splitSizeMb, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
-        {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-            var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
-
-            // License Check
-            var license = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-            if (!license.CanConvert)
-            {
-                return Results.Json(new { error = license.Message }, statusCode: StatusCodes.Status403Forbidden);
-            }
-
-            // Track usage
-            _ = licenseClient.TrackUsageAsync(userEmail);
-
-            try
-            {
-                var (filePath, fileName, isReady) = await pstService.ConvertPstToOstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail, deduplicate ?? false, splitSizeMb);
-
-                if (!isReady)
-                {
-                    return Results.Accepted();
-                }
-
-                // Mark as paid upon successful conversion
-                var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-                if (session != null)
-                {
-                    session.IsPaid = true;
-                    await db.SaveChangesAsync();
-                }
-
-                // If split files exist, return status indicating multiple files
-                if (!string.IsNullOrEmpty(session?.SplitFilesJson))
-                {
-                    // Frontend should use the /download/{fileName} endpoint instead of this return file
-                    return Results.Accepted();
-                }
-
-                return Results.File(filePath, "application/vnd.ms-outlook", fileName, enableRangeProcessing: true);
-            }
-            catch (FileNotFoundException)
-            {
-                return Results.NotFound(new { error = "Session not found" });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.Conflict(new { error = ex.Message });
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Results.Forbid();
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "ConvertToOst failed for session {SessionId}", sessionId);
-                return Results.Problem(ex.Message);
-            }
-        })
-        .WithName("ConvertToOst")
-        .WithTags("Conversion Operations")
-        .RequireAuthorization();
 
         group.MapGet("/{sessionId}/download/{fileName}", async (string sessionId, string fileName, PstService pstService, AppDbContext db, ClaimsPrincipal user) =>
         {

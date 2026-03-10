@@ -23,6 +23,9 @@ namespace PstConverter.Models
         public DateTime CreationDate { get; set; }
         public int ExportFileLimit { get; set; }
         public bool CanConvert { get; set; }
+        public long TotalStorage { get; set; } = 0;
+        public long UsedStorage { get; set; } = 0;
+        public long RemainingStorage => Math.Max(0, TotalStorage - UsedStorage);
         public string Message { get; set; } = string.Empty;
 
         public static LicenseStatus Parse(string backendResponse)

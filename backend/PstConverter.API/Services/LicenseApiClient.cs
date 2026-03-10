@@ -94,14 +94,23 @@ namespace PstConverter.Services
             return response.Content ?? string.Empty;
         }
 
-        public async Task<string> UpdateStorageAsync(string licenseId, string toolId, string moduleId, string itemId, long ostFileSizeBytes)
+        public async Task<string> UpdateStorageAsync(string licenseId, string toolId, string moduleId, long ostFileSizeBytes)
         {
-            var client = await GetClientAsync(licenseId, toolId);
-            var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}/AddStorage";
-            var request = new RestRequest(path, Method.Patch);
-            request.AddJsonBody(new { AddStorage = ostFileSizeBytes });
+            var licenseStatus = await GetDetailedLicenseStatusAsync(licenseId, toolId);
+            long reportedSize = ostFileSizeBytes;
 
-            Console.WriteLine($"[LICENSE API] UpdateStorage: {path}, Size: {ostFileSizeBytes} bytes");
+            if (licenseStatus.Tier == LicenseTier.Professional && licenseStatus.RemainingStorage < ostFileSizeBytes)
+            {
+                reportedSize = licenseStatus.RemainingStorage;
+                Console.WriteLine($"[LICENSE API] Capping storage update for {licenseId}: {ostFileSizeBytes} -> {reportedSize} (Insufficient Storage)");
+            }
+
+            var client = await GetClientAsync(licenseId, toolId);
+            var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/AddStorage";
+            var request = new RestRequest(path, Method.Patch);
+            request.AddJsonBody(new { Size = reportedSize });
+
+            Console.WriteLine($"[LICENSE API] UpdateStorage: {path}, Size: {reportedSize} bytes");
             var response = await client.ExecuteAsync(request);
 
             if (!response.IsSuccessful)
@@ -111,6 +120,23 @@ namespace PstConverter.Services
 
             return response.Content ?? string.Empty;
         }
+        // public async Task<string> UpdateStorageAsync(string licenseId, string toolId, string moduleId, string itemId, long ostFileSizeBytes)
+        // {
+        //     var client = await GetClientAsync(licenseId, toolId);
+        //     var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}/AddStorage";
+        //     var request = new RestRequest(path, Method.Patch);
+        //     request.AddJsonBody(new { AddStorage = ostFileSizeBytes });
+
+        //     Console.WriteLine($"[LICENSE API] UpdateStorage: {path}, Size: {ostFileSizeBytes} bytes");
+        //     var response = await client.ExecuteAsync(request);
+
+        //     if (!response.IsSuccessful)
+        //     {
+        //         Console.WriteLine($"[UPDATE STORAGE ERROR] {response.StatusCode} - {response.ErrorMessage ?? response.Content}");
+        //     }
+
+        //     return response.Content ?? string.Empty;
+        // }
 
         public async Task<LicenseStatus> GetDetailedLicenseStatusAsync(string licenseId, string toolId = "1")
         {

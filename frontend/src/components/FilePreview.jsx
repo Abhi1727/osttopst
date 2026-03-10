@@ -268,16 +268,6 @@ const FilePreview = ({ session, onReset }) => {
           user?.primaryEmailAddress?.emailAddress,
         );
         toast.success("Starting PST conversion...");
-      } else {
-        await conversionService.convertToOst(
-          session.sessionId,
-          getToken,
-          true,
-          null,
-          null,
-          user?.primaryEmailAddress?.emailAddress,
-        );
-        toast.success("Starting OST conversion...");
       }
     } catch (err) {
       toast.error("Conversion failed: " + err.message);

@@ -118,7 +118,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     }
 
-    public async Task<string> SaveUploadedFileAsync(Stream fileStream, string originalFileName, string userId, long size, string? password = null)
+    public async Task<string> SaveUploadedFileAsync(Stream fileStream, string originalFileName, string userId, long size, string? userEmail = null, string? password = null)
     {
         var sessionId = Guid.NewGuid().ToString("N");
         var ext = Path.GetExtension(originalFileName).ToLowerInvariant();
@@ -169,10 +169,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 CreatedAt = DateTime.UtcNow,
                 Status = "Uploaded",
                 Password = password,
+                Email = userEmail ?? userId,
                 StoreGuid = storeGuid
             };
             _db.ConversionSessions.Add(session);
             await _db.SaveChangesAsync();
+
+            // Track storage for professional users
+            _ = _licenseClient.UpdateStorageAsync(userEmail ?? userId, "1", "1", size);
 
             Console.WriteLine($"[UPLOAD] Session created: {sessionId}, Status: Uploaded");
             return sessionId;
@@ -292,7 +296,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
     }
 
-    public async Task<FinalizationResult> FinalizeChunkedUploadAsync(string uploadId, string userId)
+    public async Task<FinalizationResult> FinalizeChunkedUploadAsync(string uploadId, string userId, string? userEmail = null)
     {
         var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
         if (!Directory.Exists(chunkDir)) throw new FileNotFoundException("Upload session not found");
@@ -328,10 +332,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             FileType = ext.TrimStart('.'),
             CreatedAt = DateTime.UtcNow,
             Status = "Assembling",
-            Password = null
+            Password = null,
+            Email = userEmail ?? userId
         };
         _db.ConversionSessions.Add(session);
         await _db.SaveChangesAsync();
+
+        // Track storage for professional users
+        _ = _licenseClient.UpdateStorageAsync(userEmail ?? userId, "1", "1", metadata.TotalSize);
 
         Console.WriteLine($"[ASSEMBLY] Starting background assembly for session {sessionId}, Upload ID: {uploadId}");
         var cts = new CancellationTokenSource();
@@ -448,7 +456,6 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     public record FinalizationResult(string SessionId, string FileName, long Size, string FileType);
 
     public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false, long? splitSizeMb = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders, userEmail, deduplicate, splitSizeMb);
-    public async Task<(string FilePath, string FileName, bool isReady)> ConvertPstToOstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false, long? splitSizeMb = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Ost, excludeEmptyFolders, userEmail, deduplicate, splitSizeMb);
 
     public string GetUploadDir() => _uploadDir;
 
@@ -495,7 +502,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         int exportLimit = licenseStatus.ExportFileLimit;
         // --------------------------------------------------
 
-        string ext = format == FileFormat.Ost ? ".ost" : ".pst";
+        string ext = ".pst";
         var outputPath = Path.Combine(_uploadDir, $"{sessionId}_converted_{exportLimit}{(deduplicate ? "_dedup" : "")}{ext}");
 
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
@@ -567,7 +574,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     var tempDir = Path.Combine(_uploadDir, $"split_{sessionId}");
                     if (Directory.Exists(tempDir))
                     {
-                        var splitFiles = Directory.GetFiles(tempDir, $"*{(format == FileFormat.Ost ? ".ost" : ".pst")}");
+                        var splitFiles = Directory.GetFiles(tempDir, "*.pst");
                         int partNum = 1;
                         foreach (var sf in splitFiles)
                         {

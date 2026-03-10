@@ -251,44 +251,26 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
       const filename = session.originalFileName || session.fileName || "";
       const ext = filename.split(".").pop().toLowerCase();
 
+      if (ext !== "ost") return;
+
       abortControllerRef.current = new AbortController();
 
-      if (ext === "ost") {
-        const savedName = await conversionService.convertToPst(
-          session.sessionId,
-          getToken,
-          true, // Default to excluding empty folders
-          (p) => setProgress(p),
-          abortControllerRef.current.signal,
-          user?.primaryEmailAddress?.emailAddress,
-          splitSizeMb ? Number(splitSizeMb) : null,
+      const savedName = await conversionService.convertToPst(
+        session.sessionId,
+        getToken,
+        true, // Default to excluding empty folders
+        (p) => setProgress(p),
+        abortControllerRef.current.signal,
+        user?.primaryEmailAddress?.emailAddress,
+        splitSizeMb ? Number(splitSizeMb) : null,
+      );
+      if (Array.isArray(savedName)) {
+        setSplitFiles(savedName);
+        toast.success(
+          "File was split successfully! Please download the parts below.",
         );
-        if (Array.isArray(savedName)) {
-          setSplitFiles(savedName);
-          toast.success(
-            "File was split successfully! Please download the parts below.",
-          );
-        } else if (savedName) {
-          toast.success(`Converted file saved as: ${savedName}`);
-        }
-      } else {
-        const savedName = await conversionService.convertToOst(
-          session.sessionId,
-          getToken,
-          true, // Default to excluding empty folders
-          (p) => setProgress(p),
-          abortControllerRef.current.signal,
-          user?.primaryEmailAddress?.emailAddress,
-          splitSizeMb ? Number(splitSizeMb) : null,
-        );
-        if (Array.isArray(savedName)) {
-          setSplitFiles(savedName);
-          toast.success(
-            "File was split successfully! Please download the parts below.",
-          );
-        } else if (savedName) {
-          toast.success(`Converted file saved as: ${savedName}`);
-        }
+      } else if (savedName) {
+        toast.success(`Converted file saved as: ${savedName}`);
       }
     } catch (err) {
       if (err.name === "AbortError" || err.message === "AbortError") {
@@ -303,11 +285,11 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
     }
   };
 
-  const targetFormat = (session.originalFileName || session.fileName || "")
+  const isOstSource = (session.originalFileName || session.fileName || "")
     .toLowerCase()
-    .endsWith(".ost")
-    ? "PST"
-    : "OST";
+    .endsWith(".ost");
+
+  const targetFormat = "PST";
 
   return (
     <>
@@ -491,69 +473,71 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                 </div>
 
                 {/* Full Conversion Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-zinc-900">
-                    <Rocket className="w-5 h-5 text-emerald-600" />
-                    <h3 className="font-extrabold text-lg">
-                      Full Format Conversion
-                    </h3>
-                  </div>
-                  <p className="text-sm font-bold text-zinc-500 leading-relaxed">
-                    Download your entire data file fully converted to{" "}
-                    <span className="text-emerald-600">{targetFormat}</span>{" "}
-                    format, preserving all structure.
-                  </p>
-                  <div className="flex flex-col gap-2 mb-4">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                      Split Large File (Optional)
-                    </label>
-                    <select
-                      value={splitSizeMb}
-                      onChange={(e) => setSplitSizeMb(e.target.value)}
-                      disabled={isConverting || isExporting}
-                      className="w-full h-12 px-4 rounded-xl border-2 border-zinc-100 bg-zinc-50 focus:bg-white text-zinc-900 font-bold focus:border-emerald-500 transition-all outline-none"
-                    >
-                      <option value="">Don't Split (Single File)</option>
-                      <option value="2000">Split into 2 GB chunks</option>
-                      <option value="5000">Split into 5 GB chunks</option>
-                      <option value="10000">Split into 10 GB chunks</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Button
-                      onClick={handleConvert}
-                      disabled={isConverting || isExporting}
-                      variant="outline"
-                      className="w-full h-16 rounded-2xl border-2 border-emerald-600 text-emerald-600 font-extrabold text-lg hover:bg-emerald-50 transition-all active:scale-[0.98] gap-3"
-                    >
-                      {isConverting ? (
-                        <div className="flex flex-col items-center gap-1">
-                          <Loader2 className="w-6 h-6 animate-spin" />
-                          {progress && (
-                            <span className="text-[10px] font-bold opacity-80 uppercase tracking-tight">
-                              {progress.detail}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <>
-                          <Download className="w-6 h-6" />
-                          Download Full {targetFormat} File
-                        </>
-                      )}
-                    </Button>
-                    {isConverting && (
-                      <Button
-                        variant="ghost"
-                        onClick={handleCancel}
-                        className="w-full h-10 text-zinc-400 hover:text-red-500 font-bold text-xs uppercase tracking-widest gap-2"
+                {isOstSource && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 text-zinc-900">
+                      <Rocket className="w-5 h-5 text-emerald-600" />
+                      <h3 className="font-extrabold text-lg">
+                        Full Format Conversion
+                      </h3>
+                    </div>
+                    <p className="text-sm font-bold text-zinc-500 leading-relaxed">
+                      Download your entire data file fully converted to{" "}
+                      <span className="text-emerald-600">{targetFormat}</span>{" "}
+                      format, preserving all structure.
+                    </p>
+                    <div className="flex flex-col gap-2 mb-4">
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Split Large File (Optional)
+                      </label>
+                      <select
+                        value={splitSizeMb}
+                        onChange={(e) => setSplitSizeMb(e.target.value)}
+                        disabled={isConverting || isExporting}
+                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-100 bg-zinc-50 focus:bg-white text-zinc-900 font-bold focus:border-emerald-500 transition-all outline-none"
                       >
-                        <X className="w-4 h-4" />
-                        Cancel Conversion
+                        <option value="">Don't Split (Single File)</option>
+                        <option value="2000">Split into 2 GB chunks</option>
+                        <option value="5000">Split into 5 GB chunks</option>
+                        <option value="10000">Split into 10 GB chunks</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Button
+                        onClick={handleConvert}
+                        disabled={isConverting || isExporting}
+                        variant="outline"
+                        className="w-full h-16 rounded-2xl border-2 border-emerald-600 text-emerald-600 font-extrabold text-lg hover:bg-emerald-50 transition-all active:scale-[0.98] gap-3"
+                      >
+                        {isConverting ? (
+                          <div className="flex flex-col items-center gap-1">
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                            {progress && (
+                              <span className="text-[10px] font-bold opacity-80 uppercase tracking-tight">
+                                {progress.detail}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            <Download className="w-6 h-6" />
+                            Download Full {targetFormat} File
+                          </>
+                        )}
                       </Button>
-                    )}
+                      {isConverting && (
+                        <Button
+                          variant="ghost"
+                          onClick={handleCancel}
+                          className="w-full h-10 text-zinc-400 hover:text-red-500 font-bold text-xs uppercase tracking-widest gap-2"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel Conversion
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             )}
           </div>
