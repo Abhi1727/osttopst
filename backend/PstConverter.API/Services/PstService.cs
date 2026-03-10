@@ -733,24 +733,40 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
     private static List<PstFolderInfo> BuildFolderTree(FolderInfo folder, bool excludeEmpty = false)
     {
-        var result = new List<PstFolderInfo>();
-        foreach (var sub in folder.GetSubFolders())
+        try
         {
-            var subTree = BuildFolderTree(sub, excludeEmpty);
-            var totalMessages = sub.ContentCount + subTree.Sum(f => f.TotalMessageCount);
-            if (excludeEmpty && totalMessages == 0) continue;
+            var result = new List<PstFolderInfo>();
 
-            result.Add(new PstFolderInfo
+            foreach (var sub in folder.GetSubFolders())
             {
-                FolderId = sub.EntryIdString,
-                DisplayName = sub.DisplayName,
-                MessageCount = sub.ContentCount,
-                SubFolders = subTree,
-                TotalMessageCount = totalMessages,
-                FolderClass = sub.ContainerClass
-            });
+                try
+                {
+                    var subTree = BuildFolderTree(sub, excludeEmpty);
+                    var totalMessages = sub.ContentCount + subTree.Sum(f => f.TotalMessageCount);
+                    if (excludeEmpty && totalMessages == 0) continue;
+
+                    result.Add(new PstFolderInfo
+                    {
+                        FolderId = sub.EntryIdString,
+                        DisplayName = sub.DisplayName,
+                        MessageCount = sub.ContentCount,
+                        SubFolders = subTree,
+                        TotalMessageCount = totalMessages,
+                        FolderClass = sub.ContainerClass
+                    });
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+
+            }
+            return result;
         }
-        return result;
+        catch (Exception)
+        {
+            return [];
+        }
     }
 
     private static List<PstFolderInfo> FlattenFolderTree(List<PstFolderInfo> folders)

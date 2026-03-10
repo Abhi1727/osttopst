@@ -94,7 +94,22 @@ namespace PstConverter.Services
             return response.Content ?? string.Empty;
         }
 
-        public async Task<string> UpdateStorageAsync(string licenseId, string toolId, string moduleId, long ostFileSizeBytes)
+        public async Task<bool> Addfileforlicense(string licenseId, string toolId, string moduleId, string itemId)
+        {
+            var client = await GetClientAsync(licenseId, toolId);
+            var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}";
+            var request = new RestRequest(path, Method.Get);
+            var response = await client.ExecuteAsync(request);
+
+            if (response.StatusCode != System.Net.HttpStatusCode.OK || response.Content == "false")
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public async Task<bool> UpdateStorageAsync(string licenseId, string toolId, string moduleId, long ostFileSizeBytes)
         {
             var licenseStatus = await GetDetailedLicenseStatusAsync(licenseId, toolId);
             long reportedSize = ostFileSizeBytes;
@@ -113,12 +128,12 @@ namespace PstConverter.Services
             Console.WriteLine($"[LICENSE API] UpdateStorage: {path}, Size: {reportedSize} bytes");
             var response = await client.ExecuteAsync(request);
 
-            if (!response.IsSuccessful)
+            if (response.StatusCode != System.Net.HttpStatusCode.OK || response.Content == "false")
             {
-                Console.WriteLine($"[UPDATE STORAGE ERROR] {response.StatusCode} - {response.ErrorMessage ?? response.Content}");
+                return false;
             }
 
-            return response.Content ?? string.Empty;
+            return true;
         }
         // public async Task<string> UpdateStorageAsync(string licenseId, string toolId, string moduleId, string itemId, long ostFileSizeBytes)
         // {
@@ -160,6 +175,7 @@ namespace PstConverter.Services
                 return new LicenseStatus
                 {
                     Tier = LicenseTier.DemoExpired,
+                    Status = LicenseStatusType.NotSubscribed,
                     CanConvert = false,
                     ExportFileLimit = 0,
                     Message = $"License Check Failed: {ex.Message}"

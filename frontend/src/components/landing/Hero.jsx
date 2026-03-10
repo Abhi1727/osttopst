@@ -149,9 +149,13 @@ const Hero = ({ onUploadComplete }) => {
     const targetFile = passedFile || file;
     if (!targetFile) return;
 
-    if (licenseStatus?.tier === "DemoExpired") {
+    if (
+      licenseStatus?.tier === "DemoExpired" ||
+      licenseStatus?.status === "Expired" ||
+      licenseStatus?.status === "Cancelled"
+    ) {
       toast.error(
-        "Your free trial has expired. Please upgrade to Professional to continue.",
+        "Your license has expired or been cancelled. Please upgrade to continue.",
       );
       navigate("/our-plans");
       return;

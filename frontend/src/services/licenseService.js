@@ -21,6 +21,7 @@ const licenseService = {
       // Return a default demo-expired-like state if the call fails
       return {
         tier: "DemoExpired",
+        status: "NotSubscribed",
         canConvert: false,
         message: "Unable to verify license.",
       };
