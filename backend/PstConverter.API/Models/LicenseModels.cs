@@ -25,10 +25,22 @@ namespace PstConverter.Models
         NotSubscribed
     }
 
+    public enum LicenseResponseStatus
+    {
+        Professional,
+        Demo,
+        DemoExpired,
+        Cancelled,
+        Active,
+        Expired,
+        NotSubscribed
+    }
+
     public class LicenseStatus : IComparable<LicenseStatus>
     {
         public LicenseTier Tier { get; set; }
         public LicenseStatusType Status { get; set; }
+        public LicenseResponseStatus StatusValue { get; set; }
         public DateTime CreationDate { get; set; }
         public int ExportFileLimit { get; set; }
         public bool CanConvert { get; set; }
@@ -74,10 +86,10 @@ namespace PstConverter.Models
 
         private static int GetStatusRank(LicenseStatusType status) => status switch
         {
-            LicenseStatusType.Active => 4,
-            LicenseStatusType.Expired => 3,
-            LicenseStatusType.Cancelled => 2,
-            LicenseStatusType.NotSubscribed => 1,
+            LicenseStatusType.Active => 1,
+            LicenseStatusType.Expired => 2,
+            LicenseStatusType.Cancelled => 3,
+            LicenseStatusType.NotSubscribed => 4,
             _ => 0
         };
 
@@ -89,6 +101,7 @@ namespace PstConverter.Models
                 {
                     Tier = LicenseTier.DemoExpired,
                     Status = LicenseStatusType.NotSubscribed,
+                    StatusValue = LicenseResponseStatus.NotSubscribed,
                     CanConvert = false,
                     Message = "No response from license server."
                 };
@@ -100,9 +113,22 @@ namespace PstConverter.Models
             if (raw.Contains("professional"))
             {
                 var s = CreateProfessional();
-                if (raw.Contains("expired")) s.Status = LicenseStatusType.Expired;
-                else if (raw.Contains("cancelled")) s.Status = LicenseStatusType.Cancelled;
-                else s.Status = LicenseStatusType.Active;
+                s.StatusValue = LicenseResponseStatus.Professional;
+                if (raw.Contains("expired"))
+                {
+                    s.Status = LicenseStatusType.Expired;
+                    s.StatusValue = LicenseResponseStatus.Expired;
+                }
+                else if (raw.Contains("cancelled"))
+                {
+                    s.Status = LicenseStatusType.Cancelled;
+                    s.StatusValue = LicenseResponseStatus.Cancelled;
+                }
+                else
+                {
+                    s.Status = LicenseStatusType.Active;
+                    s.StatusValue = LicenseResponseStatus.Active;
+                }
                 return s;
             }
 
@@ -111,6 +137,7 @@ namespace PstConverter.Models
                 return new LicenseStatus
                 {
                     Tier = LicenseTier.DemoExpired,
+                    StatusValue = LicenseResponseStatus.DemoExpired,
                     Status = LicenseStatusType.Expired,
                     CanConvert = false,
                     ExportFileLimit = 0,
@@ -123,6 +150,7 @@ namespace PstConverter.Models
                 return new LicenseStatus
                 {
                     Tier = LicenseTier.Demo,
+                    StatusValue = LicenseResponseStatus.Demo,
                     Status = LicenseStatusType.Active,
                     CanConvert = true,
                     ExportFileLimit = 50,
@@ -135,20 +163,35 @@ namespace PstConverter.Models
                 return new LicenseStatus
                 {
                     Tier = LicenseTier.DemoExpired,
+                    StatusValue = LicenseResponseStatus.Cancelled,
                     Status = LicenseStatusType.Cancelled,
                     CanConvert = false,
                     Message = "License has been cancelled."
                 };
             }
 
+            if (raw.Contains("expired"))
+            {
+                return new LicenseStatus
+                {
+                    Tier = LicenseTier.DemoExpired,
+                    StatusValue = LicenseResponseStatus.Expired,
+                    Status = LicenseStatusType.Expired,
+                    CanConvert = false,
+                    Message = "License is expired."
+                };
+            }
+
             return new LicenseStatus
             {
                 Tier = LicenseTier.DemoExpired,
+                StatusValue = LicenseResponseStatus.NotSubscribed,
                 Status = LicenseStatusType.NotSubscribed,
                 CanConvert = false,
                 Message = $"Unknown license status received: {backendResponse}"
             };
         }
+
 
 
         public static LicenseStatus CreateDemo(DateTime creationDate)
@@ -157,6 +200,7 @@ namespace PstConverter.Models
             return new LicenseStatus
             {
                 Tier = isExpired ? LicenseTier.DemoExpired : LicenseTier.Demo,
+                StatusValue = isExpired ? LicenseResponseStatus.DemoExpired : LicenseResponseStatus.Demo,
                 Status = isExpired ? LicenseStatusType.Expired : LicenseStatusType.Active,
                 CreationDate = creationDate,
                 ExportFileLimit = isExpired ? 0 : 50,
@@ -170,6 +214,7 @@ namespace PstConverter.Models
             return new LicenseStatus
             {
                 Tier = LicenseTier.Professional,
+                StatusValue = LicenseResponseStatus.Professional,
                 Status = LicenseStatusType.Active,
                 CreationDate = DateTime.MinValue,
                 ExportFileLimit = -1,
@@ -177,6 +222,7 @@ namespace PstConverter.Models
                 Message = "Professional plan active."
             };
         }
+
     }
 
 

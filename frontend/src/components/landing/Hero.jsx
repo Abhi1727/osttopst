@@ -341,8 +341,9 @@ const Hero = ({ onUploadComplete }) => {
           Convert OST to PST Online File For Free
         </h1>
         <p className="text-slate-500 text-lg md:text-xl font-medium max-w-3xl mx-auto leading-relaxed">
-          An easy and free online method to convert OST to PST files instantly &
-          securely.
+          {/* An easy and free online method to convert OST to PST files instantly &
+          securely. */}
+          Upload your OST file and quickly convert it into PST format without any software hassle.
         </p>
         {/* <div className="flex flex-wrap justify-center gap-3">
           <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">

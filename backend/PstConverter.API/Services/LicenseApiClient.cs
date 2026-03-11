@@ -60,7 +60,7 @@ namespace PstConverter.Services
             return response.Content ?? string.Empty;
         }
 
-        public async Task<string> TrackUsageAsync(string licenseId, string toolId = "1", string moduleId = "1")
+        public async Task<string> GetModuleVersion(string licenseId, string toolId = "1", string moduleId = "1")
         {
             var client = await GetClientAsync(licenseId, toolId);
             var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}";
