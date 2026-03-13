@@ -9,10 +9,14 @@ namespace PstConverter.Endpoints;
 
 public static class SessionEndpoints
 {
+    /// <summary>
+    /// Extension method to map session-related API endpoints (recent sessions, duplicate check, status check, cancellation, and deletion).
+    /// </summary>
+    /// <param name="app">The IEndpointRouteBuilder instance.</param>
     public static void MapSessionEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/sessions").RequireAuthorization();
-
+        //this is for getting the recent sessions for the user
         group.MapGet("/recent", async (AppDbContext db, ClaimsPrincipal user) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
@@ -34,7 +38,7 @@ public static class SessionEndpoints
                 storeGuid = s.StoreGuid
             }));
         });
-
+        //this is for checking if the session is a duplicate
         group.MapGet("/duplicate-check", async (string fingerprint, AppDbContext db, ClaimsPrincipal user) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
@@ -64,7 +68,7 @@ public static class SessionEndpoints
 
             return Results.Ok(new { found = false });
         });
-
+        //this is for checking the status of the session
         group.MapGet("/{sessionId}/check", async (string sessionId, AppDbContext db, ClaimsPrincipal user) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
@@ -118,7 +122,7 @@ public static class SessionEndpoints
                 splitFiles = string.IsNullOrEmpty(session.SplitFilesJson) ? null : System.Text.Json.JsonSerializer.Deserialize<string[]>(session.SplitFilesJson)
             });
         });
-
+        //this is for deleting the session
         group.MapDelete("/{sessionId}", async (string sessionId, PstService pstService, AppDbContext db, ClaimsPrincipal user) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
@@ -134,7 +138,7 @@ public static class SessionEndpoints
 
             return Results.NoContent();
         });
-
+        //this is for cancelling the session
         group.MapPost("/{sessionId}/cancel", async (string sessionId, PstService pstService, ClaimsPrincipal user) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";

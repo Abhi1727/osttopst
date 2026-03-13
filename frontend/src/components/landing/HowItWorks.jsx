@@ -9,6 +9,7 @@ import {
   Shield,
   FolderTree,
   Play,
+  FileCode,
 } from "lucide-react";
 
 const StepIcon = ({ icon: Icon, badgeIcon: BadgeIcon, badgeColor }) => (
@@ -144,6 +145,188 @@ const HowItWorks = () => {
                 <div className="absolute inset-y-0 left-0 w-1/3 bg-emerald-500"></div>
               </div>
               <div className="text-white/80 text-sm font-mono tracking-wider">02:45</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Conversion Steps Section */}
+        <div className="mt-24 space-y-12">
+          <div className="text-center space-y-4">
+            <p className="text-slate-500 max-w-3xl mx-auto text-lg leading-relaxed">
+              The process of converting from OST to PST is simple even if you do
+              not have a technical background. This service is designed for the
+              average computer user.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Step 1 */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all flex flex-col items-center space-y-5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg">
+                1
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center">
+                Upload Your OST File
+              </h3>
+              <p className="text-slate-500 leading-relaxed text-sm text-center">
+                Simply drag and drop your file or click "Browse" to find the
+                file on your computer. We currently support files up to 50 GB in
+                size.
+              </p>
+            </div>
+            {/* Step 2 */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all flex flex-col items-center space-y-5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg">
+                2
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center">
+                Automatic-Conversion Begins
+              </h3>
+              <p className="text-slate-500 leading-relaxed text-sm text-center">
+                When your .ost file is uploaded it instantly begins the
+                conversion process (your file will first be repaired if it is
+                corrupt) and then will be converted to a PST file.
+              </p>
+            </div>
+            {/* Step 3 */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all flex flex-col items-center space-y-5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg">
+                3
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center">
+                Preview & Your PST File
+              </h3>
+              <p className="text-slate-500 leading-relaxed text-sm text-center">
+                When finished you can preview what you have converted and then
+                download your PST file directly to your computer.
+              </p>
+            </div>
+            {/* Step 4 */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all flex flex-col items-center space-y-5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg">
+                4
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center">
+                Import into Outlook
+              </h3>
+              <p className="text-slate-500 leading-relaxed text-sm text-center">
+                To use any edition of Microsoft Outlook to open PST, do File
+                Menu → Open & Export → Import/Export. Once the PST is opened,
+                the emails, calendar appointments, and contacts will be
+                available from within it.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Glossary Section */}
+        <div className="mt-24 space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900">
+              Understanding{" "}
+              <span className="text-emerald-600">OST and PST</span>
+            </h2>
+            <p className="text-slate-500 max-w-3xl mx-auto text-lg leading-relaxed">
+              A quick guide to Outlook's primary data storage formats.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* PST Card */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-lg transition-all space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-50 rounded-2xl">
+                  <FileCode className="w-8 h-8 text-amber-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800">
+                  PST (Personal Storage Table)
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-slate-600 leading-relaxed">
+                  A PST file is also called an{" "}
+                  <strong>"Outlook Data File,"</strong> which is simply an
+                  archived version of the email messages, as well as
+                  appointments, contacts, and to-dos that could be saved onto
+                  one's computer independently from any email server account (it
+                  can be created as needed).
+                </p>
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <strong className="text-slate-800">
+                      Purpose:
+                    </strong>{" "}
+                    Stores emails and other data as a personal archive.
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <strong className="text-slate-800">
+                      Server:
+                    </strong>{" "}
+                    Not linked to the server account.
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <strong className="text-slate-800">
+                      Adaptability:
+                    </strong>{" "}
+                    Can be smoothly shifted and opened on another system.
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <strong className="text-slate-800">
+                      Usage:
+                    </strong>{" "}
+                    Utilized for backup, storage, as well as for the migration.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* OST Card */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-lg transition-all space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-emerald-50 rounded-2xl">
+                  <RefreshCw className="w-8 h-8 text-emerald-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800">
+                  OST (Offline Storage Table)
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-slate-600 leading-relaxed">
+                  An OST file is known as an{" "}
+                  <strong>"Offline Outlook Data File."</strong> This type of
+                  file allows you to work even when you are not connected to the
+                  Internet. It will also allow you to use the system while
+                  offline and then later sync any changes back to the server.
+                </p>
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <strong className="text-slate-800">
+                      Purpose:
+                    </strong>{" "}
+                    Stores the synced copy of mailbox data for the usage of offline.
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <strong className="text-slate-800">
+                      Server:
+                    </strong>{" "}
+                    It is connected to an Exchange, Office 365, or IMAP account.
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <strong className="text-slate-800">
+                      Adaptability:
+                    </strong>{" "}
+                    Cannot be smoothly shifted to another desktop or profile.
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <strong className="text-slate-800">
+                      Usage:
+                    </strong>{" "}
+                    Utilized for temporary offline availability.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

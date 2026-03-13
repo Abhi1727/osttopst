@@ -10,39 +10,65 @@ namespace PstConverter.Endpoints;
 
 public static class ConversionEndpoints
 {
+    /// <summary>
+    /// Extension method to map conversion-related API endpoints.
+    /// </summary>
+    /// <param name="app">The IEndpointRouteBuilder instance.</param>
     public static void MapConversionEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/file-details");
-
-        group.MapGet("/{sessionId}/export", async (
-            string sessionId,
-            [FromQuery] string? format,
-            [FromQuery] string? folderId,
-            [FromQuery] string? entryIds,
-            [FromQuery] int? year,
-            [FromQuery] int? month,
-            [FromQuery] DateTime? startDate,
-            [FromQuery] DateTime? endDate,
-            [FromQuery] bool? excludeEmptyFolders,
-            [FromQuery] string? email,
-            PstService pstService,
-            LicenseApiClient licenseClient,
-            AppDbContext db,
-            ClaimsPrincipal user,
-            ILogger<Program> logger) =>
+        //THIS IS FOR EXPORT ALL FILES
+        group.MapGet("/{sessionId}/export", async (string sessionId,
+                                                    [FromQuery] string? format,
+                                                    [FromQuery] string? folderId,
+                                                    [FromQuery] string? entryIds,
+                                                    [FromQuery] int? year,
+                                                    [FromQuery] int? month,
+                                                    [FromQuery] DateTime? startDate,
+                                                    [FromQuery] DateTime? endDate,
+                                                    [FromQuery] bool? excludeEmptyFolders,
+                                                    [FromQuery] string? email,
+                                                    PstService pstService,
+                                                    LicenseApiClient licenseClient,
+                                                    AppDbContext db,
+                                                    ClaimsPrincipal user,
+                                                    ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
 
-            // License Check
-            var license = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-            if (!license.CanConvert)
+            // Get Tool License 
+            var toolStatus = await licenseClient.GetLicenceStatus(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+            // compare tool status with demo expired
+            if (toolStatus == LicenseTier.DemoExpired)
             {
-                return Results.Json(new { error = license.Message }, statusCode: StatusCodes.Status403Forbidden);
+                return Results.Json(new { error = toolStatus }, statusCode: StatusCodes.Status403Forbidden);
             }
 
+            // Get Module License
+            var moduleStatus = await licenseClient.GetModuleVersion(userEmail, ((int)Module.ConvertOSTToPST).ToString());
+
+            // compare module status with active and professional tier
+            if (toolStatus == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
+            {
+                return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);
+            }
+            if(moduleStatus == ModuleLicenseType.Active){
+                var fileSession = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                logger.LogInformation("License file check - SessionId: {SessionId}, FileSession found: {Found}, OriginalFileName: {FileName}, Size: {Size}",
+                    sessionId, fileSession != null, fileSession?.OriginalFileName, fileSession?.Size);
+                var originalFileName = fileSession?.OriginalFileName ?? "";
+                var fileSize = fileSession?.Size ?? 0;
+                bool isAvailable = await licenseClient.Addfileforlicense(userEmail,
+                                                                         ((int)Tool.ConvertOSTToPST).ToString(),
+                                                                         ((int)Module.ConvertOSTToPST).ToString(),
+                                                                          originalFileName+"_"+fileSize);
+                if(!isAvailable){
+                    return Results.Json(new { error = "File license limit exceeded" }, statusCode: StatusCodes.Status403Forbidden);
+                }
+            }
             // Track usage
-            _ = licenseClient.TrackUsageAsync(userEmail);
+            // _ = licenseClient.TrackUsageAsync(userEmail);
 
             if (logger.IsEnabled(LogLevel.Information))
             {
@@ -63,7 +89,16 @@ public static class ConversionEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, folderId, selectedIds, filter, excludeEmptyFolders ?? true, userEmail);
+                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId,
+                                                                           userId,
+                                                                           exportFormat,
+                                                                           toolStatus == LicenseTier.Demo,
+                                                                          moduleStatus,
+                                                                           folderId,
+                                                                           selectedIds,
+                                                                           filter,
+                                                                          excludeEmptyFolders ?? true,
+                                                                          userEmail);
 
                 if (!isReady)
                 {
@@ -99,13 +134,13 @@ public static class ConversionEndpoints
             }
             catch (Exception ex)
             {
-                try
-                {
-                    var logPath = @"C:\temp\debug_log.txt";
-                    File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] ERROR in ConversionEndpoints: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}");
-                    Console.WriteLine($"[ERROR] {ex.Message}");
-                }
-                catch { }
+                // try
+                // {
+                //     var logPath = @"C:\temp\debug_log.txt";
+                //     File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] ERROR in ConversionEndpoints: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}");
+                //     Console.WriteLine($"[ERROR] {ex.Message}");
+                // }
+                // catch { }
                 logger.LogError(ex, "ExportAll failed for session {SessionId}", sessionId);
                 return Results.Problem(ex.Message);
             }
@@ -114,24 +149,61 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, [FromQuery] bool? deduplicate, [FromQuery] long? splitSizeMb, [FromQuery] string? email, PstService pstService, LicenseApiClient licenseClient, AppDbContext db, ClaimsPrincipal user, ILogger<Program> logger) =>
+        //THIS IS FOR CONVERT OST TO PST
+        group.MapGet("/{sessionId}/convert-to-pst", async (string sessionId,
+                                                           [FromQuery] bool? excludeEmptyFolders,
+                                                           [FromQuery] bool? deduplicate,
+                                                           [FromQuery] long? splitSizeMb,
+                                                           [FromQuery] string? email,
+                                                           PstService pstService,
+                                                           LicenseApiClient licenseClient,
+                                                           AppDbContext db,
+                                                           ClaimsPrincipal user,
+                                                           ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
 
-            // License Check
-            var license = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-            if (!license.CanConvert)
-            {
-                return Results.Json(new { error = license.Message }, statusCode: StatusCodes.Status403Forbidden);
-            }
-
-            // Track usage
-            _ = licenseClient.TrackUsageAsync(userEmail);
-
             try
             {
-                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId, userId, excludeEmptyFolders ?? true, userEmail, deduplicate ?? false, splitSizeMb);
+                // Get Tool License 
+                var toolStatus = await licenseClient.GetLicenceStatus(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                // compare tool status with demo expired
+                if (toolStatus == LicenseTier.DemoExpired)
+                {
+                    return Results.Json(new { error = toolStatus }, statusCode: StatusCodes.Status403Forbidden);
+                }
+
+                // Get Module License
+                var moduleStatus = await licenseClient.GetModuleVersion(userEmail, ((int)Module.ConvertOSTToPST).ToString());
+
+                // compare module status with active and professional tier
+                if (toolStatus == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
+                {
+                    return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);
+                }
+
+                if(moduleStatus == ModuleLicenseType.Active){
+                    var fileSession = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                    var originalFileName = fileSession?.OriginalFileName ?? "";
+                    var fileSize = fileSession?.Size ?? 0;
+                    bool isAvailable = await licenseClient.Addfileforlicense(userEmail,
+                                                                             ((int)Tool.ConvertOSTToPST).ToString(),
+                                                                             ((int)Module.ConvertOSTToPST).ToString(),
+                                                                             originalFileName+"_"+fileSize);
+                    if(!isAvailable){
+                        return Results.Json(new { error = "File license limit exceeded" }, statusCode: StatusCodes.Status403Forbidden);
+                    }
+                }
+
+                var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId,
+                                                                                           userId, 
+                                                                                           toolStatus == LicenseTier.Demo,
+                                                                                          moduleStatus,
+                                                                                           excludeEmptyFolders ?? true, 
+                                                                                          userEmail, 
+                                                                                           deduplicate ?? false, 
+                                                                                           splitSizeMb);
 
                 if (!isReady)
                 {
@@ -177,8 +249,12 @@ public static class ConversionEndpoints
         .WithTags("Conversion Operations")
         .RequireAuthorization();
 
-
-        group.MapGet("/{sessionId}/download/{fileName}", async (string sessionId, string fileName, PstService pstService, AppDbContext db, ClaimsPrincipal user) =>
+        //THIS IS FOR SPLIT FILES
+        group.MapGet("/{sessionId}/download/{fileName}", async (string sessionId,
+                                                                string fileName,
+                                                                PstService pstService,
+                                                                AppDbContext db,
+                                                                ClaimsPrincipal user) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);

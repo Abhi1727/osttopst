@@ -9,12 +9,12 @@ using System.Threading.RateLimiting; // This is for rate limiting
 using Microsoft.Extensions.DependencyInjection; // This is for dependency injection
 using Microsoft.AspNetCore.Mvc; // This is for [FromQuery] and other MVC attributes
 using Microsoft.AspNetCore.ResponseCompression;
+using PstConverter.Models;
 
 // Initialize Aspose.Email License
 try
 {
-    var license = new License();
-
+    var license = new Aspose.Email.License();
     //  License licObj = new License();
     // string Lic = "<?xml version=\\\"1.0\\\"?>\\r\\n<License>\\r\\n  <Data>\\r\\n    <LicensedTo>Shef USA</LicensedTo>\\r\\n    <EmailTo>tarunlamba@shefusa.com</EmailTo>\\r\\n    <LicenseType>Developer OEM</LicenseType>\\r\\n    <LicenseNote>1 Developer And Unlimited Deployment Locations</LicenseNote>\\r\\n    <OrderID>260226165350</OrderID>\\r\\n    <UserID>1327979</UserID>\\r\\n    <OEM>This is a redistributable license</OEM>\\r\\n    <Products>\\r\\n      <Product>Aspose.Total Product Family</Product>\\r\\n    </Products>\\r\\n    <EditionType>Professional</EditionType>\\r\\n    <SerialNumber>b9f2d0d5-bdef-4f1d-968d-4cdd2111ade2</SerialNumber>\\r\\n    <SubscriptionExpiry>20270226</SubscriptionExpiry>\\r\\n    <LicenseExpiry>20260326</LicenseExpiry>\\r\\n    <ExpiryNote>This is a temporary license for non-commercial use only and it will expire on 2026-03-26</ExpiryNote>\\r\\n    <LicenseVersion>3.0</LicenseVersion>\\r\\n    <LicenseInstructions>https://purchase.aspose.com/policies/use-license</LicenseInstructions>\\r\\n  </Data>\\r\\n  <Signature>mFYcemoPfrXsGUWnC0oT2uR289LbOmnbnSNh3b756tCIeWVAJw5jivY236zdzaoU0+gyu8CnQq9Soiwz93HF6ychmsiqUaBcH/8EDTQqom1E/19rAKkSoDBpOwLO6sgl4CX2EmE3IdxTKzEd78j85fmUHSSql9WpW+UASSId/EE=</Signature>\\r\\n</License>";
     string Lic = "<?xml version=\"1.0\"?>\r\n<License>\r\n  <Data>\r\n    <LicensedTo>Shef USA</LicensedTo>\r\n    <EmailTo>tarunlamba@shefusa.com</EmailTo>\r\n    <LicenseType>Developer OEM</LicenseType>\r\n    <LicenseNote>1 Developer And Unlimited Deployment Locations</LicenseNote>\r\n    <OrderID>260226165350</OrderID>\r\n    <UserID>1327979</UserID>\r\n    <OEM>This is a redistributable license</OEM>\r\n    <Products>\r\n      <Product>Aspose.Total Product Family</Product>\r\n    </Products>\r\n    <EditionType>Professional</EditionType>\r\n    <SerialNumber>b9f2d0d5-bdef-4f1d-968d-4cdd2111ade2</SerialNumber>\r\n    <SubscriptionExpiry>20270226</SubscriptionExpiry>\r\n    <LicenseExpiry>20260326</LicenseExpiry>\r\n    <ExpiryNote>This is a temporary license for non-commercial use only and it will expire on 2026-03-26</ExpiryNote>\r\n    <LicenseVersion>3.0</LicenseVersion>\r\n    <LicenseInstructions>https://purchase.aspose.com/policies/use-license</LicenseInstructions>\r\n  </Data>\r\n  <Signature>mFYcemoPfrXsGUWnC0oT2uR289LbOmnbnSNh3b756tCIeWVAJw5jivY236zdzaoU0+gyu8CnQq9Soiwz93HF6ychmsiqUaBcH/8EDTQqom1E/19rAKkSoDBpOwLO6sgl4CX2EmE3IdxTKzEd78j85fmUHSSql9WpW+UASSId/EE=</Signature>\r\n</License>";
@@ -22,6 +22,7 @@ try
     MemoryStream objStream = new(byteArray);
 
     license.SetLicense(objStream);
+    
     try
     {
         var logPath = @"C:\temp\debug_log.txt";
@@ -30,14 +31,30 @@ try
     catch { }
 
 
-    //if (File.Exists("Aspose.Email.lic"))
-    //{
-    //    license.SetLicense("Aspose.Email.lic");
-    //}
+
+    if (File.Exists("Aspose.Email.lic"))
+    {
+        license.SetLicense("Aspose.Email.lic");
+    }
 }
 catch (Exception ex)
 {
     Console.WriteLine($"Aspose.Email License Error: {ex.Message}");
+}
+
+//Initialize Aspose.Words License
+try
+{
+    var license = new Aspose.Words.License();
+    string Lic = "<?xml version=\"1.0\"?>\r\n<License>\r\n  <Data>\r\n    <LicensedTo>Shef USA</LicensedTo>\r\n    <EmailTo>tarunlamba@shefusa.com</EmailTo>\r\n    <LicenseType>Developer OEM</LicenseType>\r\n    <LicenseNote>1 Developer And Unlimited Deployment Locations</LicenseNote>\r\n    <OrderID>260226165350</OrderID>\r\n    <UserID>1327979</UserID>\r\n    <OEM>This is a redistributable license</OEM>\r\n    <Products>\r\n      <Product>Aspose.Total Product Family</Product>\r\n    </Products>\r\n    <EditionType>Professional</EditionType>\r\n    <SerialNumber>b9f2d0d5-bdef-4f1d-968d-4cdd2111ade2</SerialNumber>\r\n    <SubscriptionExpiry>20270226</SubscriptionExpiry>\r\n    <LicenseExpiry>20260326</LicenseExpiry>\r\n    <ExpiryNote>This is a temporary license for non-commercial use only and it will expire on 2026-03-26</ExpiryNote>\r\n    <LicenseVersion>3.0</LicenseVersion>\r\n    <LicenseInstructions>https://purchase.aspose.com/policies/use-license</LicenseInstructions>\r\n  </Data>\r\n  <Signature>mFYcemoPfrXsGUWnC0oT2uR289LbOmnbnSNh3b756tCIeWVAJw5jivY236zdzaoU0+gyu8CnQq9Soiwz93HF6ychmsiqUaBcH/8EDTQqom1E/19rAKkSoDBpOwLO6sgl4CX2EmE3IdxTKzEd78j85fmUHSSql9WpW+UASSId/EE=</Signature>\r\n</License>";
+    byte[] byteArray = Encoding.UTF8.GetBytes(Lic);
+    MemoryStream objStream = new(byteArray);
+
+    license.SetLicense(objStream);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Aspose.Words License Error: {ex.Message}");
 }
 
 var builder = WebApplication.CreateBuilder(args);
@@ -101,12 +118,14 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                 logger.LogError("Authentication failed: {Message}", context.Exception.Message);
+                /*
                 try
                 {
                     var logPath = @"C:\temp\debug_log.txt";
                     File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] AUTH FAILED: {context.Exception.Message}{Environment.NewLine}");
                 }
                 catch { }
+                */
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
@@ -257,6 +276,7 @@ app.Use(async (context, next) =>
 // Minimal API Test Root
 app.MapGet("/api/status", () => Results.Ok(new { status = "API is running", timestamp = DateTime.Now }));
 
+/*
 // License server connectivity test
 app.MapGet("/api/license/test", async (LicenseApiClient licenseClient, IConfiguration config) =>
 {
@@ -265,6 +285,7 @@ app.MapGet("/api/license/test", async (LicenseApiClient licenseClient, IConfigur
     var result = await licenseClient.GetLicenceStatus(userId, toolId);
     return Results.Ok(new { userId, toolId, response = result });
 });
+*/
 
 app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsPrincipal user, [FromQuery] string? email, ILogger<Program> logger) =>
 {
@@ -281,10 +302,45 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
             licenseId,
             email != null ? "QueryParam" : (user.FindFirstValue(ClaimTypes.Email) != null ? "ClaimTypes.Email" : "Fallback"));
     }
+    // var status = await licenseClient.GetLicenceStatus(licenseId, ((int)Tool.ConvertOSTToPST).ToString());//await licenseClient.GetDetailedLicenseStatusAsync(licenseId);
+    // return Results.Ok(status);
+    var tier = await licenseClient.GetLicenceStatus(licenseId, ((int)Tool.ConvertOSTToPST).ToString());
+    return Results.Ok(new { tier, canConvert = tier != LicenseTier.DemoExpired, exportFileLimit = tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit });
+})
+.RequireAuthorization();
 
-    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId);
-    return Results.Ok(status);
-});
+//THIS IS FOR GENERATING A SUBSCRIPTION REQUEST (user clicks "Buy Now" on Pricing page)
+app.MapPost("/api/license/subscription", async (
+    [FromBody] SubscriptionRequest subscriptionRequest,
+    LicenseApiClient licenseClient,
+    ClaimsPrincipal user,
+    [FromQuery] string? email,
+    ILogger<Program> logger) =>
+{
+    var licenseId = email
+                 ?? user.FindFirstValue(ClaimTypes.Email)
+                 ?? user.FindFirstValue("email")
+                 ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
+                 ?? "anonymous";
+
+    var toolId = ((int)Tool.ConvertOSTToPST).ToString();
+
+    logger.LogInformation("[SUBSCRIPTION REQ] User: {LicenseId}, PlanId: {PlanId}, ModuleId: {ModuleId}",
+        licenseId, subscriptionRequest.PlanId, subscriptionRequest.ModuleId);
+
+    var result = await licenseClient.GenerateSubscriptionRequestAsync(licenseId, toolId, subscriptionRequest);
+
+    if (!result.Success)
+    {
+        return Results.Json(new { error = result.Message, raw = result.RawResponse },
+            statusCode: StatusCodes.Status502BadGateway);
+    }
+
+    return Results.Ok(result);
+})
+.WithName("GenerateSubscriptionRequest")
+.WithTags("License")
+.RequireAuthorization();
 
 
 app.MapFileEndpoints();

@@ -1,5 +1,6 @@
 namespace PstConverter.Models;
 
+//this is for the chunked upload metadata
 public class ChunkedUploadMetadata
 {
     public string UploadId { get; set; } = "";

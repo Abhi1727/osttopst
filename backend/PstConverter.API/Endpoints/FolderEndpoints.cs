@@ -7,6 +7,10 @@ namespace PstConverter.Endpoints;
 
 public static class FolderEndpoints
 {
+    /// <summary>
+    /// Extension method to map folder-related API endpoints (listing folder tree and exporting specific folders).
+    /// </summary>
+    /// <param name="app">The IEndpointRouteBuilder instance.</param>
     public static void MapFolderEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/file-details");

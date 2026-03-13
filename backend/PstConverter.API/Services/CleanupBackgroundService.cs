@@ -11,7 +11,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace PstConverter.Services;
 
-public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<CleanupBackgroundService> logger) : BackgroundService
+    /// <summary>
+    /// Background service that periodically cleans up old files and expired conversion sessions.
+    /// </summary>
+    public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<CleanupBackgroundService> logger) : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ILogger<CleanupBackgroundService> _logger = logger;
@@ -20,6 +23,10 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
     private readonly TimeSpan _initialDelay = TimeSpan.FromMinutes(30);  // wait before first cleanup
     private readonly TimeSpan _maxFileAge = TimeSpan.FromHours(6);      // sessions live for 6h
 
+    /// <summary>
+    /// Core execution loop of the background service.
+    /// </summary>
+    /// <param name="stoppingToken">A token that triggers when the service is shutting down.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Cleanup Background Service is starting.");
@@ -60,6 +67,10 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
         _logger.LogInformation("Cleanup Background Service is stopping.");
     }
 
+    /// <summary>
+    /// Orchestrates the cleanup process for physical files and database records.
+    /// </summary>
+    /// <param name="stoppingToken">Cancellation token.</param>
     private async Task DoCleanupAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Performing cleanup of old files...");
@@ -163,6 +174,11 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
         }
     }
 
+    /// <summary>
+    /// Attempts to delete a file with multiple retry attempts if the file is locked by another process.
+    /// </summary>
+    /// <param name="filePath">Target file path.</param>
+    /// <param name="retries">Maximum number of retry attempts.</param>
     private async Task TryDeleteWithRetryAsync(string filePath, int retries = 3)
     {
         if (!File.Exists(filePath)) return;

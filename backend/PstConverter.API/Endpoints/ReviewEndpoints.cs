@@ -10,6 +10,10 @@ namespace PstConverter.Endpoints;
 
 public static class ReviewEndpoints
 {
+    /// <summary>
+    /// Extension method to map review-related API endpoints (listing and creating reviews).
+    /// </summary>
+    /// <param name="routes">The IEndpointRouteBuilder instance.</param>
     public static void MapReviewEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/api/reviews").WithTags("Reviews");

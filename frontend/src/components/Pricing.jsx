@@ -221,7 +221,7 @@ const Pricing = () => {
   }, [isLoaded, isSignedIn, getToken, user]);
 
   const tierLower = String(status?.tier ?? status?.Tier ?? "").toLowerCase();
-  const isProfessional = tierLower === "professional" || tierLower === "2";
+  const isProfessional = tierLower === "professional" || tierLower === "3";
 
   const faqs = [
     {

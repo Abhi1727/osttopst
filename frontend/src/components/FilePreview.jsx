@@ -143,11 +143,11 @@ const FilePreview = ({ session, onReset }) => {
           if (data.tier !== undefined) tierStr = String(data.tier);
           else if (data.Tier !== undefined) tierStr = String(data.Tier);
 
-          if (tierStr === "0" || tierStr.toLowerCase() === "demo")
+          if (tierStr === "1" || tierStr.toLowerCase() === "demo")
             setLicenseTier("Demo");
-          else if (tierStr === "1" || tierStr.toLowerCase() === "demoexpired")
+          else if (tierStr === "2" || tierStr.toLowerCase() === "demoexpired")
             setLicenseTier("Demo Expired");
-          else if (tierStr === "2" || tierStr.toLowerCase() === "professional")
+          else if (tierStr === "3" || tierStr.toLowerCase() === "professional")
             setLicenseTier("Professional");
           else setLicenseTier(tierStr);
 

@@ -21,7 +21,5 @@ public enum ExportFormat
     Xml,
     Json,
     Vcf,
-    Ics,
-    Zip,
-    SevenZip
+    Ics
 }

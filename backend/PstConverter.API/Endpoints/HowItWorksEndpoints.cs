@@ -4,6 +4,10 @@ namespace PstConverter.Endpoints;
 
 public static class HowItWorksEndpoints
 {
+    /// <summary>
+    /// Extension method to map the 'How It Works' documentation endpoint.
+    /// </summary>
+    /// <param name="app">The IEndpointRouteBuilder instance.</param>
     public static void MapHowItWorksEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/howitswork", () =>

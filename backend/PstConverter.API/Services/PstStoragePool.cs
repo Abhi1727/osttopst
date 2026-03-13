@@ -4,13 +4,28 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace PstConverter.Services;
 
+/// <summary>
+/// Interface for a pool that manages open PST storage handles to minimize disk I/O and handle limits.
+/// </summary>
 public interface IPstStoragePool : IDisposable
 {
+    /// <summary>
+    /// Provides thread-safe access to a PersonalStorage object for a given session.
+    /// </summary>
+    /// <typeparam name="T">The return type of the action.</typeparam>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="filePath">Target physical path of the PST/OST file.</param>
+    /// <param name="action">The function to execute using the open storage handle.</param>
+    /// <param name="password">Optional password for the storage file.</param>
+    /// <returns>The result of the action.</returns>
     Task<T> AccessAsync<T>(string sessionId, string filePath, Func<PersonalStorage, Task<T>> action, string? password = null);
     void Remove(string sessionId);
     Task RemoveAsync(string sessionId);
 }
 
+/// <summary>
+/// Implementation of IPstStoragePool using IMemoryCache for the underlying handle management.
+/// </summary>
 public class PstStoragePool : IPstStoragePool
 {
     private readonly IMemoryCache _cache;
@@ -79,6 +94,10 @@ public class PstStoragePool : IPstStoragePool
         }
     }
 
+    /// <summary>
+    /// Synchronously removes and disposes a session's storage handle from the pool.
+    /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
     public void Remove(string sessionId)
     {
         if (_cache.TryGetValue(sessionId, out PersonalStorage? pst) && pst != null)
@@ -88,6 +107,10 @@ public class PstStoragePool : IPstStoragePool
         _cache.Remove(sessionId);
     }
 
+    /// <summary>
+    /// Asynchronously removes and disposes a session's storage handle from the pool, ensuring thread safety with a lock.
+    /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
     public async Task RemoveAsync(string sessionId)
     {
         if (_locks.TryGetValue(sessionId, out var semaphore))
@@ -135,6 +158,9 @@ public class PstStoragePool : IPstStoragePool
         }
     }
 
+    /// <summary>
+    /// Disposes all semaphores and clears the session locks.
+    /// </summary>
     public void Dispose()
     {
         foreach (var semaphore in _locks.Values) semaphore.Dispose();

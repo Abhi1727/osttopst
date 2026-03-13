@@ -4,6 +4,7 @@ namespace PstConverter.Endpoints;
 
 public static class ExportFormatHelpers
 {
+   //this is for getting the export format from the string      
     public static ExportFormat Parse(string? format)
     {
         return (format?.ToLowerInvariant()) switch
@@ -28,12 +29,11 @@ public static class ExportFormatHelpers
             "json" => ExportFormat.Json,
             "vcf" => ExportFormat.Vcf,
             "ics" => ExportFormat.Ics,
-            "zip" => ExportFormat.Zip,
-            "sevenzip" or "7z" => ExportFormat.SevenZip,
             _ => ExportFormat.Eml
         };
     }
 
+    //this is for getting the content type of the export format
     public static string GetContentType(this ExportFormat format)
     {
         return format switch
@@ -58,12 +58,11 @@ public static class ExportFormatHelpers
             ExportFormat.Json => "application/json",
             ExportFormat.Vcf => "text/vcard",
             ExportFormat.Ics => "text/calendar",
-            ExportFormat.Zip => "application/zip",
-            ExportFormat.SevenZip => "application/x-7z-compressed",
             _ => "application/octet-stream"
         };
     }
 
+    //this is for getting the extension of the export format
     public static string GetExtension(this ExportFormat format)
     {
         return format switch
@@ -88,8 +87,6 @@ public static class ExportFormatHelpers
             ExportFormat.Json => ".json",
             ExportFormat.Vcf => ".vcf",
             ExportFormat.Ics => ".ics",
-            ExportFormat.Zip => ".zip",
-            ExportFormat.SevenZip => ".7z",
             _ => ".eml"
         };
     }

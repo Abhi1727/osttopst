@@ -8,6 +8,10 @@ namespace PstConverter.Endpoints;
 
 public static class FileEndpoints
 {
+    /// <summary>
+    /// Extension method to map file-related API endpoints (upload, initialization, chunking, finalization, and deletion).
+    /// </summary>
+    /// <param name="app">The IEndpointRouteBuilder instance.</param>
     public static void MapFileEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/file-details");
@@ -264,6 +268,14 @@ public static class FileEndpoints
         .RequireAuthorization();
     }
 
+    /// <summary>
+    /// Validates if a given stream has a valid Outlook data file (!BDN) signature and matches the expected extension.
+    /// </summary>
+    /// <param name="stream">The file stream to validate.</param>
+    /// <param name="expectedExtension">The expected file extension (.pst or .ost).</param>
+    /// <returns>True if the file signature and version are valid; otherwise, false.</returns>
+    
+    //this is for validating the outlook data file
     public static bool IsValidOutlookDataFile(Stream stream, string expectedExtension)
     {
         if (stream.Length < 12) return false;

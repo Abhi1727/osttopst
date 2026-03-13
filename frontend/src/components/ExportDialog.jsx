@@ -149,22 +149,6 @@ const EXPORT_FORMATS = [
     color: "from-indigo-500/20 to-indigo-600/10 border-indigo-500/30",
     iconColor: "text-indigo-400",
   },
-  {
-    id: "Zip",
-    label: "ZIP",
-    description: "Compressed",
-    icon: Download,
-    color: "from-zinc-400/20 to-zinc-500/10 border-zinc-400/30",
-    iconColor: "text-zinc-400",
-  },
-  {
-    id: "SevenZip",
-    label: "7Z",
-    description: "7-Zip archive",
-    icon: Download,
-    color: "from-zinc-600/20 to-zinc-700/10 border-zinc-600/30",
-    iconColor: "text-zinc-500",
-  },
 ];
 
 const ExportDialog = ({ open, session, onClose, options = {} }) => {
@@ -497,6 +481,8 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                         className="w-full h-12 px-4 rounded-xl border-2 border-zinc-100 bg-zinc-50 focus:bg-white text-zinc-900 font-bold focus:border-emerald-500 transition-all outline-none"
                       >
                         <option value="">Don't Split (Single File)</option>
+                        <option value="200">Split into 200 MB chunks</option>
+                        <option value="300">Split into 300 MB chunks</option>
                         <option value="2000">Split into 2 GB chunks</option>
                         <option value="5000">Split into 5 GB chunks</option>
                         <option value="10000">Split into 10 GB chunks</option>

@@ -100,8 +100,17 @@ export const downloadFile = async (
 
     if (!response.ok) {
       const errorText = await response.text();
+      let errorMessage = response.statusText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error) errorMessage = typeof errorJson.error === 'string' ? errorJson.error : JSON.stringify(errorJson.error);
+        else if (errorJson.detail) errorMessage = errorJson.detail;
+        else if (errorJson.title) errorMessage = errorJson.title;
+      } catch {
+        if (errorText) errorMessage = errorText;
+      }
       console.error(`[Download] Fetch failed: ${response.status}`, errorText);
-      throw new Error(`Download failed: ${response.statusText}`);
+      throw new Error(`Download failed: ${errorMessage}`);
     }
 
     // Success - 200 OK

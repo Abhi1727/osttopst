@@ -36,10 +36,10 @@ const LicenseBadge = () => {
 
   // Map numeric or string values to our normalized keys
   let normalizedTier = "unknown";
-  if (tierValue === "0" || tierValue === "demo") normalizedTier = "demo";
-  if (tierValue === "1" || tierValue === "demoexpired")
+  if (tierValue === "1" || tierValue === "demo") normalizedTier = "demo";
+  if (tierValue === "2" || tierValue === "demoexpired")
     normalizedTier = "demoexpired";
-  if (tierValue === "2" || tierValue === "professional")
+  if (tierValue === "3" || tierValue === "professional")
     normalizedTier = "professional";
 
   if (normalizedTier === "professional") {

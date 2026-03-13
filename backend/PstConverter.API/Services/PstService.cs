@@ -12,16 +12,15 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Task = System.Threading.Tasks.Task;
 using Aspose.Words;
-using Aspose.Zip;
-using Aspose.Zip.SevenZip;
 using Aspose.Email.Calendar;
 using Aspose.Email.Mapi;
 
 namespace PstConverter.Services;
 
+
 public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbContext db, ILogger<PstService> logger, IServiceScopeFactory scopeFactory, LicenseApiClient licenseClient)
 {
-    private readonly string _uploadDir = StorageConstants.UploadDir;
+    private readonly string _uploadDir = StorageConstants.UploadDir;//for upload directory
     private readonly IPstStoragePool _pool = pool;
     private readonly IDistributedCache _cache = cache;
     private readonly AppDbContext _db = db;
@@ -31,13 +30,25 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _uploadLocks = new();
     private static readonly ConcurrentDictionary<string, CancellationTokenSource> _conversionCts = new();
     private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
-
+    public string _originalFileName {get;private set;}="";
+    public long _fileSize {get;private set;}=0;
+    /*
+    /// <summary>
+    /// Logs a debug message to the console with a timestamp.
+    /// </summary>
+    /// <param name="msg">The message to log.</param>
     private static void LogDebug(string msg)
     {
         // Use Console.WriteLine so background task progress is visible in the server logs.
         Console.WriteLine($"[PstService] {DateTime.Now:HH:mm:ss} {msg}");
     }
-
+    */
+    /// <summary>
+    /// Retrieves session data including file path and password for a given session and user.
+    /// </summary>
+    /// <param name="sessionId">The unique identifier for the conversion session.</param>
+    /// <param name="userId">The ID of the user requesting the session data.</param>
+    /// <returns>A tuple containing the file path and the optional password.</returns>
     private async Task<(string filePath, string? password)> GetSessionDataAsync(string sessionId, string userId)
     {
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
@@ -117,14 +128,24 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         throw new FileNotFoundException("The session file is no longer available on this server. Please re-upload your file.");
 
     }
-
+    /// <summary>
+    /// Saves an uploaded file to the local storage and creates a new conversion session.
+    /// </summary>
+    /// <param name="fileStream">The stream containing the file data.</param>
+    /// <param name="originalFileName">The original name of the uploaded file.</param>
+    /// <param name="userId">The ID of the user who uploaded the file.</param>
+    /// <param name="size">The size of the uploaded file in bytes.</param>
+    /// <param name="userEmail">Optional email of the user.</param>
+    /// <param name="password">Optional password for the PST/OST file.</param>
+    /// <returns>The unique session ID for the uploaded file.</returns>
     public async Task<string> SaveUploadedFileAsync(Stream fileStream, string originalFileName, string userId, long size, string? userEmail = null, string? password = null)
     {
         var sessionId = Guid.NewGuid().ToString("N");
         var ext = Path.GetExtension(originalFileName).ToLowerInvariant();
         if (ext != ".ost") ext = ".pst";
         var filePath = Path.Combine(_uploadDir, $"{sessionId}{ext}");
-
+        _originalFileName = originalFileName;
+        _fileSize = size;
         try
         {
             using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
@@ -178,7 +199,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             // Track storage for professional users
             _ = _licenseClient.UpdateStorageAsync(userEmail ?? userId, "1", "1", size);
 
-            Console.WriteLine($"[UPLOAD] Session created: {sessionId}, Status: Uploaded");
+            // Console.WriteLine($"[UPLOAD] Session created: {sessionId}, Status: Uploaded");
             return sessionId;
         }
         catch (Exception ex)
@@ -188,7 +209,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             throw;
         }
     }
-
+    /// <summary>
+    /// Initializes a chunked upload process.
+    /// </summary>
+    /// <param name="originalFileName">The original name of the file being uploaded.</param>
+    /// <param name="userId">The ID of the user initiating the upload.</param>
+    /// <param name="totalChunks">The total number of chunks expected.</param>
+    /// <param name="totalSize">The total size of the file in bytes.</param>
+    /// <returns>A unique upload ID for the chunked session.</returns>
     public async Task<string> InitChunkedUploadAsync(string originalFileName, string userId, int totalChunks, long totalSize)
     {
         var uploadId = Guid.NewGuid().ToString("N");
@@ -209,10 +237,17 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var metaPath = Path.Combine(chunkDir, "_metadata.json");
         await File.WriteAllTextAsync(metaPath, JsonSerializer.Serialize(metadata));
 
-        Console.WriteLine($"[CHUNK] Initialized chunked upload: {uploadId}, Total Chunks: {totalChunks}, File: {originalFileName}");
+        // Console.WriteLine($"[CHUNK] Initialized chunked upload: {uploadId}, Total Chunks: {totalChunks}, File: {originalFileName}");
         return uploadId;
     }
-
+    /// <summary>
+    /// Saves an individual chunk of a chunked upload.
+    /// </summary>
+    /// <param name="uploadId">The unique ID of the chunked upload session.</param>
+    /// <param name="userId">The ID of the user uploading the chunk.</param>
+    /// <param name="chunkIndex">The zero-based index of the chunk.</param>
+    /// <param name="chunkStream">The stream containing the chunk data.</param>
+    /// <returns>A tuple indicating success and the total number of chunks received so far.</returns>
     public async Task<(bool success, int receivedCount)> SaveChunkAsync(string uploadId, string userId, int chunkIndex, Stream chunkStream)
     {
         var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
@@ -251,12 +286,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         if (chunkIndex % 5 == 0 || chunkIndex == metadata.TotalChunks - 1)
         {
-            Console.WriteLine($"[CHUNK] Received chunk {chunkIndex + 1}/{metadata.TotalChunks} for upload {uploadId}");
+            // Console.WriteLine($"[CHUNK] Received chunk {chunkIndex + 1}/{metadata.TotalChunks} for upload {uploadId}");
         }
 
         return (true, chunkIndex + 1);
     }
-
+    /// <summary>
+    /// Aborts a chunked upload session and cleans up temporary files.
+    /// </summary>
+    /// <param name="uploadId">The unique ID of the chunked upload session.</param>
+    /// <param name="userId">The ID of the user aborting the upload.</param>
     public async Task AbortChunkedUploadAsync(string uploadId, string userId)
     {
         var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
@@ -295,7 +334,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             throw;
         }
     }
-
+    /// <summary>
+    /// Finalizes a chunked upload by merging all chunks into a single file and creating a conversion session.
+    /// </summary>
+    /// <param name="uploadId">The unique ID of the chunked upload session.</param>
+    /// <param name="userId">The ID of the user finalizing the upload.</param>
+    /// <param name="userEmail">Optional email of the user.</param>
+    /// <returns>A result object containing the session ID and file metadata.</returns>
     public async Task<FinalizationResult> FinalizeChunkedUploadAsync(string uploadId, string userId, string? userEmail = null)
     {
         var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
@@ -339,9 +384,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         await _db.SaveChangesAsync();
 
         // Track storage for professional users
-        _ = _licenseClient.UpdateStorageAsync(userEmail ?? userId, "1", "1", metadata.TotalSize);
+        //_ = _licenseClient.UpdateStorageAsync(userEmail ?? userId, "1", "1", metadata.TotalSize); //check for later license api
 
-        Console.WriteLine($"[ASSEMBLY] Starting background assembly for session {sessionId}, Upload ID: {uploadId}");
+        // Console.WriteLine($"[ASSEMBLY] Starting background assembly for session {sessionId}, Upload ID: {uploadId}");
         var cts = new CancellationTokenSource();
         _conversionCts[sessionId] = cts;
         var token = cts.Token;
@@ -377,7 +422,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         await chunkFs.CopyToAsync(finalStream, bufferSize, token);
                     }
                 }
-                Console.WriteLine($"[ASSEMBLY] Merged {metadata.TotalChunks} chunks into {finalPath}");
+                // Console.WriteLine($"[ASSEMBLY] Merged {metadata.TotalChunks} chunks into {finalPath}");
 
                 using (var scope = _scopeFactory.CreateScope())
                 {
@@ -417,7 +462,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         s.StoreGuid = storeGuid;
                         s.Status = "Uploaded";
                         await updateDb.SaveChangesAsync();
-                        Console.WriteLine($"[ASSEMBLY] Session {sessionId} is now READY");
+                        // Console.WriteLine($"[ASSEMBLY] Session {sessionId} is now READY");
                     }
                 }
 
@@ -425,7 +470,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine($"[ASSEMBLY] Background assembly CANCELLED for {sessionId}");
+                // Console.WriteLine($"[ASSEMBLY] Background assembly CANCELLED for {sessionId}");
                 TryDelete(finalPath);
             }
             catch (Exception ex)
@@ -452,13 +497,50 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         return new FinalizationResult(sessionId, metadata.OriginalFileName, metadata.TotalSize, ext.TrimStart('.'));
     }
-
+    /// <summary>
+    /// Represents the result of a finalized chunked upload.
+    /// </summary>
     public record FinalizationResult(string SessionId, string FileName, long Size, string FileType);
-
-    public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, string userId, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false, long? splitSizeMb = null) => await ConvertStorageAsync(sessionId, userId, FileFormat.Pst, excludeEmptyFolders, userEmail, deduplicate, splitSizeMb);
-
+    /// <summary>
+    /// Converts an OST file to a PST file.
+    /// </summary>
+    /// <param name="sessionId">The session ID of the file to convert.</param>
+    /// <param name="userId">The ID of the user requesting conversion.</param>
+    /// <param name="excludeEmptyFolders">Whether to exclude empty folders in the output.</param>
+    /// <param name="userEmail">Optional email of the user.</param>
+    /// <param name="deduplicate">Whether to remove duplicate messages during conversion.</param>
+    /// <param name="splitSizeMb">Optional size in MB to split the resulting PST into multiple parts.</param>
+    /// <returns>A tuple containing the output path, filename, and whether it's ready.</returns>
+    public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, 
+                                                                                             string userId, 
+                                                                                             bool isDemo,
+                                                                                             ModuleLicenseType moduleLicenseType,
+                                                                                             bool excludeEmptyFolders = false, 
+                                                                                             string? userEmail = null, 
+                                                                                             bool deduplicate = false, 
+                                                                                             long? splitSizeMb = null) 
+    {
+       return await ConvertStorageAsync(sessionId, 
+                                        userId,
+                                        FileFormat.Pst,
+                                        isDemo,
+                                        moduleLicenseType,
+                                        excludeEmptyFolders,
+                                        userEmail,
+                                        deduplicate,
+                                        splitSizeMb);
+    }
+                                                                                             
+    /// <summary>
+    /// Returns the absolute path to the upload directory.
+    /// </summary>
     public string GetUploadDir() => _uploadDir;
-
+    /*
+    /// <summary>
+    /// Attempts to repair a PST/OST storage file.
+    /// </summary>
+    /// <param name="sessionId">The session ID of the file to repair.</param>
+    /// <param name="userId">The ID of the user requesting the repair.</param>
     public async Task RepairStorageAsync(string sessionId, string userId)
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
@@ -470,7 +552,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             return Task.FromResult(true);
         }, password);
     }
-
+    */
+    /// <summary>
+    /// Splits a PST file into smaller chunks based on the specified size.
+    /// </summary>
+    /// <param name="sessionId">The session ID of the file to split.</param>
+    /// <param name="userId">The ID of the user requesting the split.</param>
+    /// <param name="chunkSizeMb">The maximum size of each chunk in megabytes.</param>
+    /// <returns>A list of paths to the split PST files.</returns>
     public async Task<List<string>> SplitPstAsync(string sessionId, string userId, long chunkSizeMb)
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
@@ -487,19 +576,35 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         return outputPaths;
     }
+    /// <summary>
+    /// Core method to handle conversion and processing of PST/OST storage files.
+    /// </summary>
 
-    private async Task<(string FilePath, string FileName, bool isReady)> ConvertStorageAsync(string sessionId, string userId, FileFormat format, bool excludeEmptyFolders = false, string? userEmail = null, bool deduplicate = false, long? splitSizeMb = null)
+    //this is the main method that handles the conversion of PST/OST files.
+    private async Task<(string FilePath, string FileName, bool isReady)> ConvertStorageAsync(string sessionId,
+                                                                                            string userId,
+                                                                                            FileFormat format,
+                                                                                            bool isDemo,
+                                                                                            ModuleLicenseType moduleLicenseType,
+                                                                                            bool excludeEmptyFolders = false,
+                                                                                            string? userEmail = null,
+                                                                                            bool deduplicate = false,
+                                                                                            long? splitSizeMb = null)
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
 
         // --- NEW: LICENSE CHECK BEFORE DEFINING PATHS ---
-        var licenseId = userEmail ?? userId;
-        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
-        if (!licenseStatus.CanConvert)
+        // var licenseId = userEmail ?? userId;
+        // var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
+        // if (!licenseStatus.CanConvert)
+        // {
+        //     throw new InvalidOperationException($"License check failed: {licenseStatus}");
+        // }
+        int exportLimit = -1;//licenseStatus.ExportFileLimit;
+        if(isDemo)
         {
-            throw new InvalidOperationException($"License check failed: {licenseStatus.Message}");
+            exportLimit = AllConstants.DemoExportLimit;
         }
-        int exportLimit = licenseStatus.ExportFileLimit;
         // --------------------------------------------------
 
         string ext = ".pst";
@@ -521,7 +626,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             return (outputPath, fileName, true);
         }
 
-        Console.WriteLine($"[CONVERT] Starting BACKGROUND conversion for session {sessionId} to {format}");
+        // Console.WriteLine($"[CONVERT] Starting BACKGROUND conversion for session {sessionId} to {format}");
 
         if (session != null)
         {
@@ -554,7 +659,15 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             var folderCounts = excludeEmptyFolders ? new Dictionary<string, int>() : null;
                             if (excludeEmptyFolders) BuildFolderCountCache(srcStorage.RootFolder, folderCounts!);
 
-                            CopyFolders(srcStorage.RootFolder, destStorage.RootFolder, srcStorage, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, token);
+                            CopyFolders(srcStorage.RootFolder,
+                                        destStorage.RootFolder,
+                                        srcStorage,
+                                        excludeEmptyFolders,
+                                        exportLimit,
+                                        seenMessages,
+                                        null,
+                                        folderCounts,
+                                        token);
                         }
 
                         if (splitSizeMb > 0)
@@ -601,7 +714,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     }
                     await updateDb.SaveChangesAsync();
                 }
-                Console.WriteLine($"[CONVERT] Background conversion complete for {sessionId}");
+                // Console.WriteLine($"[CONVERT] Background conversion complete for {sessionId}");
             }
             catch (OperationCanceledException)
             {
@@ -634,8 +747,18 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         return (outputPath, fileName, false);
     }
-
-    private static void CopyFolders(FolderInfo source, FolderInfo destParent, PersonalStorage srcPst, bool excludeEmptyFolders, int limit, HashSet<string>? seenHashes, HashSet<string>? visitedFolders = null, Dictionary<string, int>? folderCounts = null, CancellationToken token = default)
+    /// <summary>
+    /// Recursively copies folders and their contents from a source storage to a destination storage.
+    /// </summary>
+    private static void CopyFolders(FolderInfo source,
+                                    FolderInfo destParent,
+                                    PersonalStorage srcPst,
+                                    bool excludeEmptyFolders,
+                                    int limit,
+                                    HashSet<string>? seenHashes,
+                                    HashSet<string>? visitedFolders = null,
+                                    Dictionary<string, int>? folderCounts = null,
+                                    CancellationToken token = default)
     {
         visitedFolders ??= [];
         if (!visitedFolders.Add(source.EntryIdString)) return;
@@ -694,7 +817,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             CopyFolders(srcFolder, newFolder, srcPst, excludeEmptyFolders, limit, seenHashes, visitedFolders, folderCounts, token);
         }
     }
-
+    /// <summary>
+    /// Builds a cache of message counts for all folders in the storage.
+    /// </summary>
     private static int BuildFolderCountCache(FolderInfo folder, Dictionary<string, int> cache)
     {
         int count = folder.ContentCount;
@@ -705,7 +830,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         cache[folder.EntryIdString] = count;
         return count;
     }
-
+    /// <summary>
+    /// Calculates the total number of messages in a folder and all its subfolders.
+    /// </summary>
     private static int GetTotalMessageCount(FolderInfo folder)
     {
         int count = folder.ContentCount;
@@ -715,7 +842,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
         return count;
     }
-
+    /// <summary>
+    /// Retrieves a hierarchical tree structure of folders in a PST/OST file.
+    /// </summary>
     public async Task<List<PstFolderInfo>> GetFolderTreeAsync(string sessionId, string userId, bool excludeEmptyFolders = false)
     {
         var cacheKey = $"pst_folders_{sessionId}_{excludeEmptyFolders}";
@@ -730,7 +859,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         _cache.SetString(cacheKey, JsonSerializer.Serialize(tree), new DistributedCacheEntryOptions { SlidingExpiration = TimeSpan.FromMinutes(30) });
         return tree;
     }
-
+    /// <summary>
+    /// Recursively builds a folder info tree from a starting folder.
+    /// </summary>
     private static List<PstFolderInfo> BuildFolderTree(FolderInfo folder, bool excludeEmpty = false)
     {
         try
@@ -768,7 +899,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             return [];
         }
     }
-
+    /// <summary>
+    /// Flattens or cleans up the folder tree by removing non-essential root levels.
+    /// </summary>
     private static List<PstFolderInfo> FlattenFolderTree(List<PstFolderInfo> folders)
     {
         if (folders == null || folders.Count == 0) return folders ?? [];
@@ -798,7 +931,17 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         return folders;
     }
-
+    /// <summary>
+    /// Retrieves a list of message summaries from a specific folder.
+    /// </summary>
+    /// <param name="sessionId">The session ID of the PST/OST file.</param>
+    /// <param name="userId">The ID of the user requesting the messages.</param>
+    /// <param name="folderId">The unique ID of the folder to retrieve messages from.</param>
+    /// <param name="filter">Optional date filter for messages.</param>
+    /// <param name="sortBy">The field to sort by (e.g., "date", "subject").</param>
+    /// <param name="sortOrder">The sort order ("asc" or "desc").</param>
+    /// <returns>A list of message summaries.</returns>
+    /// 
     public async Task<List<PstMessageSummary>> GetMessagesAsync(string sessionId, string userId, string folderId, MessageDateFilter? filter = null, string? sortBy = "date", string? sortOrder = "desc")
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
@@ -807,10 +950,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             var folder = pst.GetFolderById(folderId);
             if (folder is null) return Task.FromResult(new List<PstMessageSummary>());
 
-            LogDebug($"GetMessagesAsync: Folder '{folder.DisplayName}', ContentCount={folder.ContentCount}");
+            // LogDebug($"GetMessagesAsync: Folder '{folder.DisplayName}', ContentCount={folder.ContentCount}");
             var list = new List<PstMessageSummary>();
             var contents = folder.GetContents();
-            LogDebug($"GetMessagesAsync: GetContents() returned {contents.Count} items");
+            // LogDebug($"GetMessagesAsync: GetContents() returned {contents.Count} items");
 
             foreach (var msgInfo in contents)
             {
@@ -851,7 +994,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             return Task.FromResult(list);
         }, password);
     }
-
+    /// <summary>
+    /// Retrieves detailed information about a specific message.
+    /// </summary>
+    /// <param name="sessionId">The session ID of the PST/OST file.</param>
+    /// <param name="userId">The ID of the user requesting the detail.</param>
+    /// <param name="entryId">The unique ID of the message to retrieve.</param>
+    /// <returns>A message detail object, or null if not found.</returns>
     public async Task<PstMessageDetail?> GetMessageDetailAsync(string sessionId, string userId, string entryId)
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
@@ -879,6 +1028,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }, password);
     }
 
+    /// <summary>
+    /// Retrieves a list of contacts from a specific folder.
+    /// </summary>
+    /// <param name="sessionId">The session ID of the PST/OST file.</param>
+    /// <param name="userId">The ID of the user requesting the contacts.</param>
+    /// <param name="folderId">The unique ID of the folder.</param>
+    /// <returns>A list of contact information objects.</returns>
     public async Task<List<PstContactInfo>> GetContactsAsync(string sessionId, string userId, string folderId)
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
@@ -905,6 +1061,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }, password);
     }
 
+    /// <summary>
+    /// Retrieves a list of calendar items from a specific folder.
+    /// </summary>
+    /// <param name="sessionId">The session ID of the PST/OST file.</param>
+    /// <param name="userId">The ID of the user requesting the calendar items.</param>
+    /// <param name="folderId">The unique ID of the folder.</param>
+    /// <returns>A list of calendar information objects.</returns>
     public async Task<List<PstCalendarInfo>> GetCalendarItemsAsync(string sessionId, string userId, string folderId)
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
@@ -931,6 +1094,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }, password);
     }
 
+    /// <summary>
+    /// Exports a single message to a specified format and writes it to an output stream.
+    /// </summary>
+    /// <param name="outputStream">The stream to write the exported message to.</param>
+    /// <param name="sessionId">The session ID of the PST/OST file.</param>
+    /// <param name="userId">The ID of the user requesting the export.</param>
+    /// <param name="entryId">The unique ID of the message to export.</param>
+    /// <param name="format">The target export format.</param>
     public async Task ExportMessageAsync(Stream outputStream, string sessionId, string userId, string entryId, ExportFormat format)
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
@@ -942,6 +1113,15 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }, password);
     }
 
+    /// <summary>
+    /// Exports all messages in a specific folder to a ZIP archive in the specified format.
+    /// </summary>
+    /// <param name="sessionId">The session ID of the PST/OST file.</param>
+    /// <param name="userId">The ID of the user requesting the export.</param>
+    /// <param name="folderId">The unique ID of the folder to export.</param>
+    /// <param name="format">The target export format for individual messages.</param>
+    /// <param name="filter">Optional date filter for messages.</param>
+    /// <returns>The local path to the generated ZIP archive.</returns>
     public async Task<string> ExportFolderAsync(string sessionId, string userId, string folderId, ExportFormat format, MessageDateFilter? filter = null)
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
@@ -969,25 +1149,45 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }, password);
         return tempZipPath;
     }
-
-    public async Task<(string FilePath, bool isReady)> ExportAllAsync(string sessionId, string userId, ExportFormat format, string? folderId = null, List<string>? entryIds = null, MessageDateFilter? filter = null, bool excludeEmptyFolders = false, string? userEmail = null)
+    /// <summary>
+    /// Exports multiple items (entire store, specific folder, or selected messages) to a ZIP archive.
+    /// </summary>
+    /// <param name="sessionId">The session ID of the PST/OST file.</param>
+    /// <param name="userId">The ID of the user requesting the export.</param>
+    /// <param name="format">The target export format.</param>
+    /// <param name="folderId">Optional ID of a specific folder to export.</param>
+    /// <param name="entryIds">Optional list of specific message IDs to export.</param>
+    /// <param name="filter">Optional date filter for messages.</param>
+    /// <param name="excludeEmptyFolders">Whether to exclude empty folders in the ZIP structure.</param>
+    /// <param name="userEmail">Optional email of the user.</param>
+    /// <param name="isDemo">Whether the user is on a demo license.</param>
+    /// <param name="moduleLicenseType">The type of license for the module.</param>
+    /// <returns>A tuple containing the generated ZIP path and whether it's ready.</returns>    
+    public async Task<(string FilePath, bool isReady)> ExportAllAsync(string sessionId,
+                                                                      string userId,
+                                                                      ExportFormat format,
+                                                                      bool isDemo,
+                                                                      ModuleLicenseType moduleLicenseType,  
+                                                                      string? folderId = null,
+                                                                      List<string>? entryIds = null,
+                                                                      MessageDateFilter? filter = null,
+                                                                      bool excludeEmptyFolders = false,
+                                                                      string? userEmail = null)
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
 
-        // --- NEW: LICENSE CHECK BEFORE STARTING EXPORT ---
-        var licenseId = userEmail ?? userId;
-        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
-        if (!licenseStatus.CanConvert)
+
+        int exportLimit = -1;
+        if (isDemo)
         {
-            throw new InvalidOperationException($"License check failed: {licenseStatus.Message}");
+            exportLimit = AllConstants.DemoExportLimit;
         }
-        int exportLimit = licenseStatus.ExportFileLimit;
 
         if (exportLimit > -1 && entryIds != null && entryIds.Count > exportLimit)
         {
             throw new InvalidOperationException($"Selection limit exceeded. Your license allows exporting up to {exportLimit} items. Please upgrade to a Professional plan.");
         }
-        // --------------------------------------------------
+        //--------------------------------------------------
 
         string suffix = "";
         if (!string.IsNullOrEmpty(folderId)) suffix += $"_f_{GetStableHash(folderId)}";
@@ -1018,19 +1218,19 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         if (session != null && session.Status == exportingStatus)
         {
-            LogDebug($"ExportAllAsync: Task for {suffix} is currently exporting.");
+            // LogDebug($"ExportAllAsync: Task for {suffix} is currently exporting.");
             return (tempZipPath, false);
         }
 
         if (File.Exists(tempZipPath) && isFinished)
         {
-            LogDebug($"ExportAllAsync: Task for {suffix} is already ready.");
+            // LogDebug($"ExportAllAsync: Task for {suffix} is already ready.");
             return (tempZipPath, true);
         }
 
         if (session != null)
         {
-            LogDebug($"ExportAllAsync: Starting new export task for {suffix}. Setting status to {exportingStatus}");
+            // LogDebug($"ExportAllAsync: Starting new export task for {suffix}. Setting status to {exportingStatus}");
             session.Status = exportingStatus;
             await _db.SaveChangesAsync();
         }
@@ -1050,7 +1250,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     {
                         if (entryIds != null && entryIds.Count > 0)
                         {
-                            LogDebug($"ExportAllAsync: Processing {entryIds.Count} selected entryIds");
+                            // LogDebug($"ExportAllAsync: Processing {entryIds.Count} selected entryIds");
                             int index = 0;
                             foreach (var entryId in entryIds)
                             {
@@ -1060,7 +1260,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                     using var msg = pst.ExtractMessage(entryId);
                                     if (msg == null)
                                     {
-                                        LogDebug($"ExportAllAsync: ExtractMessage returned null for {entryId}");
+                                        // LogDebug($"ExportAllAsync: ExtractMessage returned null for {entryId}");
                                         continue;
                                     }
                                     index++;
@@ -1068,13 +1268,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                     using var es = entry.Open();
                                     SaveMessageToStream(msg, es, format);
                                 }
-                                catch (Exception ex)
+                                catch (Exception)
                                 {
-                                    LogDebug($"ExportAllAsync: Error extracting {entryId}: {ex.Message}");
+                                    // LogDebug($"ExportAllAsync: Error extracting {entryId}: {ex.Message}");
                                     continue;
                                 }
                             }
-                            LogDebug($"ExportAllAsync: Successfully extracted {index} messages");
+                            // LogDebug($"ExportAllAsync: Successfully extracted {index} messages");
                         }
                         else
                         {
@@ -1093,7 +1293,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 var s = await updateDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
                 if (s != null && !token.IsCancellationRequested)
                 {
-                    LogDebug($"ExportAllAsync: Background task complete for {suffix}. Setting status to {readyStatus}");
+                    // LogDebug($"ExportAllAsync: Background task complete for {suffix}. Setting status to {readyStatus}");
                     s.Status = readyStatus;
                     await updateDb.SaveChangesAsync();
                 }
@@ -1101,7 +1301,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             catch (OperationCanceledException) { TryDelete(tempZipPath); }
             catch (Exception ex)
             {
-                LogDebug($"ExportAllAsync: Background exception for {suffix}: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                // LogDebug($"ExportAllAsync: Background exception for {suffix}: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 if (!token.IsCancellationRequested)
                 {
                     _logger.LogError(ex, "Background export failed for session {SessionId}", sessionId);
@@ -1124,7 +1324,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         return (tempZipPath, false);
     }
-
+    /// <summary>
+    /// Recursively exports folder contents and subfolders into a ZIP archive.
+    /// </summary>
     private static void ExportFolderRecursive(PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
@@ -1169,9 +1371,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 using var es = entry.Open();
                 SaveMessageToStream(msg, es, format);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogDebug($"ExportFolderRecursive: Error saving message {msgInfo.EntryIdString} to {format}: {ex.Message}");
+                // LogDebug($"ExportFolderRecursive: Error saving message {msgInfo.EntryIdString} to {format}: {ex.Message}");
             }
         }
 
@@ -1180,7 +1382,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             ExportFolderRecursive(pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, limit, token);
         }
     }
-
+    /// <summary>
+    /// Builds an Aspose.Email MailQuery based on the provided date filter.
+    /// </summary>
     private static Aspose.Email.Tools.Search.MailQuery? BuildQuery(MessageDateFilter? filter)
     {
         if (filter == null || filter.IsEmpty()) return null;
@@ -1212,7 +1416,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         return builder.GetQuery();
     }
-
+    /// <summary>
+    /// Recursively checks if a folder or its subfolders contain any messages matching the query.
+    /// </summary>
     private static bool HasMatchingContentRecursive(FolderInfo folder, Aspose.Email.Tools.Search.MailQuery? query)
     {
         if (query != null)
@@ -1231,7 +1437,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return false;
     }
 
-
+    /// <summary>
+    /// Cleans up all local files and resources associated with a session.
+    /// </summary>
+    /// <param name="sessionId">The session ID to clean up.</param>
     public async Task CleanUpAsync(string sessionId)
     {
         if (_conversionCts.TryRemove(sessionId, out var cts)) { cts.Cancel(); cts.Dispose(); }
@@ -1244,7 +1453,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var zipFiles = Directory.GetFiles(_uploadDir, $"export_{sessionId}_*.zip");
         foreach (var zip in zipFiles) TryDelete(zip);
     }
-
+    /// <summary>
+    /// Cancels any active background conversion or export tasks for a session.
+    /// </summary>
+    /// <param name="sessionId">The session ID to cancel tasks for.</param>
     public async Task CancelBackgroundTaskAsync(string sessionId)
     {
         if (_conversionCts.TryRemove(sessionId, out var cts))
@@ -1259,7 +1471,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             }
         }
     }
-
+    /// <summary>
+    /// Saves a MapiMessage to a stream in the specified export format.
+    /// </summary>
     private static void SaveMessageToStream(MapiMessage msg, Stream stream, ExportFormat format)
     {
         using var ms = new MemoryStream();
@@ -1315,7 +1529,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         }
                         else
                         {
-                            LogDebug("VCF Export: Message is not a contact, skipping.");
+                            // LogDebug("VCF Export: Message is not a contact, skipping.");
                         }
                     }
                     break;
@@ -1328,7 +1542,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         }
                         else
                         {
-                            LogDebug("ICS Export: Message is not a calendar item, skipping.");
+                            // LogDebug("ICS Export: Message is not a calendar item, skipping.");
                         }
                     }
                     break;
@@ -1365,30 +1579,6 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         }
                     }
                     break;
-                case ExportFormat.Zip:
-                    {
-                        msg.Save(ms, Aspose.Email.SaveOptions.DefaultEml);
-                        ms.Position = 0;
-                        using var nestedMs = new MemoryStream();
-                        using (var archive = new System.IO.Compression.ZipArchive(nestedMs, ZipArchiveMode.Create, true))
-                        {
-                            var entry = archive.CreateEntry("message.eml", CompressionLevel.Optimal);
-                            using var entryStream = entry.Open();
-                            ms.CopyTo(entryStream);
-                        }
-                        nestedMs.Position = 0;
-                        nestedMs.CopyTo(stream);
-                        return;
-                    }
-                case ExportFormat.SevenZip:
-                    {
-                        msg.Save(ms, Aspose.Email.SaveOptions.DefaultEml);
-                        ms.Position = 0;
-                        using var archive = new SevenZipArchive();
-                        archive.CreateEntry("message.eml", ms);
-                        archive.Save(stream);
-                        return;
-                    }
                 case ExportFormat.Mhtml:
                     msg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
                     break;
@@ -1411,13 +1601,15 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 ms.CopyTo(stream);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            LogDebug($"SaveMessageToStream: Error during {format} export: {ex.Message}");
+            // LogDebug($"SaveMessageToStream: Error during {format} export: {ex.Message}");
             throw;
         }
     }
-
+    /// <summary>
+    /// Returns the standard file extension for a given export format.
+    /// </summary>
     private static string GetFileExtension(ExportFormat format) => format switch
     {
         ExportFormat.Eml => ".eml",
@@ -1437,19 +1629,21 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         ExportFormat.Json => ".json",
         ExportFormat.Vcf => ".vcf",
         ExportFormat.Ics => ".ics",
-        ExportFormat.Zip => ".zip",
-        ExportFormat.SevenZip => ".7z",
         ExportFormat.Pdf => ".pdf",
         _ => ".eml"
     };
-
+    /// <summary>
+    /// Sanitizes a string to be used as a safe filename.
+    /// </summary>
     private static string SanitizeFileName(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();
         var sanitized = new string([.. name.Where(c => !invalid.Contains(c))]);
         return string.IsNullOrWhiteSpace(sanitized) ? "message" : sanitized.Trim();
     }
-
+    /// <summary>
+    /// Extracts a unique identifier (GUID) for the storage file based on its header content and size.
+    /// </summary>
     private static string ExtractStoreGuid(string filePath)
     {
         try
@@ -1462,13 +1656,17 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
         catch { return string.Empty; }
     }
-
+    /// <summary>
+    /// Generates a stable, short SHA256 hash of the input string.
+    /// </summary>
     private static string GetStableHash(string input)
     {
         var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(bytes).ToLowerInvariant()[..8];
     }
-
+    /// <summary>
+    /// Attempts to delete a file, with retries if the file is locked.
+    /// </summary>
     private static void TryDelete(string path)
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;

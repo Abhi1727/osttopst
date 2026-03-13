@@ -7,6 +7,9 @@ using PstConverter.Models;
 
 namespace PstConverter.Services
 {
+    /// <summary>
+    /// Service responsible for authenticating with the external license API and managing JWT tokens.
+    /// </summary>
     public class LicenseAuthService(IConfiguration configuration)
     {
         private readonly string _baseUrl = configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("LicenseApi:BaseUrl missing");
@@ -14,6 +17,12 @@ namespace PstConverter.Services
         private readonly string _password = configuration["LicenseApi:Password"] ?? "1234";
         private readonly ConcurrentDictionary<string, LicenseToken> _tokenCache = new();
 
+        /// <summary>
+        /// Retrieves a valid JWT token from the cache or by authenticating with the license server.
+        /// </summary>
+        /// <param name="licenseId">The license ID (typically user email).</param>
+        /// <param name="toolId">The ID of the tool for which authentication is requested.</param>
+        /// <returns>A valid JWT token string, or null if authentication fails.</returns>
         public async Task<string?> GetTokenAsync(string licenseId, string toolId)
         {
             var cacheKey = $"{licenseId}_{toolId}";
@@ -26,7 +35,8 @@ namespace PstConverter.Services
             {
                 var options = new RestClientOptions(_baseUrl)
                 {
-                    RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true
+                    RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true,
+                    Timeout = TimeSpan.FromSeconds(3) // 3 seconds timeout
                 };
                 var client = new RestClient(options);
                 var request = new RestRequest("Auth/login", Method.Post);
@@ -61,6 +71,11 @@ namespace PstConverter.Services
             }
         }
 
+        /// <summary>
+        /// Removes a cached token from the internal cache, forcing a re-authentication on the next request.
+        /// </summary>
+        /// <param name="licenseId">The license ID.</param>
+        /// <param name="toolId">The tool ID.</param>
         public void InvalidateToken(string licenseId, string toolId)
         {
             var cacheKey = $"{licenseId}_{toolId}";

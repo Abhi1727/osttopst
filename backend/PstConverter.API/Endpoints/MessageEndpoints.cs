@@ -7,10 +7,14 @@ namespace PstConverter.Endpoints;
 
 public static class MessageEndpoints
 {
+    /// <summary>
+    /// Extension method to map message-related API endpoints (listing, detail, contacts, calendar, and single/batch export).
+    /// </summary>
+    /// <param name="app">The IEndpointRouteBuilder instance.</param>
     public static void MapMessageEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/file-details");
-
+        //this is for getting the messages for the user
         group.MapGet("/{sessionId}/messages", async (
             string sessionId,
             [FromQuery] string folderId,
@@ -50,7 +54,7 @@ public static class MessageEndpoints
         .WithName("GetMessages")
         .WithTags("Message Operations")
         .RequireAuthorization();
-
+        //this is for getting the contacts for the user
         group.MapGet("/{sessionId}/contacts", async (string sessionId, [FromQuery] string folderId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
@@ -67,7 +71,7 @@ public static class MessageEndpoints
         .WithName("GetContacts")
         .WithTags("Folder Operations")
         .RequireAuthorization();
-
+        //this is for getting the calendar items for the user
         group.MapGet("/{sessionId}/calendar", async (string sessionId, [FromQuery] string folderId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
@@ -84,7 +88,7 @@ public static class MessageEndpoints
         .WithName("GetCalendarItems")
         .WithTags("Folder Operations")
         .RequireAuthorization();
-
+        //this is for getting the message detail for the user
         group.MapGet("/{sessionId}/messages/{entryId}", async (string sessionId, string entryId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
@@ -106,7 +110,7 @@ public static class MessageEndpoints
         .WithName("GetMessageDetail")
         .WithTags("Message Operations")
         .RequireAuthorization();
-
+        //this is for exporting the message for the user
         group.MapGet("/{sessionId}/messages/{entryId}/export", (string sessionId, string entryId, [FromQuery] string? format, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
@@ -138,16 +142,20 @@ public static class MessageEndpoints
         .WithName("ExportMessage")
         .WithTags("Message Operations")
         .RequireAuthorization();
-
+        
+        //this is for exporting the messages in batch for the user
         group.MapPost("/{sessionId}/messages/export-batch", async (
             string sessionId,
             [FromQuery] string? format,
             [FromBody] BatchExportRequest request,
             PstService pstService,
+            LicenseApiClient licenseClient,
             ClaimsPrincipal user,
             ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+
             if (logger.IsEnabled(LogLevel.Information))
             {
                 logger.LogInformation("BatchExportMessages request: session={SessionId}, format={Format}, count={Count}", sessionId, format, request.EntryIds?.Count ?? 0);
@@ -160,8 +168,25 @@ public static class MessageEndpoints
 
             try
             {
+                var toolStatus = await licenseClient.GetLicenceStatus(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                if (toolStatus == LicenseTier.DemoExpired)
+                {
+                    return Results.Json(new { error = toolStatus }, statusCode: StatusCodes.Status403Forbidden);
+                }
+                var moduleStatus = await licenseClient.GetModuleVersion(userEmail, ((int)Module.ConvertOSTToPST).ToString());
+                if (toolStatus == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
+                {
+                    return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);
+                }
+
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                var (filePath, isReady) = await pstService.ExportAllAsync(sessionId, userId, exportFormat, entryIds: request.EntryIds);
+                var (filePath, isReady) = await pstService.ExportAllAsync(
+                    sessionId, 
+                    userId, 
+                    exportFormat,
+                    toolStatus == LicenseTier.Demo,
+                    moduleStatus,
+                    entryIds: request.EntryIds);
 
                 if (!isReady)
                 {

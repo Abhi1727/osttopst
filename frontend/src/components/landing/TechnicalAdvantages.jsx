@@ -54,7 +54,7 @@ const TechnicalAdvantages = () => {
           <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
-                Broad Compatibility Across All OST & PST Variants
+                Supports All OST and PST File Variants
               </h3>
               <p className="text-slate-500 mb-8 leading-relaxed">
                 Our free OST to PST converter software is engineered to handle every variant of OST and PST file you might encounter.

@@ -108,7 +108,16 @@ const downloadFile = async (
     pollResult = await pollForDownload();
   } else if (!triggerRes.ok) {
     const errorText = await triggerRes.text();
-    throw new Error(`Request failed: ${triggerRes.statusText}`);
+    let errorMessage = triggerRes.statusText;
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (errorJson.error) errorMessage = typeof errorJson.error === 'string' ? errorJson.error : JSON.stringify(errorJson.error);
+      else if (errorJson.detail) errorMessage = errorJson.detail;
+      else if (errorJson.title) errorMessage = errorJson.title;
+    } catch { 
+      if (errorText) errorMessage = errorText;
+    }
+    throw new Error(errorMessage);
   }
 
   if (signal?.aborted) return null;

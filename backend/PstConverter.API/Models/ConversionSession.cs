@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace PstConverter.Models;
 
+    //this is for the conversion session
 public class ConversionSession
 {
     [Key]
