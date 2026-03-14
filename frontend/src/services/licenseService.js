@@ -27,6 +27,34 @@ const licenseService = {
       };
     }
   },
+
+  /**
+   * Generates a subscription request for a specific plan.
+   * @param {string} token - Auth token
+   * @param {Object} requestData - { TotalItems, Storage, TotalDays, PlanId, ModuleId }
+   * @param {string} email - Optional email override
+   * @returns {Promise<Object>} The response from the server.
+   */
+  generateSubscriptionRequest: async (token, requestData, email) => {
+    try {
+      const url = email
+        ? `${API_BASE_URL}/license/subscription?email=${encodeURIComponent(email)}`
+        : `${API_BASE_URL}/license/subscription`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          ...getHeaders(token),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+      return await handleResponse(res);
+    } catch (error) {
+      console.error("Error generating subscription request:", error);
+      throw error;
+    }
+  },
 };
 
 export default licenseService;

@@ -54,6 +54,8 @@ namespace PstConverter.Services
         /// <returns>The user's license tier (Professional, Demo, etc.).</returns>
         public async Task<LicenseTier> GetLicenceStatus(string licenseId, string toolId = "1")
         {
+            //return LicenseTier.Professional;
+            //--------------------------------------
             var client = await GetClientAsync(licenseId, toolId);
             var path = $"Licences/{licenseId}/Tools/{toolId}";
             var request = new RestRequest(path);
@@ -89,6 +91,8 @@ namespace PstConverter.Services
         /// <returns>The module license type (Active, Expired, etc.).</returns>
         public async Task<ModuleLicenseType> GetModuleVersion(string licenseId, string toolId = "1", string moduleId = "1")
         {
+            //return ModuleLicenseType.Active;
+            //---------------------------------------
             var client = await GetClientAsync(licenseId, toolId);
             var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}";
             var request = new RestRequest(path);
@@ -138,6 +142,8 @@ namespace PstConverter.Services
         /// <returns>True if registration was successful; otherwise, false.</returns>
         public async Task<bool> Addfileforlicense(string licenseId, string toolId, string moduleId, string itemId)
         {
+            //return true;
+            //----------------------------------------
             var client = await GetClientAsync(licenseId, toolId);
             var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}";
             var request = new RestRequest(path, Method.Get);
@@ -199,7 +205,18 @@ namespace PstConverter.Services
             var client = await GetClientAsync(licenseId, toolId);
             var path = $"Licences/{licenseId}/Tools/{toolId}/GenerateSubscriptionRequest";
             var restRequest = new RestRequest(path, Method.Post);
-            restRequest.AddJsonBody(request);
+            
+            // The external API expects an array of objects where all numeric values are strings
+            var payload = new[]
+            {
+                new {
+                    TotalItems = request.TotalItems.ToString(),
+                    Storage = request.Storage.ToString(),
+                    TotalDays = request.TotalDays.ToString(),
+                    ModuleId = request.ModuleId.ToString()
+                }
+            };
+            restRequest.AddJsonBody(payload);
 
             var response = await client.ExecuteAsync(restRequest);
 

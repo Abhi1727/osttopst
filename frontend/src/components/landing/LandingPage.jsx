@@ -8,6 +8,7 @@ import ReviewSection from "./ReviewSection";
 import ConversionHistory from "../ConversionHistory";
 import HowItWorks from "./HowItWorks";
 import TrustFeatures from "./TrustFeatures";
+import LandingFaq from "./LandingFaq";
 
 import { SignedIn } from "@clerk/clerk-react";
 
@@ -28,6 +29,7 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
       <TechnicalAdvantages />
       <Glossary />
       <ConversionMissions />
+      <LandingFaq />
       <ReviewSection />
     </div>
   );

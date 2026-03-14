@@ -24,151 +24,144 @@ const Faq = () => {
 
   const questions = [
     {
-      id: "item-1",
+      id: "gen-1",
       category: "General",
       question: "What is an OST file?",
       answer:
-        "An OST file (Offline Outlook Data File) is a synchronized mirror or a 'cache' of what’s currently on the mail server. It allows you to work offline and syncs changes once you're back online.",
+        "An OST file, which stands for Offline Outlook Data File, is a setup mirror or a 'cache' of what’s currently on the mail server. It permits you to work offline and syncs modifications once you're back online.",
     },
     {
-      id: "item-2",
+      id: "gen-2",
       category: "General",
       question: "What is a PST file?",
       answer:
-        "A PST file (Personal Storage Table) acts like a personal filing cabinet for emails, calendar events, and contacts. It is stored on your hard drive and is independent of the server.",
+        "A PST file, which stands for Personal Storage Table, acts like a personal filing cabinet for emails, calendar events, and contacts. It is gathered on a hard drive and is free of the server.",
     },
     {
-      id: "item-3",
+      id: "gen-3",
       category: "General",
       question: "How do I Import an OST File into Outlook PST?",
       answer:
-        "Outlook doesn't directly import OST files. You must first convert the OST to a PST format. Once converted, you can use Outlook's 'Import/Export' wizard to bring the PST data into your profile.",
+        "Outlook doesn't directly import OST files. First, you must convert the OST to a PST format. Once it gets converted, you can utilize Outlook's 'Import/Export' wizard to bring out the PST data into your profile.",
     },
     {
-      id: "item-4",
+      id: "gen-4",
       category: "General",
       question: "How to convert OST to PST online?",
       answer:
-        "You can use our secure online service. Simply upload your OST file, our cloud-based engine will process it instantly maintaining your folder structure, and then you can download the resulting PST file.",
+        "You can utilize our safe and secure online service. Just simply add your OST file, our cloud-based engine will process it quickly, managing your folder structure, and then you can download or install the PST file.",
     },
     {
-      id: "item-5",
+      id: "gen-5",
+      category: "General",
+      question: "What is the migrate emails OST to PST converter tool?",
+      answer:
+        "It is a characterized utility built to unlock 'orphaned' OST files and convert them into standard PST files that can be opened by any Outlook version.",
+    },
+    {
+      id: "gen-6",
+      category: "General",
+      question: "How to open an OST File without Outlook?",
+      answer:
+        "OST files are locked to the MAPI profile that generated them. To see the data without the original Outlook account, you must convert it to a PST or utilize an OST viewer tool.",
+    },
+    {
+      id: "gen-7",
+      category: "General",
+      question: "Is the OST TO PST converter safe?",
+      answer:
+        "Our online viewer and converter use 256-bit SSL encryption. Unlike many 'free' downloadable tools that may harbor malware, our cloud-based process makes sure your data stays in a safe and secure pipeline.",
+    },
+    {
+      id: "gen-8",
+      category: "General",
+      question: "Does the new Outlook still use OST files?",
+      answer:
+        "Yes, the contemporary 'New Outlook' for Windows and Office 365 continues to utilize a local cache for offline access and performance, which is stored in a format similar to the outdated OST.",
+    },
+    {
+      id: "tech-1",
       category: "Technical",
       question: "How to move mails from OST to PST in Outlook 2016?",
       answer:
-        "In Outlook 2016, if the account is active, you can export to a PST file via File > Open & Export > Import/Export. If the account is inaccessible, you'll need a conversion tool like ours to extract the data from the OST file.",
+        "In Outlook 2016, if the account is active, you can export to a PST file through File > Open & Export > Import/Export. If the account is inaccessible, you'll need a conversion tool like ours to extract the data from the OST file.",
     },
     {
-      id: "item-6",
+      id: "tech-2",
       category: "Technical",
-      question: "Does scanpst work on OST files?",
+      question: "Does ScanPst work on OST files?",
       answer:
-        "The Inbox Repair Tool (scanpst.exe) is primarily designed for PST files. While it may run on OST files, it often fails to resolve complex sync issues or 'orphaned' file problems, where a dedicated converter is more effective.",
+        "The Inbox Repair Tool (scanpst.exe) is primarily designed for PST files. While it may run on OST files, it often fails to resolve complex sync issues or 'orphaned' file problems, where a dedicated converter is more efficient.",
     },
     {
-      id: "item-7",
+      id: "tech-3",
       category: "Technical",
       question: "How do I change the OST File in Outlook?",
       answer:
-        "You can change the location or recreate an OST file by going to Account Settings > Data Files. However, Outlook will always create a new OST file that syncs with the server; it won't 'open' an old one like a PST.",
+        "You can modify the location or recreate an OST file by going to Account Settings > Data Files. However, Outlook will always create a new OST file that syncs with the server; it won't 'open' an old one like a PST.",
     },
     {
-      id: "item-8",
-      category: "General",
-      question: "What is migrate emails OST to PST converter tool?",
-      answer:
-        "It is a specialized utility designed to unlock 'orphaned' or inaccessible OST files and convert them into standard PST files that can be opened by any Outlook version.",
-    },
-    {
-      id: "item-9",
+      id: "tech-4",
       category: "Technical",
       question: "How to convert emails to PST files?",
       answer:
         "Emails can be saved to PST files by using the Export function in Outlook or by using a conversion service like ours to transform an existing OST cache into a standalone PST file.",
     },
     {
-      id: "item-10",
-      category: "General",
-      question: "How to open an OST File without Outlook?",
-      answer:
-        "OST files are locked to the MAPI profile that created them. To view the data without the original Outlook account, you must convert it to a PST or use an OST viewer tool.",
-    },
-    {
-      id: "item-11",
+      id: "tech-5",
       category: "Technical",
-      question: "How to create .PST file without using Outlook?",
+      question: "How to create a PST file without using Outlook?",
       answer:
         "Professional conversion services like ours can generate valid PST files directly from your OST data using server-side processing, eliminating the need for a local Outlook installation during the process.",
     },
     {
-      id: "item-12",
+      id: "tech-6",
       category: "Technical",
       question: "How to merge OST and PST files?",
       answer:
-        "The best way is to convert the OST to a PST first. Once you have two PST files, you can use Outlook's import feature or our service to consolidate the data into a single, searchable file.",
+        "The best way is to convert the OST to a PST first. Once you have two PST files, you can use Outlook's import feature or our service to consolidate the data into one, searchable file.",
     },
     {
-      id: "item-13",
-      category: "General",
-      question: "Is the OST TO PST converter safe?",
-      answer:
-        "Our online viewer and converter use 256-bit SSL encryption. Unlike many 'free' downloadable tools that may harbor malware, our cloud-based process ensures your data remains in a secure pipeline.",
-    },
-    {
-      id: "item-14",
+      id: "tech-7",
       category: "Technical",
       question: "Will a large PST file slow down Outlook?",
       answer:
-        "Yes, very large PST files (especially over 20-30GB) can cause performance lag. Our service offers deduplication during conversion to help keep your final PST file as lean and efficient as possible.",
+        "Yes, very large PST files (specifically more than 20-30GB) can cause performance lag. Our service offers deduplication during conversion to help keep your final PST file as lean and efficient as possible.",
     },
     {
-      id: "item-15",
-      category: "General",
-      question: "Does the new Outlook still use OST files?",
-      answer:
-        "Yes, the modern 'New Outlook' for Windows and Office 365 continues to use a local cache for offline access and performance, which is stored in a format similar to the traditional OST.",
-    },
-    {
-      id: "item-16",
+      id: "tech-8",
       category: "Technical",
-      question: "What is the limitation of OST file in Outlook?",
+      question: "What is the limitation of the OST file in Outlook?",
       answer:
         "The biggest limitation is portability; an OST cannot be opened on another computer or by a different user profile without being converted to PST first.",
     },
     {
-      id: "item-17",
-      category: "Technical",
-      question: "Can you read an OST file?",
-      answer:
-        "Not directly like a document. It requires the original mail profile or a conversion tool to 'read' and extract the data into a usable format like PST.",
-    },
-    {
       id: "bill-1",
       category: "Billing",
-      question: "Will I get an official invoice for my purchase?",
+      question: "Will I receive an official invoice for my purchase?",
       answer:
-        "Yes, an official PDF invoice is automatically generated and sent to your registered email address immediately after the transaction is completed. You can also request custom billing details to be added to the invoice.",
+        "Yes, an official PDF invoice is generated automatically and sent to your registered email address spontaneously after the transaction is completed. You can also request custom billing information to be included in the invoice.",
     },
     {
       id: "bill-2",
       category: "Billing",
       question: "Is it a one-time fee or a recurring subscription?",
       answer:
-        "Our licenses are strictly one-time payments. There are no monthly or yearly recurring fees. Once you purchase a license, you own it for a lifetime for that specific version.",
+        "Our licenses are strictly one-time payments. There are no monthly or yearly recurring fees. Once you purchase a license, you own it for a lifetime for that particular version.",
     },
     {
       id: "bill-3",
       category: "Billing",
-      question: "What is your refund policy?",
+      question: "What is our refund policy?",
       answer:
-        "We offer a 30-day money-back guarantee. If our software fails to perform the conversion as promised and our technical team cannot resolve the issue, we will process a full refund without any questions.",
+        "We offer a 30-day money-back guarantee. If our software fails to perform the conversion and our technical team cannot resolve the issue, we will process a full refund without any questions.",
     },
     {
       id: "bill-4",
       category: "Billing",
       question: "Can I use one license on multiple computers?",
       answer:
-        "The Personal license is valid for a single PC. The Corporate and Technical licenses allow for multiple installations (10 and Unlimited respectively) within the same organization.",
+        "The Personal license is valid for a single PC. The Corporate and Technical licenses permit several downloads within the same organization.",
     },
   ];
 

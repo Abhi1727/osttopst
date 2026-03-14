@@ -325,8 +325,8 @@ app.MapPost("/api/license/subscription", async (
 
     var toolId = ((int)Tool.ConvertOSTToPST).ToString();
 
-    logger.LogInformation("[SUBSCRIPTION REQ] User: {LicenseId}, PlanId: {PlanId}, ModuleId: {ModuleId}",
-        licenseId, subscriptionRequest.PlanId, subscriptionRequest.ModuleId);
+    logger.LogInformation("[SUBSCRIPTION REQ] User: {LicenseId}, ModuleId: {ModuleId}",
+        licenseId, subscriptionRequest.ModuleId);
 
     var result = await licenseClient.GenerateSubscriptionRequestAsync(licenseId, toolId, subscriptionRequest);
 

@@ -10,11 +10,13 @@ import {
   Share2,
   AtSign,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import licenseService from "@/services/licenseService";
+import { toast } from "sonner";
 
 const comparisonFeatures = [
   {
@@ -91,6 +93,30 @@ const comparisonFeatures = [
   },
 ];
 
+const toolComparison = [
+  {
+    feature: "OST Size Limit",
+    others: "5-20 GB",
+    ours: "50 GB",
+  },
+  {
+    feature: "Cloud Conversion",
+    others: "No",
+    ours: "Yes",
+  },
+  {
+    feature: "Damage Repair",
+    others: "Limited",
+    ours: "Upgraded",
+  },
+  {
+    feature: "Price",
+    others: "More than $299",
+    ours: "Begins at $49",
+  },
+];
+
+
 const PricingCard = ({
   title,
   price,
@@ -99,6 +125,8 @@ const PricingCard = ({
   recommended,
   ctaText = "Buy Now",
   isActive = false,
+  onClick,
+  isLoading = false,
 }) => (
   <div
     className={`relative flex flex-col h-full p-8 bg-white rounded-xl shadow-lg border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${isActive ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-gray-200"} ${recommended ? "ring-2 ring-yellow-400 z-10" : ""}`}
@@ -173,10 +201,17 @@ const PricingCard = ({
     </ul>
 
     <Button
-      disabled={isActive}
+      disabled={isActive || isLoading}
+      onClick={onClick}
       className={`w-full py-6 font-bold text-md rounded-md transition-colors ${isActive ? "bg-emerald-100 text-emerald-600 border-emerald-200 cursor-default" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
     >
-      {isActive ? "Active Plan" : ctaText}
+      {isLoading ? (
+        <Loader2 className="w-5 h-5 animate-spin" />
+      ) : isActive ? (
+        "Active Plan"
+      ) : (
+        ctaText
+      )}
     </Button>
   </div>
 );
@@ -204,6 +239,61 @@ const Pricing = () => {
   const { getToken, isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
   const [status, setStatus] = useState(null);
+  const [purchasingPlan, setPurchasingPlan] = useState(null);
+
+  // Dynamic pricing details state
+  const [totalItems, setTotalItems] = useState(0);
+  const [storageGB, setStorageGB] = useState(0);
+  const [totalDays, setTotalDays] = useState(365);
+
+  const calculateFinalPrice = (basePrice) => {
+    if (basePrice === 0) return 0;
+    const itemCost = (totalItems / 1000) * 2; // $2 per 1000 items
+    const storageCost = storageGB * 0.2; // $0.2 per GB
+    const dayRatio = totalDays / 365;
+    return Math.round((basePrice + itemCost + storageCost) * dayRatio);
+  };
+
+  const handlePurchase = async (moduleId, basePrice, planNumber) => {
+    if (!isSignedIn) {
+      toast.error("Please sign in to purchase a plan", {
+        description: "You need an account to manage your licenses.",
+      });
+      return;
+    }
+
+    setPurchasingPlan(planNumber);
+    try {
+      const token = await getToken();
+      const email = user?.primaryEmailAddress?.emailAddress;
+
+      const requestData = {
+        TotalItems: totalItems,
+        Storage: storageGB * 1024 * 1024 * 1024, // Convert GB to Bytes
+        TotalDays: totalDays,
+        ModuleId: moduleId,
+      };
+
+      const response = await licenseService.generateSubscriptionRequest(
+        token,
+        requestData,
+        email,
+      );
+
+      if (response) {
+        toast.success("Subscription request generated!", {
+          description: "Our team will contact you for further assistance.",
+        });
+      }
+    } catch (error) {
+      console.error("Purchase error:", error);
+      toast.error("Failed to initiate purchase", {
+        description: error.message || "Please try again later.",
+      });
+    } finally {
+      setPurchasingPlan(null);
+    }
+  };
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -260,9 +350,7 @@ const Pricing = () => {
     <div className="bg-gray-50 flex flex-col font-sans">
       <div className="bg-gray-50 pt-16 md:pt-28 pb-8 md:pb-12 text-center px-4">
         <h1 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 md:mb-6 tracking-tight leading-tight">
-          Choose the Right Plan for Your
-          <br />
-          Needs
+          Choose the Right Plan for Your Needs
         </h1>
         <div className="relative inline-block">
           <p className="text-gray-500 font-medium max-w-2xl mx-auto text-sm md:text-base relative z-10">
@@ -275,14 +363,89 @@ const Pricing = () => {
         </div>
       </div>
 
+      {/* Customization Section */}
+      <div className="max-w-4xl mx-auto px-4 w-full mb-12">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <span className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5" />
+            </span>
+            Customize Your Requirements
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-gray-700 flex justify-between">
+                Total Items
+                <span className="text-emerald-600 font-bold">{totalItems.toLocaleString()}</span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100000"
+                step="1000"
+                value={totalItems}
+                onChange={(e) => setTotalItems(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              />
+              <div className="flex justify-between text-[10px] text-gray-400 font-medium">
+                <span>0</span>
+                <span>100K+</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-gray-700 flex justify-between">
+                Storage (GB)
+                <span className="text-emerald-600 font-bold">{storageGB} GB</span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="500"
+                step="10"
+                value={storageGB}
+                onChange={(e) => setStorageGB(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              />
+              <div className="flex justify-between text-[10px] text-gray-400 font-medium">
+                <span>0 GB</span>
+                <span>500 GB</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-gray-700 flex justify-between">
+                Validity (Days)
+                <span className="text-emerald-600 font-bold">{totalDays} Days</span>
+              </label>
+              <input
+                type="range"
+                min="30"
+                max="1095"
+                step="30"
+                value={totalDays}
+                onChange={(e) => setTotalDays(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              />
+              <div className="flex justify-between text-[10px] text-gray-400 font-medium">
+                <span>30D</span>
+                <span>3 Years</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Pricing Cards Section */}
       <div className="max-w-7xl mx-auto px-4 w-full pb-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
           {/* Personal Plan */}
           <PricingCard
             title="Personal"
-            price="49"
+            price={calculateFinalPrice(49)}
             description="Perfect for individual users needing to recover their mailbox."
+            isLoading={purchasingPlan === 1}
+            onClick={() => handlePurchase(1, 49, 1)}
             features={[
               { text: "Core OST to PST conversion", included: true },
               { text: "Single license (1 PC)", included: true },
@@ -295,10 +458,12 @@ const Pricing = () => {
           {/* Corporate Plan - Mapped to 'Professional' in simple license API for now */}
           <PricingCard
             title="Corporate"
-            price="199"
+            price={calculateFinalPrice(199)}
             description="Ideal for small to medium businesses and corporate offices."
             recommended={true}
-            isActive={isProfessional}
+            isActive={false}
+            isLoading={purchasingPlan === 2}
+            onClick={() => handlePurchase(1, 199, 2)}
             features={[
               { text: "Advanced conversion & filters", included: true },
               { text: "PST Splitting & Deduplication", included: true },
@@ -312,8 +477,10 @@ const Pricing = () => {
           {/* Technical Plan */}
           <PricingCard
             title="Technical"
-            price="399"
+            price={calculateFinalPrice(399)}
             description="Best for IT administrators and large scale migrations."
+            isLoading={purchasingPlan === 3}
+            onClick={() => handlePurchase(1, 399, 3)}
             features={[
               { text: "Bulk conversion & Cloud Migration", included: true },
               { text: "Server/Admin license (Unlimited)", included: true },
@@ -479,7 +646,51 @@ const Pricing = () => {
         </div>
       </div>
 
-      {/* FAQ Section */}
+      {/* Why Our Pricing is Better - Tool Comparison */}
+      <div className="w-full bg-gray-50 py-20 px-4 border-y border-gray-100">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+              Why is our <span className="text-emerald-600">Pricing better?</span>
+            </h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              We offer premium enterprise features at a fraction of the cost of traditional tools.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+            {/* Header */}
+            <div className="hidden md:contents">
+              <div className="p-6 bg-slate-50 border-b border-gray-200 font-bold text-slate-800">Features</div>
+              <div className="p-6 bg-slate-50 border-b border-l border-gray-200 font-bold text-slate-800 text-center">Other Tools</div>
+              <div className="p-6 bg-emerald-50 border-b border-l border-emerald-100 font-bold text-emerald-700 text-center">Our Tools</div>
+            </div>
+
+            {toolComparison.map((item, index) => (
+              <React.Fragment key={index}>
+                {/* Mobile Labels */}
+                <div className="md:hidden p-4 bg-slate-50 font-bold text-slate-800 border-t border-gray-200 first:border-t-0">
+                  {item.feature}
+                </div>
+                
+                {/* Desktop/Row Layout */}
+                <div className="p-6 border-b border-gray-100 last:md:border-b-0 hidden md:block text-gray-600 font-medium">
+                  {item.feature}
+                </div>
+                <div className="p-6 border-b border-l border-gray-100 last:md:border-b-0 text-center text-gray-400">
+                  <span className="md:hidden font-semibold text-gray-500 mr-2">Other Tools:</span>
+                  {item.others}
+                </div>
+                <div className="p-6 border-b border-l border-emerald-50 bg-emerald-50/30 last:md:border-b-0 text-center font-bold text-emerald-600">
+                  <span className="md:hidden font-semibold text-emerald-700 mr-2">Our Tools:</span>
+                  {item.ours}
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="w-full bg-white py-24 px-4 border-t border-gray-100">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-4">

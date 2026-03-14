@@ -116,6 +116,59 @@ const Support = () => {
         </div>
       </div>
 
+      {/* Support Process Section */}
+      <div className="max-w-6xl mx-auto px-4 pb-20">
+        <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-100">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+              How does our Support Process Work?
+            </h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">
+              We follow a streamlined 4-step process to ensure your issues are resolved quickly and efficiently.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Submit Ticket",
+                desc: "First, submit your problem or ticket.",
+              },
+              {
+                step: "02",
+                title: "Analysis",
+                desc: "Second, our technical team analyzes the issue.",
+              },
+              {
+                step: "03",
+                title: "Troubleshooting",
+                desc: "Third, you will get a detailed troubleshooting guide.",
+              },
+              {
+                step: "04",
+                title: "Live Support",
+                desc: "If required, we schedule an online support session.",
+              },
+            ].map((item, index) => (
+              <div key={index} className="relative">
+                <div className="text-5xl font-black text-emerald-600 mb-4 select-none text-center">
+                  {item.step}
+                </div>
+                <div className="relative -mt-8 pt-2">
+                  <h4 className="text-lg font-bold text-slate-800 mb-2 text-center">
+                    {item.title}
+                  </h4>
+                  <p className="text-slate-500 text-sm leading-relaxed text-center">
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Contact Section */}
       <div className="max-w-6xl mx-auto px-4 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">

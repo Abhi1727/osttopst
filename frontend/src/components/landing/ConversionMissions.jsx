@@ -21,7 +21,7 @@ const ConversionMissions = () => {
       ),
       title: "IT Administrators",
       description:
-        "Great for IT Administrators managing multiple user accounts; can quickly convert/move/restore all OSTs quickly and accurately across an organization.",
+        "Great for IT Administrators managing multiple user accounts, it can quickly convert/move/restore all OSTs quickly and accurately across an organization.",
     },
     {
       icons: (
@@ -49,7 +49,7 @@ const ConversionMissions = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center">
           <h2 className="text-3xl md:text-3xl font-extrabold text-slate-900">
-            Who is our Converter useful for?
+            <span className="text-emerald-600">Ideal Users</span> of Our Converter  
           </h2>
         </div>
 

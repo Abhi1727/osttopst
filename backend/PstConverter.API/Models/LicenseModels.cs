@@ -329,7 +329,6 @@ namespace PstConverter.Models
         public int TotalItems { get; set; }
         public long Storage { get; set; }
         public int TotalDays { get; set; }
-        public int PlanId { get; set; }
         public int ModuleId { get; set; }
     }
 
