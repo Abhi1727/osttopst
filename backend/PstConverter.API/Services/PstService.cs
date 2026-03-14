@@ -801,6 +801,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 }
 
                 using var msg = srcPst.ExtractMessage(msgInfo.EntryIdString);
+                
                 if (msg != null)
                 {
                     if (seenHashes != null && string.IsNullOrEmpty(dedupKey))
@@ -1004,12 +1005,15 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     public async Task<PstMessageDetail?> GetMessageDetailAsync(string sessionId, string userId, string entryId)
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
-        return await _pool.AccessAsync(sessionId, filePath, pst =>
+        return await _pool.AccessAsync(sessionId, filePath, async pst =>
         {
+            
             var msg = pst.ExtractMessage(entryId);
-            if (msg == null) return Task.FromResult<PstMessageDetail?>(null);
+            if (msg == null) return null;
 
-            return Task.FromResult<PstMessageDetail?>(new PstMessageDetail
+            
+
+            return new PstMessageDetail
             {
                 EntryId = entryId,
                 Subject = msg.Subject ?? "(No Subject)",
@@ -1024,7 +1028,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         Size = att.BinaryData?.Length ?? 0,
                         ContentType = att.MimeTag ?? "application/octet-stream"
                     })]
-            });
+            };
         }, password);
     }
 
@@ -1126,7 +1130,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{Guid.NewGuid():N}.zip");
-        await _pool.AccessAsync(sessionId, filePath, pst =>
+        await _pool.AccessAsync(sessionId, filePath, async pst =>
         {
             var folder = pst.GetFolderById(folderId) ?? throw new FileNotFoundException("Folder not found");
             using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024))
@@ -1139,13 +1143,20 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     if (filter != null && !filter.IsEmpty() && !filter.Matches(date)) continue;
 
                     using var msg = pst.ExtractMessage(msgInfo.EntryIdString);
-                    index++;
-                    var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}", CompressionLevel.NoCompression);
-                    using var es = entry.Open();
-                    SaveMessageToStream(msg, es, format);
+                    if (msg != null)
+                    {
+                        // Check storage limit
+                        var success = await _licenseClient.UpdateStorageAsync(userId, "1", "1", msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msg.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0);
+                        if (!success) throw new Exception("License storage limit exceeded");
+
+                        index++;
+                        var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}", CompressionLevel.NoCompression);
+                        using var es = entry.Open();
+                        SaveMessageToStream(msg, es, format);
+                    }
                 }
             }
-            return Task.FromResult(true);
+            return true;
         }, password);
         return tempZipPath;
     }
@@ -1243,7 +1254,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         {
             try
             {
-                await _pool.AccessAsync(sessionId, filePath, pst =>
+                await _pool.AccessAsync(sessionId, filePath, async pst =>
                 {
                     using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 4 * 1024 * 1024))
                     using (var archive = new System.IO.Compression.ZipArchive(fs, ZipArchiveMode.Create, true))
@@ -1258,19 +1269,20 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                 try
                                 {
                                     using var msg = pst.ExtractMessage(entryId);
-                                    if (msg == null)
-                                    {
-                                        // LogDebug($"ExportAllAsync: ExtractMessage returned null for {entryId}");
-                                        continue;
-                                    }
+                                    if (msg == null) continue;
+
+                                    // Check storage limit
+                                    var success = await _licenseClient.UpdateStorageAsync(userId, "1", "1", msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msg.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0);
+                                    if (!success) throw new Exception("License storage limit exceeded");
+
                                     index++;
                                     var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}", CompressionLevel.NoCompression);
                                     using var es = entry.Open();
                                     SaveMessageToStream(msg, es, format);
                                 }
-                                catch (Exception)
+                                catch (Exception ex)
                                 {
-                                    // LogDebug($"ExportAllAsync: Error extracting {entryId}: {ex.Message}");
+                                    if (ex.Message == "License storage limit exceeded") throw;
                                     continue;
                                 }
                             }
@@ -1281,11 +1293,11 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             var root = string.IsNullOrEmpty(folderId) ? pst.RootFolder : pst.GetFolderById(folderId);
                             if (root != null)
                             {
-                                ExportFolderRecursive(pst, root, "", format, archive, filter, excludeEmptyFolders, exportLimit, token);
+                                await ExportFolderRecursive(userId, pst, root, "", format, archive, filter, excludeEmptyFolders, exportLimit, token);
                             }
                         }
                     }
-                    return Task.FromResult(true);
+                    return true;
                 }, password);
 
                 using var scope = _scopeFactory.CreateScope();
@@ -1327,7 +1339,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <summary>
     /// Recursively exports folder contents and subfolders into a ZIP archive.
     /// </summary>
-    private static void ExportFolderRecursive(PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token)
+    private async Task ExportFolderRecursive(string userId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
 
@@ -1360,6 +1372,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             using var msg = pst.ExtractMessage(msgInfo.EntryIdString);
             if (msg == null) continue;
 
+            // Check storage limit
+            var success = await _licenseClient.UpdateStorageAsync(userId, "1", "1", msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msg.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0);
+            if (!success) throw new Exception("License storage limit exceeded");
+
             folderExportedCount++;
             var entryName = string.IsNullOrEmpty(path)
                 ? $"{SanitizeFileName(msg.Subject ?? "msg")}_{folderExportedCount}{GetFileExtension(format)}"
@@ -1371,15 +1387,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 using var es = entry.Open();
                 SaveMessageToStream(msg, es, format);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                if (ex.Message == "License storage limit exceeded") throw;
                 // LogDebug($"ExportFolderRecursive: Error saving message {msgInfo.EntryIdString} to {format}: {ex.Message}");
             }
         }
 
         foreach (var sub in folder.GetSubFolders())
         {
-            ExportFolderRecursive(pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, limit, token);
+            await ExportFolderRecursive(userId, pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, limit, token);
         }
     }
     /// <summary>

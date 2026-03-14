@@ -338,7 +338,7 @@ const Hero = ({ onUploadComplete }) => {
       {/* Main Heading & Tagline */}
       <div className="text-center mb-12 max-w-4xl mx-auto space-y-1">
         <h1 className="text-xl md:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
-          Convert OST to PST Online Securely & Instantly
+          Convert OST to PST Online
         </h1>
         <p className="text-slate-500 text-lg md:text-xl font-medium max-w-3xl mx-auto leading-relaxed">
           {/* An easy and free online method to convert OST to PST files instantly &
