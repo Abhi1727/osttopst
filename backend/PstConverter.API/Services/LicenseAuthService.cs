@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using RestSharp;
 using PstConverter.Models;
 
@@ -10,11 +11,12 @@ namespace PstConverter.Services
     /// <summary>
     /// Service responsible for authenticating with the external license API and managing JWT tokens.
     /// </summary>
-    public class LicenseAuthService(IConfiguration configuration)
+    public class LicenseAuthService(IConfiguration configuration, ILogger<LicenseAuthService> logger)
     {
         private readonly string _baseUrl = configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("LicenseApi:BaseUrl missing");
         private readonly string _username = configuration["LicenseApi:Username"] ?? "admin";
         private readonly string _password = configuration["LicenseApi:Password"] ?? "1234";
+        private readonly ILogger<LicenseAuthService> _logger = logger;
         private readonly ConcurrentDictionary<string, LicenseToken> _tokenCache = new();
 
         /// <summary>
@@ -36,7 +38,7 @@ namespace PstConverter.Services
                 var options = new RestClientOptions(_baseUrl)
                 {
                     RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true,
-                    Timeout = TimeSpan.FromSeconds(3) // 3 seconds timeout
+                    Timeout = TimeSpan.FromSeconds(30) // 30 seconds timeout
                 };
                 var client = new RestClient(options);
                 var request = new RestRequest("Auth/login", Method.Post);
@@ -50,7 +52,7 @@ namespace PstConverter.Services
                     toolId
                 });
 
-                Console.WriteLine($"[LICENSE AUTH] Attempting login for License ID (Email): {licenseId} at {_baseUrl}Auth/login");
+                _logger.LogInformation("[LICENSE AUTH] Attempting login for License ID (Email): {LicenseId} at {BaseUrl}Auth/login", licenseId, _baseUrl);
                 var response = await client.ExecuteAsync<TokenResponse>(request);
 
                 if (response.IsSuccessful && response.Data != null)
@@ -60,13 +62,13 @@ namespace PstConverter.Services
                     return newToken.Token;
                 }
 
-                Console.WriteLine($"[LICENSE AUTH ERROR] {response.StatusCode} - {response.ErrorMessage ?? response.Content}");
+                _logger.LogError("[LICENSE AUTH ERROR] {StatusCode} - {ErrorMessage}. Content: {ResponseContent}", response.StatusCode, response.ErrorMessage, response.Content);
                 _tokenCache.TryRemove(cacheKey, out _);
                 return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[LICENSE AUTH CRITICAL] {ex.Message}");
+                _logger.LogCritical(ex, "[LICENSE AUTH CRITICAL] {Message}", ex.Message);
                 return null;
             }
         }
@@ -80,7 +82,7 @@ namespace PstConverter.Services
         {
             var cacheKey = $"{licenseId}_{toolId}";
             _tokenCache.TryRemove(cacheKey, out _);
-            Console.WriteLine($"[LICENSE AUTH] Token invalidated for {licenseId}");
+            _logger.LogInformation("[LICENSE AUTH] Token invalidated for {LicenseId}", licenseId);
         }
 
         private class TokenResponse

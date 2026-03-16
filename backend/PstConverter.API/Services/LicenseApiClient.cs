@@ -1,6 +1,10 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
 using PstConverter.Models;
 using RestSharp;
 using RestSharp.Authenticators;
@@ -10,18 +14,9 @@ namespace PstConverter.Services
     /// <summary>
     /// Service client for interacting with the external license API.
     /// </summary>
-    public class LicenseApiClient
+    public class LicenseApiClient(IConfiguration configuration, LicenseAuthService authService, ILogger<LicenseApiClient> logger, IDistributedCache cache, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory scopeFactory)
     {
-        private readonly string _baseUrl;
-        private readonly LicenseAuthService _authService;
-
-    
-        public LicenseApiClient(IConfiguration configuration, LicenseAuthService authService)
-        {
-            _baseUrl = configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("CRITICAL: LicenseApi:BaseUrl is missing in appsettings.json!");
-            _authService = authService;
-            // Console.WriteLine($"[LICENSE CONFIG] BaseUrl: {_baseUrl}");
-        }
+        private readonly string _baseUrl = configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("CRITICAL: LicenseApi:BaseUrl is missing in appsettings.json!");
 
         /// <summary>
         /// Creates and configures a RestClient with necessary authentication tokens.
@@ -34,10 +29,10 @@ namespace PstConverter.Services
             var options = new RestClientOptions(_baseUrl)
             {
                 RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true,
-                Timeout = TimeSpan.FromSeconds(3) // 3 seconds timeout
+                Timeout = TimeSpan.FromSeconds(30) // 30 seconds timeout
             };
 
-            var token = await _authService.GetTokenAsync(licenseId, toolId);
+            var token = await authService.GetTokenAsync(licenseId, toolId);
             if (!string.IsNullOrEmpty(token))
             {
                 options.Authenticator = new JwtAuthenticator(token);
@@ -52,109 +47,32 @@ namespace PstConverter.Services
         /// <param name="licenseId">The user's license ID (email).</param>
         /// <param name="toolId">The ID of the tool.</param>
         /// <returns>The user's license tier (Professional, Demo, etc.).</returns>
-        public async Task<LicenseTier> GetLicenceStatus(string licenseId, string toolId = "1")
+        public async Task<LicenseTier> GetLicenceStatus(string emailOrId)
         {
-            //return LicenseTier.Professional;
-            //--------------------------------------
-            var client = await GetClientAsync(licenseId, toolId);
-            var path = $"Licences/{licenseId}/Tools/{toolId}";
-            var request = new RestRequest(path);
-
-            // Console.WriteLine($"[LICENSE API] Requesting status for License ID (Email): {licenseId}, Tool: {toolId} from {_baseUrl}{path}");
-            var response = await client.ExecuteAsync(request);
-
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                // Console.WriteLine($"[LICENSE API] Map request Unauthorized. Invalidating token and retrying...");
-                _authService.InvalidateToken(licenseId, toolId);
-                client = await GetClientAsync(licenseId, toolId);
-                response = await client.ExecuteAsync(request);
-            }
-
-            if (!response.IsSuccessful || string.IsNullOrEmpty(response.Content))
-            {
-                // Console.WriteLine($"[LICENSE API] Map request failed. Status Code: {response.StatusCode}, Error: {response.ErrorMessage}");
-                return LicenseTier.Demo; // Fallback to Demo so app remains usable when server is down
-                //throw new Exception($"License server returned error: {response.StatusCode} - {response.ErrorMessage ?? response.Content}");
-            }
-            // Console.WriteLine($"[LICENSE MAPPED] License ID (Email): {licenseId}, Tier: {response.Content}");
-
-            return new ConvertStringEnum().ConvertStringToLicenseTier(response.Content ?? string.Empty);
+            var licenseId = emailOrId.ToLowerInvariant();
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
+            var mock = await db.MockLicenses.FirstOrDefaultAsync(m => m.LicenseId == licenseId);
+            if (mock != null) return mock.Tier;
+            return LicenseTier.Demo;
         }
 
         /// <summary>
         /// Fetches the module-specific license version or status.
         /// </summary>
-        /// <param name="licenseId">The user's license ID (email).</param>
-        /// <param name="toolId">The tool ID.</param>
-        /// <param name="moduleId">The module ID within the tool.</param>
         /// <returns>The module license type (Active, Expired, etc.).</returns>
-        public async Task<ModuleLicenseType> GetModuleVersion(string licenseId, string toolId = "1", string moduleId = "1")
+        public static Task<ModuleLicenseType> GetModuleVersion()
         {
-            //return ModuleLicenseType.Active;
-            //---------------------------------------
-            var client = await GetClientAsync(licenseId, toolId);
-            var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}";
-            var request = new RestRequest(path);
-
-            // Console.WriteLine($"[LICENSE TRACK] License ID (Email): {licenseId}, Path: {path}");
-            var response = await client.ExecuteAsync(request);
-
-            if (!response.IsSuccessful)
-            {
-                // Console.WriteLine($"[LICENSE TRACK ERROR] {response.StatusCode} - {response.ErrorMessage}");
-            }
-
-            return new ConvertStringEnum().ConvertStringToModuleLicenseType(response.Content ?? string.Empty);
+            return Task.FromResult(ModuleLicenseType.Active);
         }
-
-        /// <summary>
-        /// Checks if a specific module is activated for the user.
-        /// </summary>
-        /// <param name="licenseId">The user's license ID.</param>
-        /// <param name="toolId">The tool ID.</param>
-        /// <param name="moduleId">The module ID.</param>
-        /// <returns>A string response from the license server.</returns>
-        // public async Task<string> ModuleActivated(string licenseId, string toolId, string moduleId)
-        // {
-        //     var client = await GetClientAsync(licenseId, toolId);
-        //     var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}";
-        //     var request = new RestRequest(path, Method.Get);
-
-        //     // Console.WriteLine($"[LICENSE API] Checking Module activation: {path}");
-        //     var response = await client.ExecuteAsync(request);
-
-        //     if (!response.IsSuccessful)
-        //     {
-        //         // Console.WriteLine($"[MODULE ACTIVATED ERROR] {response.StatusCode} - {response.ErrorMessage ?? response.Content}");
-        //     }
-
-        //     return response.Content ?? string.Empty;
-        // }
 
         /// <summary>
         /// Registers a file for the user's license to track converted items.
         /// </summary>
-        /// <param name="licenseId">The user's license ID.</param>
-        /// <param name="toolId">The tool ID.</param>
-        /// <param name="moduleId">The module ID.</param>
-        /// <param name="itemId">The item or file ID.</param>
         /// <returns>True if registration was successful; otherwise, false.</returns>
-        public async Task<bool> Addfileforlicense(string licenseId, string toolId, string moduleId, string itemId)
+        public static Task<bool> Addfileforlicense()
         {
-            //return true;
-            //----------------------------------------
-            var client = await GetClientAsync(licenseId, toolId);
-            var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}";
-            var request = new RestRequest(path, Method.Get);
-            var response = await client.ExecuteAsync(request);
-
-            if (response.StatusCode != System.Net.HttpStatusCode.OK || response.Content == "false")
-            {
-                return false;
-            }
-
-            return true;
+            return Task.FromResult(true);
         }
 
         /// <summary>
@@ -165,32 +83,128 @@ namespace PstConverter.Services
         /// <param name="moduleId">The module ID.</param>
         /// <param name="ostFileSizeBytes">The size of the file processsed in bytes.</param>
         /// <returns>True if the storage update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateStorageAsync(string licenseId, string toolId, string moduleId, long ostFileSizeBytes)
+        public async Task<bool> UpdateStorageAsync(string emailOrId, string toolId, long ostFileSizeBytes)
         {
-            //var licenseStatus = await GetDetailedLicenseStatusAsync(licenseId, toolId);
-            long reportedSize = ostFileSizeBytes;
-
-            // if (licenseStatus.Tier == LicenseTier.Professional && licenseStatus.RemainingStorage < ostFileSizeBytes)
-            // {
-            //     reportedSize = licenseStatus.RemainingStorage;
-            //     // Console.WriteLine($"[LICENSE API] Capping storage update for {licenseId}: {ostFileSizeBytes} -> {reportedSize} (Insufficient Storage)");
-            // }
-
-            var client = await GetClientAsync(licenseId, toolId);
-            var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/AddStorage";
-            var request = new RestRequest(path, Method.Patch);
-            request.AddJsonBody(new { Size = reportedSize });
-
-            // Console.WriteLine($"[LICENSE API] UpdateStorage: {path}, Size: {reportedSize} bytes");
-            var response = await client.ExecuteAsync(request);
-
-            if (response.StatusCode != System.Net.HttpStatusCode.OK || response.Content == "false")
+            var licenseId = emailOrId.ToLowerInvariant();
+            // Check cache first for custom allotted values
+            var cacheKey = $"allotted_license_{licenseId}";
+            var cachedJson = await cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cachedJson))
             {
-                return false;
+                try
+                {
+                    var status = JsonSerializer.Deserialize<DetailedLicenseStatus>(cachedJson);
+                    if (status != null)
+                    {
+                        if (logger.IsEnabled(LogLevel.Information))
+                        {
+                            logger.LogInformation("[LICENSE STORAGE DEBUG] {LicenseId}: Current: {Used} bytes, Allotted: {Allotted} bytes, Adding: {Adding} bytes", licenseId, status.TotalStorageUsed, status.TotalStorageAllotted, ostFileSizeBytes);
+                        }
+
+                        // If already hit ANY limit, block immediately
+                        if (status.IsUsageRestricted)
+                        {
+                            logger.LogWarning("[LICENSE STORAGE] Usage already restricted for {LicenseId}", licenseId);
+                            return false;
+                        }
+
+                        bool limitExceeded = status.TotalStorageAllotted != -1 && (status.TotalStorageUsed + ostFileSizeBytes > status.TotalStorageAllotted);
+
+                        // Increment usage even if it exceeds, so the UI can show the bottleneck
+                        status.TotalStorageUsed += ostFileSizeBytes;
+                        
+                        // Update flags
+                        ApplyLimits(status);
+
+                        await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(status), new DistributedCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(30)
+                        });
+
+                        // PERSIST TO DB
+                        await SyncMockToDb(licenseId, status);
+
+                        if (limitExceeded || status.IsUsageRestricted)
+                        {
+                            logger.LogWarning("[LICENSE STORAGE] Limit hit for {LicenseId}", licenseId);
+                            return false;
+                        }
+
+                        return true;
+                    }
+                }
+                catch { }
             }
 
+            // Fallback: Fetch detailed status to ensure we have tracking data (even for Demo)
+            var currentStatus = await GetDetailedLicenseStatusAsync(licenseId);
+            if (currentStatus != null)
+            {
+                if (currentStatus.IsUsageRestricted) return false;
+
+                if (logger.IsEnabled(LogLevel.Information))
+                {
+                    logger.LogInformation("[LICENSE STORAGE DEBUG] {LicenseId} (Internal): Current: {Used} bytes, Allotted: {Allotted} bytes, Adding: {Adding} bytes", licenseId, currentStatus.TotalStorageUsed, currentStatus.TotalStorageAllotted, ostFileSizeBytes);
+                }
+
+                bool limitExceeded = currentStatus.TotalStorageAllotted != -1 && (currentStatus.TotalStorageUsed + ostFileSizeBytes > currentStatus.TotalStorageAllotted);
+
+                currentStatus.TotalStorageUsed += ostFileSizeBytes;
+                ApplyLimits(currentStatus);
+                
+                // Write back to cache
+                await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(currentStatus), new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(30)
+                });
+
+                // PERSIST TO DB
+                await SyncMockToDb(licenseId, currentStatus);
+
+                if (limitExceeded || currentStatus.IsUsageRestricted)
+                {
+                    return false;
+                }
+
+                return true;
+            }
             return true;
         }
+
+        public async Task<bool> UpdateItemsAsync(string emailOrId, string toolId)
+        {
+            var licenseId = emailOrId.ToLowerInvariant();
+
+            // Get the current status (from cache or DB)
+            var currentStatus = await GetDetailedLicenseStatusAsync(licenseId);
+            if (currentStatus == null) return true;
+
+            // Increment usage directly instead of recounting from DB since DB contains old demo sessions
+            currentStatus.TotalItemsUsed++;
+            ApplyLimits(currentStatus);
+
+            // Write back to cache and DB
+            var cacheKey = $"allotted_license_{licenseId}";
+            await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(currentStatus), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(30)
+            });
+            await SyncMockToDb(licenseId, currentStatus);
+
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("[LICENSE ITEMS] {LicenseId}: {Used} / {Allotted} OST files", 
+                    licenseId, currentStatus.TotalItemsUsed, currentStatus.TotalItemsAllotted);
+            }
+
+            if (currentStatus.HitFileCountLimit || currentStatus.IsUsageRestricted)
+            {
+                logger.LogWarning("[LICENSE ITEMS] File count limit hit for {LicenseId}", licenseId);
+                return false;
+            }
+            return true;
+        }
+
 
         /// <summary>
         /// Forwards a pricing-plan purchase request to the external license API.
@@ -203,10 +217,10 @@ namespace PstConverter.Services
         public async Task<SubscriptionResponse> GenerateSubscriptionRequestAsync(string licenseId, string toolId, SubscriptionRequest request)
         {
             var client = await GetClientAsync(licenseId, toolId);
-            var path = $"Licences/{licenseId}/Tools/{toolId}/GenerateSubscriptionRequest";
-            var restRequest = new RestRequest(path, Method.Post);
-            
-            // The external API expects an array of objects where all numeric values are strings
+            var restRequest = new RestRequest("Licences/{licenseId}/Tools/{toolId}/GenerateSubscriptionRequest", Method.Post);
+            restRequest.AddUrlSegment("licenseId", licenseId);
+            restRequest.AddUrlSegment("toolId", toolId);
+
             var payload = new[]
             {
                 new {
@@ -218,17 +232,24 @@ namespace PstConverter.Services
             };
             restRequest.AddJsonBody(payload);
 
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("[LICENSE API] GenerateSubscriptionRequest for {LicenseId}", licenseId);
+            }
+
             var response = await client.ExecuteAsync(restRequest);
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                _authService.InvalidateToken(licenseId, toolId);
+                authService.InvalidateToken(licenseId, toolId);
                 client = await GetClientAsync(licenseId, toolId);
                 response = await client.ExecuteAsync(restRequest);
             }
 
             if (!response.IsSuccessful)
             {
+                logger.LogError("[LICENSE API ERROR] Subscription failed: {StatusCode} - {ErrorMessage}. Raw: {RawResponse}",
+                    response.StatusCode, response.ErrorMessage, response.Content);
                 return new SubscriptionResponse
                 {
                     Success = false,
@@ -237,52 +258,179 @@ namespace PstConverter.Services
                 };
             }
 
+            // --- ALLOTMENT LOGIC ---
+            // If the request was successful, we "allot" the data to the user session
+            var allotted = new DetailedLicenseStatus
+            {
+                Tier = LicenseTier.Professional,
+                CanConvert = true,
+                ExportFileLimit = -1,
+                TotalItemsAllotted = request.TotalItems,
+                TotalItemsUsed = 0, // Reset to 0 as default starting point
+                TotalStorageAllotted = request.Storage,
+                TotalStorageUsed = 0, // Reset to 0 as default starting point
+                TotalDaysAllotted = request.TotalDays,
+                ExpiryDate = DateTime.Now.AddDays(request.TotalDays)
+            };
+
+            // Persist this in cache so GetDetailedLicenseStatusAsync can pick it up
+            var cacheKey = $"allotted_license_{licenseId}";
+            await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(allotted), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(30) // Keep for trial period or similar
+            });
+
+            // PERSIST TO DB
+            await SyncMockToDb(licenseId, allotted);
+
             return new SubscriptionResponse
             {
                 Success = true,
-                Message = "Subscription request accepted.",
-                RawResponse = response.Content
+                Message = "Subscription request success (Simulated/Allotted)",
+                RawResponse = response.Content,
+                AllottedData = allotted
             };
         }
 
-        // public async Task<string> UpdateStorageAsync(string licenseId, string toolId, string moduleId, string itemId, long ostFileSizeBytes)
-        // {
-        //     var client = await GetClientAsync(licenseId, toolId);
-        //     var path = $"Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}/AddStorage";
-        //     var request = new RestRequest(path, Method.Patch);
-        //     request.AddJsonBody(new { AddStorage = ostFileSizeBytes });
+        public async Task<DetailedLicenseStatus> GetDetailedLicenseStatusAsync(string emailOrId, string? toolId = null)
+        {
+            var licenseId = emailOrId.ToLowerInvariant();
+            try
+            {
+                var tier = await GetLicenceStatus(licenseId);
 
-        //     Console.WriteLine($"[LICENSE API] UpdateStorage: {path}, Size: {ostFileSizeBytes} bytes");
-        //     var response = await client.ExecuteAsync(request);
+                // Check cache first for custom allotted values
+                var cacheKey = $"allotted_license_{licenseId}";
+                var cachedJson = await cache.GetStringAsync(cacheKey);
+                if (!string.IsNullOrEmpty(cachedJson))
+                {
+                    try
+                    {
+                        var customStatus = JsonSerializer.Deserialize<DetailedLicenseStatus>(cachedJson);
+                        if (customStatus != null)
+                        {
+                            return ApplyLimits(customStatus);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "[LICENSE CACHE] Failed to deserialize cached license for {LicenseId}", licenseId);
+                    }
+                }
 
-        //     if (!response.IsSuccessful)
-        //     {
-        //         Console.WriteLine($"[UPDATE STORAGE ERROR] {response.StatusCode} - {response.ErrorMessage ?? response.Content}");
-        //     }
+                // CACHE MISS or EMPTY: Check DB
+                using var scope = scopeFactory.CreateScope();
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
+                    var dbMock = await db.MockLicenses.FindAsync(licenseId);
+                    if (dbMock != null)
+                    {
+                        var status = new DetailedLicenseStatus
+                        {
+                            Tier = dbMock.Tier,
+                            CanConvert = dbMock.Tier != LicenseTier.DemoExpired,
+                            ExportFileLimit = dbMock.Tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit,
+                            TotalItemsAllotted = dbMock.TotalItemsAllotted,
+                            TotalItemsUsed = dbMock.TotalItemsUsed,
+                            TotalStorageAllotted = dbMock.TotalStorageAllotted,
+                            TotalStorageUsed = dbMock.TotalStorageUsed,
+                            TotalDaysAllotted = dbMock.TotalDaysAllotted,
+                            ExpiryDate = dbMock.ExpiryDate
+                        };
 
-        //     return response.Content ?? string.Empty;
-        // }
+                        // Put in cache
+                        await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(status), new DistributedCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(30)
+                        });
 
-        // public async Task<LicenseStatus> GetDetailedLicenseStatusAsync(string licenseId, string toolId = "1")
-        // {
-        //     try
-        //     {
-        //         var status = await GetLicenceStatus(licenseId, toolId);
+                        return ApplyLimits(status);
+                    }
+                }
 
-        //         return ;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Console.WriteLine($"[LICENSE FAIL] License ID (Email): {licenseId}, Error: {ex.Message}");
-        //         return new LicenseStatus
-        //         {
-        //             Tier = LicenseTier.DemoExpired,
-        //             Status = ModuleLicenseType.NotSubscribed,
-        //             CanConvert = false,
-        //             ExportFileLimit = 0,
-        //             Message = $"License Check Failed: {ex.Message}"
-        //         };
-        //     }
-        // }
+                // If still nothing, fallback to Demo default
+                var fallbackStatus = new DetailedLicenseStatus
+                {
+                    Tier = tier,
+                    CanConvert = tier != LicenseTier.DemoExpired,
+                    ExportFileLimit = tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit,
+                    TotalItemsAllotted = tier == LicenseTier.Professional ? 100000 : 1, // Restricted to 1 file for Demo
+                    TotalItemsUsed = 0,
+                    TotalStorageAllotted = tier == LicenseTier.Professional ? 1024L * 1024 * 1024 * 1024 : 1024L * 1024 * 1024,
+                    TotalStorageUsed = 0,
+                    TotalDaysAllotted = tier == LicenseTier.Professional ? 365 : 7,
+                    ExpiryDate = DateTime.Now.AddDays(tier == LicenseTier.Professional ? 365 : 7)
+                };
+                return ApplyLimits(fallbackStatus);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[LICENSE FAIL] Detailed status check failed for {LicenseId}", licenseId);
+                return new DetailedLicenseStatus
+                {
+                    Tier = LicenseTier.DemoExpired,
+                    CanConvert = false,
+                    ExportFileLimit = 0
+                };
+            }
+        }
+
+        private static DetailedLicenseStatus ApplyLimits(DetailedLicenseStatus status)
+        {
+            if (status.TotalItemsAllotted != -1 && status.TotalItemsUsed >= status.TotalItemsAllotted)
+            {
+                status.HitFileCountLimit = true;
+            }
+            if (status.TotalStorageAllotted != -1 && status.TotalStorageUsed >= status.TotalStorageAllotted)
+            {
+                status.HitSizeLimit = true;
+            }
+            if (status.ExpiryDate < DateTime.Now)
+            {
+                status.HitTimePeriodLimit = true;
+            }
+            return status;
+        }
+
+        private async Task SyncMockToDb(string emailOrId, DetailedLicenseStatus status)
+        {
+            var licenseId = emailOrId.ToLowerInvariant();
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
+                var dbMock = await db.MockLicenses.FindAsync(licenseId);
+                if (dbMock == null)
+                {
+                    db.MockLicenses.Add(new MockLicense
+                    {
+                        LicenseId = licenseId,
+                        Tier = status.Tier,
+                        TotalItemsAllotted = status.TotalItemsAllotted,
+                        TotalItemsUsed = status.TotalItemsUsed,
+                        TotalStorageAllotted = status.TotalStorageAllotted,
+                        TotalStorageUsed = status.TotalStorageUsed,
+                        TotalDaysAllotted = status.TotalDaysAllotted,
+                        ExpiryDate = status.ExpiryDate ?? DateTime.Now.AddDays(365)
+                    });
+                }
+                else
+                {
+                    dbMock.Tier = status.Tier;
+                    dbMock.TotalItemsAllotted = status.TotalItemsAllotted;
+                    dbMock.TotalItemsUsed = status.TotalItemsUsed;
+                    dbMock.TotalStorageAllotted = status.TotalStorageAllotted;
+                    dbMock.TotalStorageUsed = status.TotalStorageUsed;
+                    dbMock.TotalDaysAllotted = status.TotalDaysAllotted;
+                    dbMock.ExpiryDate = status.ExpiryDate ?? DateTime.Now.AddDays(365);
+                    dbMock.LastUpdated = DateTime.UtcNow;
+                }
+                await db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to sync mock license to DB for {LicenseId}", licenseId);
+            }
+        }
     }
 }

@@ -37,8 +37,7 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
 
-            // Get Tool License 
-            var toolStatus = await licenseClient.GetLicenceStatus(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+            var toolStatus = await licenseClient.GetLicenceStatus(userEmail);
             // compare tool status with demo expired
             if (toolStatus == LicenseTier.DemoExpired)
             {
@@ -46,7 +45,7 @@ public static class ConversionEndpoints
             }
 
             // Get Module License
-            var moduleStatus = await licenseClient.GetModuleVersion(userEmail, ((int)Module.ConvertOSTToPST).ToString());
+            var moduleStatus = await LicenseApiClient.GetModuleVersion();
 
             // compare module status with active and professional tier
             if (toolStatus == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
@@ -54,17 +53,10 @@ public static class ConversionEndpoints
                 return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);
             }
             if(moduleStatus == ModuleLicenseType.Active){
-                var fileSession = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-                logger.LogInformation("License file check - SessionId: {SessionId}, FileSession found: {Found}, OriginalFileName: {FileName}, Size: {Size}",
-                    sessionId, fileSession != null, fileSession?.OriginalFileName, fileSession?.Size);
-                var originalFileName = fileSession?.OriginalFileName ?? "";
-                var fileSize = fileSession?.Size ?? 0;
-                bool isAvailable = await licenseClient.Addfileforlicense(userEmail,
-                                                                         ((int)Tool.ConvertOSTToPST).ToString(),
-                                                                         ((int)Module.ConvertOSTToPST).ToString(),
-                                                                          originalFileName+"_"+fileSize);
-                if(!isAvailable){
-                    return Results.Json(new { error = "File license limit exceeded" }, statusCode: StatusCodes.Status403Forbidden);
+                var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit)
+                {
+                    return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
                 }
             }
             // Track usage
@@ -109,7 +101,12 @@ public static class ConversionEndpoints
                 var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
                 if (session != null)
                 {
-                    session.IsPaid = true;
+                    if (!session.IsPaid)
+                    {
+                        session.IsPaid = true;
+                        await licenseClient.UpdateStorageAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString(), session.Size);
+                        await licenseClient.UpdateItemsAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                    }
                     await db.SaveChangesAsync();
                 }
 
@@ -167,7 +164,7 @@ public static class ConversionEndpoints
             try
             {
                 // Get Tool License 
-                var toolStatus = await licenseClient.GetLicenceStatus(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                var toolStatus = await licenseClient.GetLicenceStatus(userEmail);
                 // compare tool status with demo expired
                 if (toolStatus == LicenseTier.DemoExpired)
                 {
@@ -175,7 +172,7 @@ public static class ConversionEndpoints
                 }
 
                 // Get Module License
-                var moduleStatus = await licenseClient.GetModuleVersion(userEmail, ((int)Module.ConvertOSTToPST).ToString());
+                var moduleStatus = await LicenseApiClient.GetModuleVersion();
 
                 // compare module status with active and professional tier
                 if (toolStatus == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
@@ -184,15 +181,10 @@ public static class ConversionEndpoints
                 }
 
                 if(moduleStatus == ModuleLicenseType.Active){
-                    var fileSession = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-                    var originalFileName = fileSession?.OriginalFileName ?? "";
-                    var fileSize = fileSession?.Size ?? 0;
-                    bool isAvailable = await licenseClient.Addfileforlicense(userEmail,
-                                                                             ((int)Tool.ConvertOSTToPST).ToString(),
-                                                                             ((int)Module.ConvertOSTToPST).ToString(),
-                                                                             originalFileName+"_"+fileSize);
-                    if(!isAvailable){
-                        return Results.Json(new { error = "File license limit exceeded" }, statusCode: StatusCodes.Status403Forbidden);
+                    var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                    if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit)
+                    {
+                        return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
                     }
                 }
 
@@ -214,7 +206,12 @@ public static class ConversionEndpoints
                 var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
                 if (session != null)
                 {
-                    session.IsPaid = true;
+                    if (!session.IsPaid)
+                    {
+                        session.IsPaid = true;
+                        await licenseClient.UpdateStorageAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString(), session.Size);
+                        await licenseClient.UpdateItemsAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                    }
                     await db.SaveChangesAsync();
                 }
 

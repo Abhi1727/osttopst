@@ -117,6 +117,12 @@ const toolComparison = [
 ];
 
 
+const formatStatusStorage = (bytes) => {
+  if (!bytes) return "0 GB";
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
+};
+
 const PricingCard = ({
   title,
   price,
@@ -127,6 +133,7 @@ const PricingCard = ({
   isActive = false,
   onClick,
   isLoading = false,
+  activeDetails = null,
 }) => (
   <div
     className={`relative flex flex-col h-full p-8 bg-white rounded-xl shadow-lg border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${isActive ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-gray-200"} ${recommended ? "ring-2 ring-yellow-400 z-10" : ""}`}
@@ -145,7 +152,13 @@ const PricingCard = ({
     <div className="mb-6 min-h-[100px]">
       <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
       <p className="text-sm text-gray-500">{description}</p>
+      {isActive && activeDetails && (
+        <div className="mt-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100 animate-pulse">
+           ACTIVE: {activeDetails}
+        </div>
+      )}
     </div>
+
 
     <div className="mb-8">
       <div className="flex items-baseline gap-1">
@@ -223,10 +236,10 @@ const FooterColumn = ({ title, links }) => (
       {links.map((link, i) => (
         <li key={i}>
           <a
-            href="#"
+            href={link.href || "#"}
             className="text-gray-400 text-xs hover:text-white transition-colors"
           >
-            {link}
+            {link.label || link}
           </a>
         </li>
       ))}
@@ -242,16 +255,43 @@ const Pricing = () => {
   const [purchasingPlan, setPurchasingPlan] = useState(null);
 
   // Dynamic pricing details state
-  const [totalItems, setTotalItems] = useState(0);
-  const [storageGB, setStorageGB] = useState(0);
+  const [totalItems, setTotalItems] = useState(1000);
+  const [storageGB, setStorageGB] = useState(50);
   const [totalDays, setTotalDays] = useState(365);
 
   const calculateFinalPrice = (basePrice) => {
     if (basePrice === 0) return 0;
-    const itemCost = (totalItems / 1000) * 2; // $2 per 1000 items
+    const itemCost = (totalItems / 100) * 2; // $2 per 1000 items
     const storageCost = storageGB * 0.2; // $0.2 per GB
     const dayRatio = totalDays / 365;
     return Math.round((basePrice + itemCost + storageCost) * dayRatio);
+  };
+
+  const fetchStatus = async () => {
+    if (!isLoaded || !isSignedIn) return;
+    try {
+      const token = await getToken();
+      const email = user?.primaryEmailAddress?.emailAddress;
+      const data = await licenseService.getLicenseStatus(token, email);
+      setStatus(data);
+
+      // Check for usage restriction and show popup
+      if (data && (data.isUsageRestricted || data.IsUsageRestricted)) {
+        toast.warning("Usage Limit Reached", {
+          description: "You have reached your plan's usage limits. Please upgrade your plan or contact support to continue.",
+          duration: 10000,
+          action: {
+            label: "Upgrade Now",
+            onClick: () => {
+                 const el = document.getElementById('pricing-slider');
+                 if(el) el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load license in Pricing", error);
+    }
   };
 
   const handlePurchase = async (moduleId, basePrice, planNumber) => {
@@ -280,11 +320,18 @@ const Pricing = () => {
         email,
       );
 
-      if (response) {
-        toast.success("Subscription request generated!", {
-          description: "Our team will contact you for further assistance.",
+      if (response?.success) {
+        toast.success("Plan Allotted Successfully!", {
+          description: `Backend confirms: ${response.allottedData?.totalItemsAllotted?.toLocaleString()} items, ${formatStatusStorage(response.allottedData?.totalStorageAllotted)} Storage allotted for ${response.allottedData?.totalDaysAllotted} days.`,
+        });
+        // Refetch updated status from backend
+        fetchStatus();
+      } else if (response) {
+         toast.success("Subscription request generated!", {
+          description: response.message || "Your request is being processed.",
         });
       }
+
     } catch (error) {
       console.error("Purchase error:", error);
       toast.error("Failed to initiate purchase", {
@@ -296,17 +343,6 @@ const Pricing = () => {
   };
 
   useEffect(() => {
-    const fetchStatus = async () => {
-      if (!isLoaded || !isSignedIn) return;
-      try {
-        const token = await getToken();
-        const email = user?.primaryEmailAddress?.emailAddress;
-        const data = await licenseService.getLicenseStatus(token, email);
-        setStatus(data);
-      } catch (error) {
-        console.error("Failed to load license in Pricing", error);
-      }
-    };
     fetchStatus();
   }, [isLoaded, isSignedIn, getToken, user]);
 
@@ -375,21 +411,21 @@ const Pricing = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700 flex justify-between">
-                Total Items
-                <span className="text-emerald-600 font-bold">{totalItems.toLocaleString()}</span>
+                OST File Limit
+                <span className="text-emerald-600 font-bold">{totalItems} Files</span>
               </label>
               <input
                 type="range"
-                min="0"
-                max="100000"
-                step="1000"
+                min="1"
+                max="50"
+                step="1"
                 value={totalItems}
                 onChange={(e) => setTotalItems(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
               />
               <div className="flex justify-between text-[10px] text-gray-400 font-medium">
-                <span>0</span>
-                <span>100K+</span>
+                <span>1 File</span>
+                <span>50 Files</span>
               </div>
             </div>
 
@@ -400,16 +436,16 @@ const Pricing = () => {
               </label>
               <input
                 type="range"
-                min="0"
-                max="500"
-                step="10"
+                min="1"
+                max="1000"
+                step="1"
                 value={storageGB}
                 onChange={(e) => setStorageGB(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
               />
               <div className="flex justify-between text-[10px] text-gray-400 font-medium">
                 <span>0 GB</span>
-                <span>500 GB</span>
+                <span>1000 GB</span>
               </div>
             </div>
 
@@ -420,7 +456,7 @@ const Pricing = () => {
               </label>
               <input
                 type="range"
-                min="30"
+                min="1"
                 max="1095"
                 step="30"
                 value={totalDays}
@@ -461,8 +497,19 @@ const Pricing = () => {
             price={calculateFinalPrice(199)}
             description="Ideal for small to medium businesses and corporate offices."
             recommended={true}
-            isActive={false}
+            isActive={isProfessional}
             isLoading={purchasingPlan === 2}
+            activeDetails={isProfessional ? (
+              <div className="flex flex-col gap-1">
+                <div>{`UPLOADED: ${(status.totalItemsUsed ?? status.TotalItemsUsed)?.toLocaleString()} / ${(status.totalItemsAllotted ?? status.TotalItemsAllotted)?.toLocaleString()} OST Files`}</div>
+                <div>{`STORAGE: ${formatStatusStorage(status.totalStorageUsed ?? status.TotalStorageUsed)} / ${formatStatusStorage(status.totalStorageAllotted ?? status.TotalStorageAllotted)} Storage Used`}</div>
+                {(status.isUsageRestricted || status.IsUsageRestricted || status.hitFileCountLimit || status.HitFileCountLimit || status.hitSizeLimit || status.HitSizeLimit) && (
+                   <div className="text-red-600 font-black text-[9px] mt-1 bg-red-50 p-1 rounded border border-red-200">
+                      LIMIT REACHED!
+                   </div>
+                )}
+              </div>
+            ) : null}
             onClick={() => handlePurchase(1, 199, 2)}
             features={[
               { text: "Advanced conversion & filters", included: true },
@@ -473,6 +520,8 @@ const Pricing = () => {
               { text: "Commercial use license", included: true },
             ]}
           />
+
+
 
           {/* Technical Plan */}
           <PricingCard
@@ -783,10 +832,11 @@ const Pricing = () => {
           <FooterColumn
             title="Company"
             links={[
-              "About Us",
-              "Privacy Policy",
-              "Refund Policy",
-              "Contact Support",
+              { label: "About Us", href: "#" },
+              { label: "Privacy Policy", href: "/privacy-policy" },
+              { label: "Terms & Conditions", href: "/terms-conditions" },
+              { label: "Refund Policy", href: "#" },
+              { label: "Contact Support", href: "/support" },
             ]}
           />
         </div>

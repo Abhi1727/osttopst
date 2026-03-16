@@ -25,6 +25,9 @@ const LicenseBadge = () => {
     };
 
     fetchStatus();
+
+    window.addEventListener("license-refresh", fetchStatus);
+    return () => window.removeEventListener("license-refresh", fetchStatus);
   }, [isAuthLoaded, isUserLoaded, isSignedIn, getToken, user]);
 
   if (loading) return null;
@@ -42,14 +45,39 @@ const LicenseBadge = () => {
   if (tierValue === "3" || tierValue === "professional")
     normalizedTier = "professional";
 
+  const formatStorage = (bytes) => {
+    if (!bytes) return "0 GB";
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
+  };
+
+  const totalItems = status.totalItemsAllotted ?? status.TotalItemsAllotted;
+  const usedItems = status.totalItemsUsed ?? status.TotalItemsUsed ?? 0;
+  const totalStorage = status.totalStorageAllotted ?? status.TotalStorageAllotted;
+  const usedStorage = status.totalStorageUsed ?? status.TotalStorageUsed ?? 0;
+
   if (normalizedTier === "professional") {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold shadow-sm shadow-emerald-500/20 border border-emerald-400/30 animate-in fade-in zoom-in duration-500">
-        <Sparkles className="w-3.5 h-3.5" />
-        <span>PROFESSIONAL</span>
+      <div className="flex flex-col items-end gap-1 px-1">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] font-black shadow-sm shadow-emerald-500/20 border border-emerald-400/30 animate-in fade-in zoom-in duration-500 tracking-wider">
+          <Sparkles className="w-3 h-3" />
+          <span>PROFESSIONAL PLAN</span>
+        </div>
+        <div className="flex gap-2 text-[9px] font-bold text-emerald-700 bg-emerald-50/50 px-2 py-0.5 rounded-md border border-emerald-100/50 uppercase tracking-tight">
+          <span className="flex items-center gap-1">
+            <Shield className="w-2.5 h-2.5" />
+            {usedItems.toLocaleString()} / {totalItems?.toLocaleString()} Files
+          </span>
+          <span className="w-px h-2 bg-emerald-200 self-center"></span>
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="w-2.5 h-2.5" />
+            {formatStorage(usedStorage)} / {formatStorage(totalStorage)}
+          </span>
+        </div>
       </div>
     );
   }
+
 
   if (normalizedTier === "demo") {
     return (

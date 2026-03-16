@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<ConversionSession> ConversionSessions { get; set; } = null!;
     public DbSet<Review> Reviews { get; set; } = null!;
+    public DbSet<MockLicense> MockLicenses { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

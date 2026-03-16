@@ -22,6 +22,8 @@ import Blogs from "./components/Blogs";
 import AdminDashboard from "./components/AdminDashboard";
 import BlogPostDetail from "./components/BlogPostDetail";
 import Pricing from "./components/Pricing";
+import PrivacyPolicy from "./components/PrivacyPolicy";
+import TermsConditions from "./components/TermsConditions";
 import UnifiedHeader from "./components/UnifiedHeader";
 import Footer from "./components/landing/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -129,6 +131,8 @@ function App() {
             <Route path="/admin/blogs" element={<AdminDashboard />} />
             <Route path="/blogs/:id" element={<BlogPostDetail />} />
             <Route path="/our-plans" element={<Pricing />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-conditions" element={<TermsConditions />} />
           </Routes>
         </main>
         {location.pathname !== "/preview" && <Footer />}

@@ -251,6 +251,10 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<AppDbContext>();
         DbInitializer.Initialize(context);
+        // Repair: Recalculate item counts from actual session counts (fixes old email-counting bug)
+        var cache = services.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>();
+        await DbInitializer.RecalculateItemsUsedAsync(context, cache);
+        // DbInitializer.ClearAllData(context); // Clear once as requested - Commented out to persist data
     }
     catch (Exception ex)
     {
@@ -302,11 +306,11 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
             licenseId,
             email != null ? "QueryParam" : (user.FindFirstValue(ClaimTypes.Email) != null ? "ClaimTypes.Email" : "Fallback"));
     }
-    // var status = await licenseClient.GetLicenceStatus(licenseId, ((int)Tool.ConvertOSTToPST).ToString());//await licenseClient.GetDetailedLicenseStatusAsync(licenseId);
-    // return Results.Ok(status);
-    var tier = await licenseClient.GetLicenceStatus(licenseId, ((int)Tool.ConvertOSTToPST).ToString());
-    return Results.Ok(new { tier, canConvert = tier != LicenseTier.DemoExpired, exportFileLimit = tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit });
+
+    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId, ((int)Tool.ConvertOSTToPST).ToString());
+    return Results.Ok(status);
 })
+
 .RequireAuthorization();
 
 //THIS IS FOR GENERATING A SUBSCRIPTION REQUEST (user clicks "Buy Now" on Pricing page)
@@ -325,8 +329,10 @@ app.MapPost("/api/license/subscription", async (
 
     var toolId = ((int)Tool.ConvertOSTToPST).ToString();
 
-    logger.LogInformation("[SUBSCRIPTION REQ] User: {LicenseId}, ModuleId: {ModuleId}",
-        licenseId, subscriptionRequest.ModuleId);
+    if (logger.IsEnabled(LogLevel.Information))
+    {
+        logger.LogInformation("[SUBSCRIPTION REQ] User: {LicenseId}, ModuleId: {ModuleId}", licenseId, subscriptionRequest.ModuleId);
+    }
 
     var result = await licenseClient.GenerateSubscriptionRequestAsync(licenseId, toolId, subscriptionRequest);
 

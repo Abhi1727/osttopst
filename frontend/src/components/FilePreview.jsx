@@ -110,6 +110,105 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
   );
 };
 
+const LicenseUsageBar = ({ status }) => {
+  if (!status) return null;
+
+  const usedItems = status.totalItemsUsed ?? status.TotalItemsUsed ?? 0;
+  const allottedItems =
+    status.totalItemsAllotted ?? status.TotalItemsAllotted ?? 0;
+  const usedStorage = status.totalStorageUsed ?? status.TotalStorageUsed ?? 0;
+  const allottedStorage =
+    status.totalStorageAllotted ?? status.TotalStorageAllotted ?? 0;
+
+  const itemPercent =
+    allottedItems > 0 ? Math.min(100, (usedItems / allottedItems) * 100) : 0;
+  const storagePercent =
+    allottedStorage > 0
+      ? Math.min(100, (usedStorage / allottedStorage) * 100)
+      : 0;
+
+  const formatStorage = (bytes) => {
+    if (!bytes) return "0 GB";
+    if (bytes < 1024 * 1024 * 1024)
+      return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
+  };
+
+  return (
+    <div className="mt-8 pt-8 border-t border-zinc-100 px-1">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.15em] flex items-center gap-2">
+          Your Plan Usage
+          {(status.isUsageRestricted || status.IsUsageRestricted || status.hitFileCountLimit || status.HitFileCountLimit) && (
+            <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[8px] animate-pulse">
+              LIMIT REACHED
+            </span>
+          )}
+        </h3>
+        <Button
+          variant="link"
+          className="h-auto p-0 text-[10px] font-black text-emerald-600 uppercase tracking-tighter hover:no-underline hover:text-emerald-700"
+          onClick={() => (window.location.href = "/pricing")}
+        >
+          Upgrade Plan
+        </Button>
+      </div>
+
+      <div className="space-y-6">
+        {/* Items Usage */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-[11px] font-bold">
+            <span className="text-zinc-500 uppercase tracking-tighter">
+              OST Files
+            </span>
+            <span
+              className={
+                usedItems >= allottedItems ? "text-rose-500" : "text-zinc-900"
+              }
+            >
+              {usedItems.toLocaleString()} / {allottedItems.toLocaleString()}
+            </span>
+          </div>
+          <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+            <div
+              className={cn(
+                "h-full transition-all duration-700 ease-out",
+                itemPercent > 90 ? "bg-rose-500" : "bg-emerald-500",
+              )}
+              style={{ width: `${itemPercent}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Storage Usage */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-[11px] font-bold">
+            <span className="text-zinc-500 uppercase tracking-tighter">
+              Storage
+            </span>
+            <span
+              className={
+                usedStorage >= allottedStorage ? "text-rose-500" : "text-zinc-900"
+              }
+            >
+              {formatStorage(usedStorage)} / {formatStorage(allottedStorage)}
+            </span>
+          </div>
+          <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+            <div
+              className={cn(
+                "h-full transition-all duration-700 ease-out",
+                storagePercent > 90 ? "bg-rose-500" : "bg-emerald-500",
+              )}
+              style={{ width: `${storagePercent}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const FilePreview = ({ session, onReset }) => {
   const { getToken } = useAuth();
   const { user } = useUser();
@@ -129,6 +228,7 @@ const FilePreview = ({ session, onReset }) => {
   const [filter, setFilter] = useState({ year: null, month: null });
   const [licenseLimit, setLicenseLimit] = useState(-1);
   const [licenseTier, setLicenseTier] = useState("");
+  const [licenseStatus, setLicenseStatus] = useState(null);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -156,6 +256,7 @@ const FilePreview = ({ session, onReset }) => {
           } else if (data.ExportFileLimit !== undefined) {
             setLicenseLimit(data.ExportFileLimit);
           }
+          setLicenseStatus(data);
         }
       } catch (err) {
         console.error("Failed to fetch license", err);
@@ -579,6 +680,8 @@ const FilePreview = ({ session, onReset }) => {
                     />
                   ))}
                 </div>
+
+                <LicenseUsageBar status={licenseStatus} />
               </div>
             )}
           </ScrollArea>

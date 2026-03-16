@@ -179,8 +179,9 @@ const Hero = ({ onUploadComplete }) => {
         licenseStatus?.tier === "Professional" &&
         !passedFile?._storageLimitAccepted
       ) {
-        const remaining =
-          (licenseStatus.totalStorage || 0) - (licenseStatus.usedStorage || 0);
+        const total = licenseStatus.totalStorageAllotted ?? licenseStatus.TotalStorageAllotted ?? 0;
+        const used = licenseStatus.totalStorageUsed ?? licenseStatus.TotalStorageUsed ?? 0;
+        const remaining = total - used;
         if (targetFile.size > remaining) {
           setPendingFile(targetFile);
           setIsStorageLimitDialogOpen(true);
@@ -319,6 +320,7 @@ const Hero = ({ onUploadComplete }) => {
 
       if (savedName) {
         toast.success(`Started downloading: ${savedName}`);
+        window.dispatchEvent(new Event("license-refresh"));
       }
       setFinishedPstDownload(true);
     } catch (err) {
@@ -343,7 +345,7 @@ const Hero = ({ onUploadComplete }) => {
         <p className="text-slate-500 text-lg md:text-xl font-medium max-w-3xl mx-auto leading-relaxed">
           {/* An easy and free online method to convert OST to PST files instantly &
           securely. */}
-          Upload your OST file and quickly convert it into PST format without any software hassle.
+        Drag, upload, preview, and export your Outlook data safely from any browser.
         </p>
         {/* <div className="flex flex-wrap justify-center gap-3">
           <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">

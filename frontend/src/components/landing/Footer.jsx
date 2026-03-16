@@ -28,10 +28,16 @@ const Footer = () => {
         </div>
 
         <div className="flex gap-8 text-sm text-slate-500 font-medium">
-          <a href="#" className="hover:text-emerald-600 transition-colors">
+          <a
+            href="/privacy-policy"
+            className="hover:text-emerald-600 transition-colors"
+          >
             Privacy Policy
           </a>
-          <a href="#" className="hover:text-emerald-600 transition-colors">
+          <a
+            href="/terms-conditions"
+            className="hover:text-emerald-600 transition-colors"
+          >
             Terms & Conditions
           </a>
           <a href="/faq" className="hover:text-emerald-600 transition-colors">

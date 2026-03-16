@@ -168,12 +168,12 @@ public static class MessageEndpoints
 
             try
             {
-                var toolStatus = await licenseClient.GetLicenceStatus(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                var toolStatus = await licenseClient.GetLicenceStatus(userEmail);
                 if (toolStatus == LicenseTier.DemoExpired)
                 {
                     return Results.Json(new { error = toolStatus }, statusCode: StatusCodes.Status403Forbidden);
                 }
-                var moduleStatus = await licenseClient.GetModuleVersion(userEmail, ((int)Module.ConvertOSTToPST).ToString());
+                var moduleStatus = await LicenseApiClient.GetModuleVersion();
                 if (toolStatus == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
                 {
                     return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);

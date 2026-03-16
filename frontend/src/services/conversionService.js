@@ -52,11 +52,14 @@ const downloadFile = async (
           return true;
         }
 
+        if (s === "limitreached" || s === "limitreached") {
+          throw new Error("LICENSE_LIMIT_EXCEEDED");
+        }
+
         if (s.includes("failed")) {
-          console.error("[Download] Backend reported failure:", status);
-          throw new Error(
-            `Conversion or export failed on the server: ${status.status}`,
-          );
+          const errMsg = status.message || status.status || "Unknown error";
+          console.error("[Download] Backend reported failure:", errMsg);
+          throw new Error(`Conversion or export failed: ${errMsg}`);
         }
       }
 
@@ -155,7 +158,10 @@ const downloadFile = async (
   a.download = suggestedName;
   document.body.appendChild(a);
   a.click();
-  setTimeout(() => document.body.removeChild(a), 100);
+  setTimeout(() => {
+    document.body.removeChild(a);
+    window.location.reload();
+  }, 1000);
   return suggestedName;
 };
 
@@ -233,6 +239,9 @@ export const conversionService = {
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
-    setTimeout(() => document.body.removeChild(a), 100);
+    setTimeout(() => {
+        document.body.removeChild(a);
+        window.location.reload();
+    }, 1000);
   },
 };

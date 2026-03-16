@@ -40,4 +40,5 @@ public class ConversionSession
     public bool IsPaid { get; set; } = false;
 
     public string? SplitFilesJson { get; set; }
+    public string? ErrorMessage { get; set; }
 }

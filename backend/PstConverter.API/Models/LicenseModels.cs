@@ -338,5 +338,26 @@ namespace PstConverter.Models
         public bool Success { get; set; }
         public string? Message { get; set; }
         public string? RawResponse { get; set; }
+        public DetailedLicenseStatus? AllottedData { get; set; }
+    }
+
+    //THIS IS FOR DETAILED LICENSE STATUS (used to show plan limits on frontend)
+    public class DetailedLicenseStatus
+    {
+        public LicenseTier Tier { get; set; }
+        public bool CanConvert { get; set; }
+        public int ExportFileLimit { get; set; }
+        public int TotalItemsAllotted { get; set; }
+        public int TotalItemsUsed { get; set; }
+        public long TotalStorageAllotted { get; set; }
+        public long TotalStorageUsed { get; set; }
+        public int TotalDaysAllotted { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public bool HitTimePeriodLimit { get; set; }
+        public bool HitSizeLimit { get; set; }
+        public bool HitFileCountLimit { get; set; }
+        public bool IsUsageRestricted => HitTimePeriodLimit || HitSizeLimit || HitFileCountLimit;
     }
 }
+
+

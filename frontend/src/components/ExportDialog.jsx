@@ -214,10 +214,24 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
       );
       if (savedName) {
         toast.success(`Export saved as: ${savedName}`);
+        window.dispatchEvent(new Event("license-refresh"));
       }
     } catch (err) {
       if (err.name === "AbortError" || err.message === "AbortError") {
         console.log("Export cancelled by user");
+        return;
+      }
+      if (err.message === "LICENSE_LIMIT_EXCEEDED" || err.message === "LimitReached") {
+        toast.error("Plan Limit Reached", {
+          description: "You have exceeded your plan's storage or item limit. Please upgrade to continue.",
+          action: {
+            label: "Upgrade Plan",
+            onClick: () => {
+              onClose();
+              window.location.href = "/pricing";
+            },
+          },
+        });
         return;
       }
       console.error(err);
@@ -253,12 +267,27 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
         toast.success(
           "File was split successfully! Please download the parts below.",
         );
+        window.dispatchEvent(new Event("license-refresh"));
       } else if (savedName) {
         toast.success(`Converted file saved as: ${savedName}`);
+        window.dispatchEvent(new Event("license-refresh"));
       }
     } catch (err) {
       if (err.name === "AbortError" || err.message === "AbortError") {
         console.log("Conversion cancelled by user");
+        return;
+      }
+      if (err.message === "LICENSE_LIMIT_EXCEEDED" || err.message === "LimitReached") {
+        toast.error("Plan Limit Reached", {
+          description: "You have exceeded your plan's storage or item limit. Please upgrade to continue.",
+          action: {
+            label: "Upgrade Plan",
+            onClick: () => {
+              onClose();
+              window.location.href = "/pricing";
+            },
+          },
+        });
         return;
       }
       toast.error("Conversion failed: " + err.message);
