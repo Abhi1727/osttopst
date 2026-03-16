@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using System.IO.Compression;
 using Aspose.Email.Storage.Pst;
 using PstConverter.Models;
@@ -1571,9 +1572,18 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 case ExportFormat.Txt:
                     using (var mailMsg = msg.ToMailMessage(new MailConversionOptions()))
                     {
+                        // Ensure international characters are preserved by setting UTF-8 encoding
+                        mailMsg.BodyEncoding = Encoding.UTF8;
+                        mailMsg.SubjectEncoding = Encoding.UTF8;
+                        
                         mailMsg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
                         ms.Position = 0;
+                        
                         var doc = new Aspose.Words.Document(ms);
+                        
+                        // Ensure Aspose.Words can find fonts for international characters
+                        doc.FontSettings = Aspose.Words.Fonts.FontSettings.DefaultInstance;
+                        
                         var wordsSaveFormat = format switch
                         {
                             ExportFormat.Pdf => Aspose.Words.SaveFormat.Pdf,

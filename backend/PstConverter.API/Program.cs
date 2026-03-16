@@ -51,6 +51,13 @@ try
     MemoryStream objStream = new(byteArray);
 
     license.SetLicense(objStream);
+
+    // Global Font Settings for Aspose.Words to support international characters
+    Aspose.Words.Fonts.FontSettings.DefaultInstance.SetFontsFolders(new[] 
+    { 
+        @"C:\Windows\Fonts", 
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts") 
+    }, true);
 }
 catch (Exception ex)
 {

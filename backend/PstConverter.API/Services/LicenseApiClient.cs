@@ -83,7 +83,7 @@ namespace PstConverter.Services
         /// <param name="moduleId">The module ID.</param>
         /// <param name="ostFileSizeBytes">The size of the file processsed in bytes.</param>
         /// <returns>True if the storage update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateStorageAsync(string emailOrId, string toolId, long ostFileSizeBytes)
+        public async Task<bool> UpdateStorageAsync(string emailOrId,  long ostFileSizeBytes)
         {
             var licenseId = emailOrId.ToLowerInvariant();
             // Check cache first for custom allotted values
@@ -171,7 +171,7 @@ namespace PstConverter.Services
             return true;
         }
 
-        public async Task<bool> UpdateItemsAsync(string emailOrId, string toolId)
+        public async Task<bool> UpdateItemsAsync(string emailOrId)
         {
             var licenseId = emailOrId.ToLowerInvariant();
 
@@ -292,7 +292,7 @@ namespace PstConverter.Services
             };
         }
 
-        public async Task<DetailedLicenseStatus> GetDetailedLicenseStatusAsync(string emailOrId, string? toolId = null)
+        public async Task<DetailedLicenseStatus> GetDetailedLicenseStatusAsync(string emailOrId)
         {
             var licenseId = emailOrId.ToLowerInvariant();
             try

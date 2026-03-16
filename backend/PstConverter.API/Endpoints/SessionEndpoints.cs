@@ -69,7 +69,7 @@ public static class SessionEndpoints
             return Results.Ok(new { found = false });
         });
         //this is for checking the status of the session
-        group.MapGet("/{sessionId}/check", async (string sessionId, AppDbContext db, ClaimsPrincipal user) =>
+        group.MapGet("/{sessionId}/check", async (string sessionId, AppDbContext db, LicenseApiClient licenseClient, ClaimsPrincipal user) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var session = await db.ConversionSessions
@@ -101,10 +101,23 @@ public static class SessionEndpoints
             // If the status starts with "Ready", the background task has definitely finished the file.
             var isSessionReady = (session.Status ?? "").StartsWith("Ready", StringComparison.OrdinalIgnoreCase);
 
+            // 3. License check to handle background limit hit or external changes
+            var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
+            var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+            
+            bool limitHit = licenseStatus.HitFileCountLimit || licenseStatus.HitSizeLimit || licenseStatus.HitTimePeriodLimit;
+
             // Rate-limit LastAccessedAt updates to once per 60s
             if ((DateTime.UtcNow - session.LastAccessedAt).TotalSeconds > 60)
             {
                 session.LastAccessedAt = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+            }
+
+            if (limitHit && session.Status != "Ready")
+            {
+                // Force status to LimitReached if license is hit and it's not already ready
+                session.Status = "LimitReached";
                 await db.SaveChangesAsync();
             }
 

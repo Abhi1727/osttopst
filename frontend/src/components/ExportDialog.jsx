@@ -372,6 +372,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                             session.sessionId,
                             file,
                             getToken,
+                            user?.primaryEmailAddress?.emailAddress
                           )
                         }
                         className="bg-zinc-200 hover:bg-emerald-100 text-zinc-700 hover:text-emerald-700 rounded-xl px-4 py-2 font-black transition-colors"

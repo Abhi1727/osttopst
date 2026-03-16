@@ -104,8 +104,14 @@ public static class ConversionEndpoints
                     if (!session.IsPaid)
                     {
                         session.IsPaid = true;
-                        await licenseClient.UpdateStorageAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString(), session.Size);
-                        await licenseClient.UpdateItemsAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                        var storageSuccess = await licenseClient.UpdateStorageAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString(), session.Size);
+                        var itemsSuccess = await licenseClient.UpdateItemsAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+
+                        if (!storageSuccess || !itemsSuccess)
+                        {
+                            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                            return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+                        }
                     }
                     await db.SaveChangesAsync();
                 }
@@ -209,8 +215,14 @@ public static class ConversionEndpoints
                     if (!session.IsPaid)
                     {
                         session.IsPaid = true;
-                        await licenseClient.UpdateStorageAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString(), session.Size);
-                        await licenseClient.UpdateItemsAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                        var storageSuccess = await licenseClient.UpdateStorageAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString(), session.Size);
+                        var itemsSuccess = await licenseClient.UpdateItemsAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+
+                        if (!storageSuccess || !itemsSuccess)
+                        {
+                            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                            return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+                        }
                     }
                     await db.SaveChangesAsync();
                 }
@@ -249,13 +261,23 @@ public static class ConversionEndpoints
         //THIS IS FOR SPLIT FILES
         group.MapGet("/{sessionId}/download/{fileName}", async (string sessionId,
                                                                 string fileName,
+                                                                [FromQuery] string? email,
                                                                 PstService pstService,
+                                                                LicenseApiClient licenseClient,
                                                                 AppDbContext db,
                                                                 ClaimsPrincipal user) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
             if (session == null) return Results.NotFound();
+
+            // License check
+            var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
+            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+            if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit)
+            {
+                return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+            }
 
             if (session.SplitFilesJson != null)
             {

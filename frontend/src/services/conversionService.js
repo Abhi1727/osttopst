@@ -231,9 +231,10 @@ export const conversionService = {
     }
   },
 
-  async downloadSplitFile(sessionId, fileName, getToken) {
+  async downloadSplitFile(sessionId, fileName, getToken, email = null) {
     const token = await getToken();
-    const url = `${API_BASE_URL}/file-details/${sessionId}/download/${encodeURIComponent(fileName)}?token=${token}`;
+    let url = `${API_BASE_URL}/file-details/${sessionId}/download/${encodeURIComponent(fileName)}?token=${token}`;
+    if (email) url += `&email=${encodeURIComponent(email)}`;
     const a = document.createElement("a");
     a.href = url;
     a.download = fileName;
