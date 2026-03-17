@@ -69,7 +69,7 @@ const BlogPostDetail = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white pt-20 text-slate-500 font-medium font-inter">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="animate-pulse">Loading amazing content...</p>
         </div>
       </div>
@@ -81,10 +81,10 @@ const BlogPostDetail = () => {
     .slice(0, 3);
 
   return (
-    <div className="bg-white min-h-screen overflow-x-hidden font-inter selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="bg-white min-h-screen overflow-x-hidden font-inter selection:bg-brand-100 selection:text-brand-900">
       {/* Immersive Scroll Progress Bar */}
       <div
-        className="fixed top-20 left-0 h-1 bg-emerald-500 z-[70] transition-all duration-300"
+        className="fixed top-20 left-0 h-1 bg-brand-500 z-[70] transition-all duration-300"
         style={{ width: `${readingProgress}%` }}
       ></div>
 
@@ -93,7 +93,7 @@ const BlogPostDetail = () => {
           {/* Breadcrumb & Back */}
           <button
             onClick={() => navigate("/blogs")}
-            className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 transition-colors mb-12 group font-bold text-sm uppercase tracking-widest"
+            className="flex items-center gap-2 text-slate-500 hover:text-brand-600 transition-colors mb-12 group font-bold text-sm uppercase tracking-widest"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Articles
@@ -101,7 +101,7 @@ const BlogPostDetail = () => {
 
           <div className="max-w-4xl mb-16">
             <div className="flex items-center gap-4 mb-8">
-              <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest border border-emerald-100/50">
+              <span className="bg-brand-50 text-brand-600 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest border border-brand-100/50">
                 {post.category}
               </span>
               <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
@@ -159,14 +159,14 @@ const BlogPostDetail = () => {
               <div className="mt-24 pt-16 border-t border-slate-100">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8 group/footer">
                   <div className="flex items-center gap-8">
-                    <button className="flex items-center gap-3 text-slate-500 hover:text-emerald-600 transition-colors group">
-                      <div className="p-3 rounded-xl bg-slate-50 group-hover:bg-emerald-50 transition-colors">
+                    <button className="flex items-center gap-3 text-slate-500 hover:text-brand-600 transition-colors group">
+                      <div className="p-3 rounded-xl bg-slate-50 group-hover:bg-brand-50 transition-colors">
                         <ThumbsUp className="w-5 h-5" />
                       </div>
                       <span className="font-bold text-sm">124 Likes</span>
                     </button>
-                    <button className="flex items-center gap-3 text-slate-500 hover:text-emerald-600 transition-colors group">
-                      <div className="p-3 rounded-xl bg-slate-50 group-hover:bg-emerald-50 transition-colors">
+                    <button className="flex items-center gap-3 text-slate-500 hover:text-brand-600 transition-colors group">
+                      <div className="p-3 rounded-xl bg-slate-50 group-hover:bg-brand-50 transition-colors">
                         <Share2 className="w-5 h-5" />
                       </div>
                       <span className="font-bold text-sm">Share Article</span>
@@ -194,14 +194,14 @@ const BlogPostDetail = () => {
                 {/* Author Card */}
                 <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100/50 group hover:bg-white hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:rotate-6 transition-transform">
+                    <div className="w-16 h-16 rounded-2xl bg-brand-500 flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:rotate-6 transition-transform">
                       <User className="w-8 h-8 text-white" />
                     </div>
                     <div>
                       <h4 className="font-black text-slate-900 text-lg">
                         {post.author}
                       </h4>
-                      <p className="text-emerald-600 font-bold text-xs uppercase tracking-widest">
+                      <p className="text-brand-600 font-bold text-xs uppercase tracking-widest">
                         Editorial Team
                       </p>
                     </div>
@@ -214,7 +214,7 @@ const BlogPostDetail = () => {
                     <button className="flex-1 bg-white hover:bg-slate-900 hover:text-white text-slate-600 text-[10px] font-black uppercase tracking-widest py-3 rounded-xl border border-slate-200 transition-all">
                       View Profile
                     </button>
-                    <button className="w-11 h-11 flex items-center justify-center bg-white hover:bg-emerald-500 hover:text-white text-slate-400 rounded-xl border border-slate-200 transition-all">
+                    <button className="w-11 h-11 flex items-center justify-center bg-white hover:bg-brand-500 hover:text-white text-slate-400 rounded-xl border border-slate-200 transition-all">
                       <Share2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -223,7 +223,7 @@ const BlogPostDetail = () => {
                 {/* You May Like - Recommended */}
                 <div className="space-y-8">
                   <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
+                    <div className="w-1.5 h-6 bg-brand-500 rounded-full"></div>
                     <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm">
                       You may like
                     </h3>
@@ -244,10 +244,10 @@ const BlogPostDetail = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                          <span className="text-[10px] font-black text-brand-600 uppercase tracking-widest">
                             {rec.category}
                           </span>
-                          <h4 className="font-black text-slate-900 text-sm leading-tight group-hover:text-emerald-600 transition-colors line-clamp-2">
+                          <h4 className="font-black text-slate-900 text-sm leading-tight group-hover:text-brand-600 transition-colors line-clamp-2">
                             {rec.title}
                           </h4>
                         </div>
@@ -262,10 +262,10 @@ const BlogPostDetail = () => {
                 </div>
 
                 {/* Promotional Banner */}
-                <div className="relative p-8 rounded-[2.5rem] bg-slate-900 overflow-hidden shadow-2xl shadow-emerald-900/10 group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl group-hover:bg-emerald-500/30 transition-colors"></div>
+                <div className="relative p-8 rounded-[2.5rem] bg-slate-900 overflow-hidden shadow-2xl shadow-brand-900/10 group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/20 rounded-full blur-2xl group-hover:bg-brand-500/30 transition-colors"></div>
                   <div className="relative z-10 space-y-6">
-                    <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center">
                       <Bookmark className="w-6 h-6 text-white" />
                     </div>
                     <h3 className="text-xl font-black text-white leading-tight">
@@ -275,10 +275,10 @@ const BlogPostDetail = () => {
                       Convert unlimited OST files securely on your local machine
                       with full data integrity.
                     </p>
-                    <button className="w-full bg-emerald-500 hover:bg-white hover:text-slate-900 text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-widest transition-all group-hover:scale-[1.02]">
+                    <button className="w-full bg-brand-500 hover:bg-white hover:text-slate-900 text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-widest transition-all group-hover:scale-[1.02]">
                       Download Free Trial
                     </button>
-                    <p className="text-center text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest">
+                    <p className="text-center text-[10px] font-bold text-brand-500/60 uppercase tracking-widest">
                       Trusted by 40,000+ Users
                     </p>
                   </div>

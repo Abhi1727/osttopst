@@ -15,12 +15,12 @@ import {
 } from "lucide-react";
 
 const TrustFeatureCard = ({ icon: Icon, title, description }) => (
-  <div className="flex flex-col items-center text-center p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all group">
-    <div className="p-4 rounded-2xl bg-emerald-50 mb-6 group-hover:scale-110 transition-transform">
-      <Icon className="w-10 h-10 text-emerald-600" />
+  <div className="flex flex-col items-start p-6 md:p-10 rounded-2xl md:rounded-3xl bg-white border border-slate-100 hover:shadow-2xl hover:shadow-brand-500/10 transition-all group">
+    <div className="w-10 h-10 md:w-14 md:h-14 bg-brand-50 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:bg-brand-500 group-hover:text-white transition-all">
+      <Icon className="w-5 h-5 md:w-7 md:h-7 text-brand-600 group-hover:text-white" />
     </div>
-    <h4 className="font-black text-slate-800 mb-3 text-lg">{title}</h4>
-    <p className="text-sm text-slate-500 leading-relaxed max-w-[200px]">
+    <h4 className="font-black text-slate-900 mb-2 md:mb-4 text-lg md:text-xl tracking-tight leading-tight">{title}</h4>
+    <p className="text-slate-500 font-semibold leading-relaxed text-xs md:text-base">
       {description}
     </p>
   </div>
@@ -103,14 +103,17 @@ const TrustFeatures = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-            Features that Make It Powerful 
+    <section className="py-10 md:py-24">
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="text-center mb-10 md:mb-20">
+          <h2 className="text-2xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-tight tracking-tight">
+            Our Professional <span className="header-text-gradient">Capabilities</span>
           </h2>
+          <p className="mt-2 md:mt-6 text-slate-500 text-sm md:text-lg lg:text-xl font-semibold max-w-2xl mx-auto leading-relaxed">
+            Advanced features designed to handle even the most complex Outlook data migration scenarios.
+          </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
           {features.map((feature, index) => (
             <TrustFeatureCard key={index} {...feature} />
           ))}

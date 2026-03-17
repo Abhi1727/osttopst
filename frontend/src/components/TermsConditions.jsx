@@ -11,7 +11,7 @@ const Section = ({ title, icon: Icon, children }) => (
     className="mb-12"
   >
     <div className="flex items-center gap-3 mb-4">
-      <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
+      <div className="p-2 bg-brand-100 rounded-lg text-brand-600">
         <Icon className="w-6 h-6" />
       </div>
       <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
@@ -24,27 +24,27 @@ const Section = ({ title, icon: Icon, children }) => (
 
 const TermsConditions = () => {
   return (
-    <div className="bg-slate-50 min-h-screen">
-      {/* Header */}
-      <section className="bg-gradient-to-b from-emerald-50/80 to-slate-50 pt-32 pb-16 px-4 text-center">
+    <div className="bg-slate-50 min-h-screen font-sans flex flex-col">
+      {/* Header Section */}
+      <header className="bg-gradient-to-b from-brand-50 to-slate-50 pt-8 pb-8 px-4 text-center relative overflow-hidden">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <span className="inline-block bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8">
+            <span className="inline-block bg-brand-100 text-brand-700 text-[10px] sm:text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8">
               Legal
             </span>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 mb-6 tracking-tighter">
-              Terms & <span className="text-emerald-500">Conditions</span>
+              Terms & <span className="text-brand-500">Conditions</span>
             </h1>
             <p className="text-slate-500 max-w-2xl mx-auto text-lg font-medium">
               Last updated: March 14, 2026. Please read these terms carefully.
             </p>
           </motion.div>
         </div>
-      </section>
+      </header>
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 py-16 pb-32">

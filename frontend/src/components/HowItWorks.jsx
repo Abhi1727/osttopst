@@ -26,9 +26,9 @@ const StepItem = ({ img, index }) => {
             delay: 0.1,
           }}
           viewport={{ once: true }}
-          className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white border-4 border-emerald-500 shadow-2xl shadow-emerald-500/30 flex items-center justify-center z-20"
+          className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white border-4 border-brand-500 shadow-2xl shadow-brand-500/30 flex items-center justify-center z-20"
         >
-          <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-emerald-500"></div>
+          <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-brand-500"></div>
         </motion.div>
 
         {/* Step Number Label */}
@@ -56,7 +56,7 @@ const StepItem = ({ img, index }) => {
           viewport={{ once: true, margin: "-10%" }}
           className={`${isEven ? "md:col-start-1" : "md:col-start-2"} order-last md:order-none`}
         >
-          <div className="relative group overflow-hidden rounded-[32px] md:rounded-[50px] shadow-2xl shadow-slate-200/50 hover:shadow-emerald-500/20 transition-all duration-700">
+          <div className="relative group overflow-hidden rounded-[32px] md:rounded-[50px] shadow-2xl shadow-slate-200/50 hover:shadow-brand-500/20 transition-all duration-700">
             <img
               src={img}
               alt={`Step ${index + 1}`}
@@ -86,18 +86,18 @@ const HowItWorks = () => {
   return (
     <div className="bg-slate-50 min-h-screen font-sans flex flex-col overflow-x-hidden">
       {/* Header Section */}
-      <section className="bg-gradient-to-b from-emerald-50/80 to-slate-50 pt-32 pb-24 px-4 text-center relative">
+      <section className="bg-gradient-to-b from-brand-50/80 to-slate-50 pt-32 pb-24 px-4 text-center relative">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <span className="inline-block bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8">
+            <span className="inline-block bg-brand-100 text-brand-700 text-[10px] sm:text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8">
               Visual Journey
             </span>
             <h1 className="text-5xl sm:text-6xl md:text-8xl font-black text-slate-900 mb-8 tracking-tighter leading-none">
-              How It <span className="text-emerald-500">Works</span>
+              How It <span className="text-brand-500">Works</span>
             </h1>
             <p className="text-slate-500 max-w-2xl mx-auto text-lg md:text-xl font-medium leading-relaxed">
               Explore our intuitive 3-step process to securely migrate your
@@ -107,7 +107,7 @@ const HowItWorks = () => {
         </div>
 
         {/* Decorative background blur */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0,transparent_70%)] pointer-events-none -z-10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.08)_0,transparent_70%)] pointer-events-none -z-10" />
       </section>
 
       {/* Timeline Section */}
@@ -116,7 +116,7 @@ const HowItWorks = () => {
         <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-slate-200 -translate-x-1/2 hidden md:block">
           <motion.div
             style={{ scaleY, originY: 0 }}
-            className="w-full h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]"
+            className="w-full h-full bg-brand-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
           />
         </div>
 
@@ -130,7 +130,7 @@ const HowItWorks = () => {
       {/* CTA Section */}
       <section className="bg-slate-900 py-32 px-4 relative overflow-hidden">
         {/* Modern dark patterns */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:40px_40px]" />
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:40px_40px]" />
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
@@ -141,7 +141,7 @@ const HowItWorks = () => {
           >
             <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tight">
               Ready to{" "}
-              <span className="text-emerald-400 text-glow-emerald">
+              <span className="text-brand-400 text-glow-brand">
                 Simplify
               </span>
               ?
@@ -152,7 +152,7 @@ const HowItWorks = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Button
-                className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black h-16 px-12 rounded-2xl flex items-center gap-3 text-lg transition-all hover:scale-105 active:scale-95 shadow-xl shadow-emerald-500/20"
+                className="bg-brand-500 hover:bg-brand-400 text-slate-900 font-black h-16 px-12 rounded-2xl flex items-center gap-3 text-lg transition-all hover:scale-105 active:scale-95 shadow-xl shadow-brand-500/20"
                 onClick={() => navigate("/")}
               >
                 <Zap className="w-5 h-5 fill-current" />

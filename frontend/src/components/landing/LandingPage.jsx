@@ -9,6 +9,7 @@ import ConversionHistory from "../ConversionHistory";
 import HowItWorks from "./HowItWorks";
 import TrustFeatures from "./TrustFeatures";
 import LandingFaq from "./LandingFaq";
+import FormatMarquee from "./FormatMarquee";
 
 import { SignedIn } from "@clerk/clerk-react";
 
@@ -22,6 +23,8 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
           <ConversionHistory onRestore={onRestore} />
         </SignedIn>
       </div>
+
+      <FormatMarquee />
 
       <HowItWorks />
       <TrustFeatures />

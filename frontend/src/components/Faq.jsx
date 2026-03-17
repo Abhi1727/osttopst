@@ -117,9 +117,9 @@ const Faq = () => {
     {
       id: "tech-6",
       category: "Technical",
-      question: "How to merge OST and PST files?",
+      question: "How to convert emails into EML file?",
       answer:
-        "The best way is to convert the OST to a PST first. Once you have two PST files, you can use Outlook's import feature or our service to consolidate the data into one, searchable file.",
+        "Emails can be saved to EML files by using the Export function in Outlook or by using a conversion service like ours to transform an existing OST cache into a standalone EML file.",
     },
     {
       id: "tech-7",
@@ -168,23 +168,18 @@ const Faq = () => {
   const filteredQuestions = questions.filter(
     (q) =>
       q.category === activeCategory ||
-      (activeCategory === "General" && q.category === "General"), // Default logic
+      (activeCategory === "General" && q.category === "General"),
   );
-
-  // Group questions by 'General' and 'Technical' for the specific layout in screenshot
-  // The screenshot shows "General Questions" and "Technical Support" sections.
-  // We can render all sections or filter. The screenshot implies a long scrolling list or sections.
-  // Let's implement it as sections for better UX matching the visual of having headers.
 
   return (
     <div className="bg-slate-50 min-h-screen font-sans flex flex-col">
       {/* Header Section */}
-      <div className="bg-slate-50 pt-20 pb-16 px-4 text-center relative overflow-hidden">
+      <header className="bg-gradient-to-b from-brand-50/80 to-slate-50 pt-8 pb-8 px-4 text-center relative overflow-hidden text-slate-900">
         {/* Background Blobs matching screenshot style roughly */}
-        <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+        <div className="absolute top-0 left-0 w-96 h-96 bg-brand-100/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight">
-          Frequently Asked <span className="text-emerald-600">Questions</span>
+        <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+          Frequently Asked <span className="text-brand-600">Questions</span>
         </h1>
         <p className="text-slate-500 max-w-2xl mx-auto text-sm md:text-base mb-10">
           Everything you need to know about the OST to PST conversion process,
@@ -200,12 +195,12 @@ const Faq = () => {
               placeholder="Search for questions..."
               className="w-full pl-14 pr-32 py-4 rounded-full border-none focus:ring-0 text-slate-700 bg-transparent outline-none h-14"
             />
-            <Button className="absolute right-2 top-2 bottom-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-8 font-semibold h-auto">
+            <Button className="absolute right-2 top-2 bottom-2 bg-brand-600 hover:bg-brand-700 text-white rounded-full px-8 font-semibold h-auto">
               Search
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
       <div className="max-w-[1400px] mx-auto px-6 w-full flex-1 pb-32">
@@ -217,8 +212,8 @@ const Faq = () => {
               onClick={() => setActiveCategory(cat)}
               className={`px-8 py-3 rounded-full text-sm font-bold transition-all duration-300 border ${
                 activeCategory === cat
-                  ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-200 scale-105"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-600"
+                  ? "bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-200 scale-105"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-brand-300 hover:text-brand-600"
               }`}
             >
               {cat} Questions
@@ -235,15 +230,15 @@ const Faq = () => {
                 key={item.id}
                 className="group relative flex flex-col space-y-4"
               >
-                <div className="absolute -left-6 top-1 w-1 h-0 bg-emerald-500 transition-all duration-500 group-hover:h-full opacity-50 overflow-hidden rounded-full"></div>
-                <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight leading-snug group-hover:text-emerald-700 transition-colors">
+                <div className="absolute -left-6 top-1 w-1 h-0 bg-brand-500 transition-all duration-500 group-hover:h-full opacity-50 overflow-hidden rounded-full"></div>
+                <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight leading-snug group-hover:text-brand-700 transition-colors">
                   {item.question}
                 </h3>
                 <p className="text-slate-600 text-base md:text-lg leading-relaxed font-medium opacity-90">
                   {item.answer}
                 </p>
                 <div className="pt-2">
-                  <div className="h-px w-20 bg-emerald-100 group-hover:w-full transition-all duration-700"></div>
+                  <div className="h-px w-20 bg-brand-100 group-hover:w-full transition-all duration-700"></div>
                 </div>
               </div>
             ))}
@@ -252,7 +247,7 @@ const Faq = () => {
 
       {/* Footer Banner */}
       <div className="max-w-6xl mx-auto px-4 w-full mb-20">
-        <div className="bg-emerald-700 rounded-3xl p-8 md:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-emerald-900/10">
+        <div className="bg-brand-700 rounded-3xl p-8 md:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-brand-900/10">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
 
@@ -260,21 +255,21 @@ const Faq = () => {
             <h2 className="text-2xl md:text-3xl font-black text-white mb-2">
               Couldn't find what you needed?
             </h2>
-            <p className="text-emerald-100 text-sm md:text-base max-w-lg">
+            <p className="text-brand-100 text-sm md:text-base max-w-lg">
               Submit a support ticket and we'll get back to you within 24 hours.
             </p>
           </div>
 
           <div className="relative z-10 flex gap-4">
             <Button
-              className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold h-12 px-6 rounded-lg shadow-lg"
+              className="bg-white text-brand-700 hover:bg-brand-50 font-bold h-12 px-6 rounded-lg shadow-lg"
               onClick={() => navigate("/support")}
             >
               Contact Support
             </Button>
             <Button
               variant="outline"
-              className="bg-emerald-800/50 text-white border-emerald-600 hover:bg-emerald-800 hover:text-white font-bold h-12 px-6 rounded-lg"
+              className="bg-brand-800/50 text-white border-brand-600 hover:bg-brand-800 hover:text-white font-bold h-12 px-6 rounded-lg"
               onClick={() => console.log("Live Chat")}
             >
               Live Chat

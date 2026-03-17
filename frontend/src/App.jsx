@@ -97,10 +97,10 @@ function App() {
     <ErrorBoundary>
       <Toaster position="top-right" />
       <div
-        className={`flex flex-col ${
+        className={`flex flex-col professional-gradient ${
           location.pathname === "/preview"
-            ? "h-screen overflow-hidden bg-zinc-50"
-            : "min-h-screen bg-white"
+            ? "h-screen overflow-hidden"
+            : "min-h-screen"
         }`}
       >
         <UnifiedHeader session={session} onReset={handleReset} />

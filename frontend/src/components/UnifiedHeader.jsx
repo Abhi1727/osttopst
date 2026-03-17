@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Sparkles, Menu, X } from "lucide-react";
+import { Sun, Moon, Sparkles, Menu, X, Laptop } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SignedIn,
@@ -44,172 +44,178 @@ const UnifiedHeader = ({ session, onReset }) => {
     navigate(pendingPath);
   };
 
+  const navItems = [
+    { label: "Home", path: "/" },
+    { label: "Our Plan", path: "/our-plans" },
+    { label: "How It Works", path: "/#how-it-works" },
+    { label: "FAQ", path: "/faq" },
+    { label: "Blogs", path: "/blogs" },
+    { label: "Contact Us", path: "/support" },
+  ];
+
+  const handleNavItemClick = (item) => {
+    if (item.label === "How It Works" && location.pathname === "/") {
+      const el = document.getElementById("how-it-works");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+    }
+    handleNavigation(item.path);
+  };
+
   return (
-    <header className="flex h-20 items-center justify-between px-6 lg:px-12 border-b border-border/10 bg-white/80 backdrop-blur-md sticky top-0 z-50 transition-colors duration-300">
+    <header className="flex h-14 md:h-16 items-center justify-between px-4 md:px-8 lg:px-12 border-b border-border/10 bg-white/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
       <div
-        className="flex items-center gap-3 cursor-pointer"
+        className="flex items-center gap-2 md:gap-3 cursor-pointer shrink-0"
         onClick={() => handleNavigation("/")}
       >
-        <div className="p-2 rounded-lg bg-emerald-100/50">
+        <div className="p-1.5 rounded-lg bg-brand-100/50">
           <img
             src={logo}
-            alt="OST to PST Converter"
-            className="w-6 h-6 object-contain"
+            alt="OST to PST"
+            className="w-5 h-5 md:w-6 md:h-6 object-contain"
           />
         </div>
-        <span className="text-xl font-bold tracking-tight text-slate-800">
-          OST TO PST Converter
+        <span className="text-sm md:text-lg font-bold tracking-tight text-slate-800 whitespace-nowrap">
+          OST TO PST <span className="hidden sm:inline">Converter</span>
         </span>
       </div>
 
-      <nav className="hidden lg:flex items-center gap-8">
-        {["Home", "Our Plan", "How It Works", "FAQ", "Blogs", "Contact Us"].map(
-          (item) => {
-            let path = "/";
-            if (item === "Home") path = "/";
-            if (item === "Our Plan") path = "/our-plans";
-            if (item === "How It Works") path = "/#how-it-works";
-            if (item === "FAQ") path = "/faq";
-            if (item === "Blogs") path = "/blogs";
-            if (item === "Contact Us") path = "/support";
-
-            const isActive = location.pathname === path;
-
-            return (
-              <span
-                key={item}
-                onClick={() => {
-                  if (item === "How It Works" && location.pathname === "/") {
-                    const el = document.getElementById("how-it-works");
-                    if (el) {
-                      el.scrollIntoView({ behavior: "smooth" });
-                      return;
-                    }
-                  }
-                  handleNavigation(path);
-                }}
-                className={`cursor-pointer text-sm font-medium transition-colors ${
-                  isActive
-                    ? "text-emerald-600 font-bold"
-                    : "text-slate-600 hover:text-emerald-600"
-                }`}
-              >
-                {item}
-              </span>
-            );
-          },
-        )}
+      {/* Desktop Nav */}
+      <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <span
+              key={item.label}
+              onClick={() => handleNavItemClick(item)}
+              className={`cursor-pointer text-sm font-semibold transition-colors ${
+                isActive
+                  ? "text-brand-600"
+                  : "text-slate-600 hover:text-brand-600"
+              }`}
+            >
+              {item.label}
+            </span>
+          );
+        })}
       </nav>
 
-      <div className="flex items-center gap-4">
-        <Button className="hidden xl:flex bg-amber-400 hover:bg-amber-500 text-slate-900 font-semibold px-6 shadow-md shadow-amber-400/20 gap-2">
-          <Sparkles className="w-4 h-4" />
-          Try Desktop Version
-        </Button>
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Only show on desktop-ish */}
+        <div className="hidden lg:flex items-center gap-4">
+          <Button className="hidden xl:flex bg-[#f97316] hover:bg-[#ea580c] text-white font-extrabold px-6 h-10 rounded-full shadow-lg shadow-orange-500/10 gap-2 transition-all border-none text-xs">
+            <Laptop className="w-4 h-4" />
+            Get Desktop Tool
+          </Button>
+          
+          <LicenseBadge />
 
-        <div className="lg:hidden">
+          <div className="flex items-center">
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button
+                  variant="outline"
+                  className="h-9 px-4 text-xs border-slate-300 text-slate-700 font-bold"
+                >
+                  Sign In
+                </Button>
+              </SignInButton>
+            </SignedOut>
+
+            <SignedIn>
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox: "h-8 w-8 ring-2 ring-brand-100",
+                  },
+                }}
+              />
+            </SignedIn>
+          </div>
+        </div>
+
+        {/* Mobile menu trigger */}
+        <div className="lg:hidden flex items-center gap-2">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-slate-600">
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-600">
                 <Menu className="w-6 h-6" />
               </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[300px] flex flex-col gap-8 pt-12"
+              className="w-[300px] flex flex-col gap-6 pt-10"
             >
-              <SheetTitle className="text-left text-emerald-600 font-bold">
-                Menu
+              <SheetTitle className="text-left text-brand-600 font-bold text-lg">
+                Navigation
               </SheetTitle>
-              <nav className="flex flex-col gap-6">
-                {[
-                  "Home",
-                  "Our Plan",
-                  "How It Works",
-                  "FAQ",
-                  "Blogs",
-                  "Contact Us",
-                ].map((item) => {
-                  let path = "/";
-                  if (item === "Home") path = "/";
-                  if (item === "Our Plan") path = "/our-plans";
-                  if (item === "How It Works") path = "/#how-it-works";
-                  if (item === "FAQ") path = "/faq";
-                  if (item === "Blogs") path = "/blogs";
-                  if (item === "Contact Us") path = "/support";
+              
+              <div className="flex flex-col gap-1">
+                {navItems.map((item) => (
+                  <SheetClose key={item.label} asChild>
+                    <button
+                      onClick={() => handleNavItemClick(item)}
+                      className={`text-left py-3 px-4 text-sm font-bold rounded-xl transition-colors ${
+                        location.pathname === item.path
+                          ? "bg-brand-50 text-brand-600"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  </SheetClose>
+                ))}
+              </div>
 
-                  return (
-                    <SheetClose key={item} asChild>
-                      <span
-                        onClick={() => {
-                          if (
-                            item === "How It Works" &&
-                            location.pathname === "/"
-                          ) {
-                            const el = document.getElementById("how-it-works");
-                            if (el) {
-                              el.scrollIntoView({ behavior: "smooth" });
-                              return;
-                            }
-                          }
-                          handleNavigation(path);
-                        }}
-                        className={`text-lg font-semibold cursor-pointer ${
-                          location.pathname === path
-                            ? "text-emerald-600"
-                            : "text-slate-600"
-                        }`}
-                      >
-                        {item}
-                      </span>
-                    </SheetClose>
-                  );
-                })}
-              </nav>
               <Separator />
-              <Button className="w-full bg-amber-400 text-slate-900 font-bold">
-                Get Desktop Version
-              </Button>
+
+              <div className="flex flex-col gap-4">
+                <div className="px-4">
+                  <p className="text-[10px] uppercase font-black text-slate-400 mb-3 tracking-widest">Account & License</p>
+                  <LicenseBadge />
+                </div>
+                
+                <div className="flex items-center px-4 justify-between">
+                   <span className="text-sm font-bold text-slate-600">User Profile</span>
+                   <SignedIn>
+                    <UserButton
+                      afterSignOutUrl="/"
+                      appearance={{
+                        elements: {
+                          userButtonAvatarBox: "h-10 w-10 ring-2 ring-brand-100",
+                        },
+                      }}
+                    />
+                  </SignedIn>
+                  <SignedOut>
+                    <SignInButton mode="modal">
+                      <Button variant="outline" className="h-9 px-4 text-xs font-bold border-slate-300">
+                        Sign In
+                      </Button>
+                    </SignInButton>
+                  </SignedOut>
+                </div>
+              </div>
+
+              <div className="mt-auto pb-4">
+                <Button className="w-full bg-[#f97316] hover:bg-[#ea580c] text-white font-extrabold py-6 rounded-xl flex gap-2 shadow-xl shadow-orange-500/10 border-none">
+                  <Laptop className="w-5 h-5" />
+                  Get Desktop Tool
+                </Button>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
-
-        <LicenseBadge />
-
-        <SignedOut>
-          <SignInButton mode="modal">
-            <Button
-              variant="outline"
-              className="border-slate-300 text-slate-700 hover:text-emerald-600 hover:border-emerald-600"
-            >
-              Sign In
-            </Button>
-          </SignInButton>
-        </SignedOut>
-
-        <SignedIn>
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                userButtonAvatarBox: "h-9 w-9 ring-2 ring-emerald-100",
-              },
-            }}
-          />
-        </SignedIn>
       </div>
+      
       <SessionGuardModal
         isOpen={isGuardOpen}
         onClose={() => setIsGuardOpen(false)}
         onHome={confirmLeave}
-        onExport={() => {
-          setIsGuardOpen(false);
-          // Ideally trigger export dialog which is in FilePreview...
-          // But Header doesn't control FilePreview state.
-          // Maybe navigate to preview with strict "open export" param?
-          // Or just close intended modal and let user export manually.
-          // For now, close modal. User stays on preview.
-        }}
+        onExport={() => setIsGuardOpen(false)}
       />
     </header>
   );

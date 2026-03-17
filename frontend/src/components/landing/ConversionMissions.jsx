@@ -9,7 +9,7 @@ const ConversionMissions = () => {
   const bottomAudiences = [
     {
       icons: (
-        <UserCircle className="w-10 h-10 text-emerald-600" strokeWidth={1.5} />
+        <UserCircle className="w-10 h-10 text-brand-600" strokeWidth={1.5} />
       ),
       title: "Outlook Users",
       description:
@@ -17,7 +17,7 @@ const ConversionMissions = () => {
     },
     {
       icons: (
-        <FolderUp className="w-10 h-10 text-emerald-600" strokeWidth={1.5} />
+        <FolderUp className="w-10 h-10 text-brand-600" strokeWidth={1.5} />
       ),
       title: "IT Administrators",
       description:
@@ -26,7 +26,7 @@ const ConversionMissions = () => {
     {
       icons: (
         <GraduationCap
-          className="w-10 h-10 text-emerald-600"
+          className="w-10 h-10 text-brand-600"
           strokeWidth={1.5}
         />
       ),
@@ -36,7 +36,7 @@ const ConversionMissions = () => {
     },
     {
       icons: (
-        <Store className="w-10 h-10 text-emerald-600" strokeWidth={1.5} />
+        <Store className="w-10 h-10 text-brand-600" strokeWidth={1.5} />
       ),
       title: "Small to Large Businesses",
       description:
@@ -45,11 +45,11 @@ const ConversionMissions = () => {
   ];
 
   return (
-    <section className="py-16 md:py-10 px-4 md:px-6 lg:px-12 bg-white">
+    <section className="py-12 md:py-16 px-4 md:px-6 lg:px-12">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center">
-          <h2 className="text-3xl md:text-3xl font-extrabold text-slate-900">
-            <span className="text-emerald-600">Ideal Users</span> of Our Converter  
+        <div className="text-center mb-10 md:mb-12">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">
+            <span className="text-brand-600">Ideal Users</span> of Our Converter  
           </h2>
         </div>
 
@@ -59,7 +59,7 @@ const ConversionMissions = () => {
               key={idx}
               className="flex flex-col items-center text-center space-y-4 group"
             >
-              <div className="w-20 h-20 bg-emerald-50/50 rounded-full flex items-center justify-center mb-2 shadow-sm border border-emerald-100/50 group-hover:shadow-md group-hover:scale-105 transition-all">
+              <div className="w-20 h-20 bg-brand-50/50 rounded-full flex items-center justify-center mb-2 shadow-sm border border-brand-100/50 group-hover:shadow-md group-hover:scale-105 transition-all">
                 {item.icon}
               </div>
               <h3 className="text-base font-bold text-slate-900">
@@ -73,15 +73,15 @@ const ConversionMissions = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto mt-16 space-y-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="max-w-7xl mx-auto mt-10 md:mt-12 space-y-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {bottomAudiences.map((item, idx) => (
             <div
               key={idx}
-              className="flex flex-col items-center text-center p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow group min-h-[300px]"
+              className="flex flex-col items-center text-center p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow group min-h-[250px] md:min-h-[300px]"
             >
-              <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
-                <span className="text-emerald-600 font-bold text-lg">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-brand-50 rounded-full flex items-center justify-center mb-4 md:mb-6">
+                <span className="text-brand-600 font-bold text-lg scale-75 md:scale-100">
                   {item.icons}
                 </span>
               </div>

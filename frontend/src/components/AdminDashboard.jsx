@@ -267,7 +267,7 @@ const AdminDashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
-              SEO <span className="text-emerald-600">Admin Panel</span>
+              SEO <span className="text-brand-600">Admin Panel</span>
             </h1>
             <p className="text-slate-500 font-medium">
               Upload documents to automatically generate professional blog
@@ -275,7 +275,7 @@ const AdminDashboard = () => {
             </p>
           </div>
           <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+            <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center text-brand-600">
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
@@ -294,13 +294,13 @@ const AdminDashboard = () => {
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
               <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <Upload className="w-5 h-5 text-emerald-600" />
+                <Upload className="w-5 h-5 text-brand-600" />
                 Upload Content
               </h2>
 
               <div
                 className={`relative group border-2 border-dashed rounded-3xl p-10 text-center transition-all cursor-pointer
-                  ${file ? "border-emerald-500 bg-emerald-50/30" : "border-slate-200 hover:border-emerald-400 hover:bg-slate-50"}`}
+                  ${file ? "border-brand-500 bg-brand-50/30" : "border-slate-200 hover:border-brand-400 hover:bg-slate-50"}`}
                 onClick={() => document.getElementById("file-upload").click()}
               >
                 <input
@@ -314,7 +314,7 @@ const AdminDashboard = () => {
                 <div className="flex flex-col items-center">
                   <div
                     className={`w-16 h-16 rounded-2xl mb-4 flex items-center justify-center transition-all
-                    ${file ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" : "bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600"}`}
+                    ${file ? "bg-brand-600 text-white shadow-lg shadow-brand-200" : "bg-slate-100 text-slate-400 group-hover:bg-brand-100 group-hover:text-brand-600"}`}
                   >
                     {file ? (
                       <FileType className="w-8 h-8" />
@@ -351,7 +351,7 @@ const AdminDashboard = () => {
                 <button
                   onClick={handleUpload}
                   disabled={isUploading}
-                  className="w-full mt-6 bg-emerald-600 text-white font-black py-4 rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full mt-6 bg-brand-600 text-white font-black py-4 rounded-2xl hover:bg-brand-700 transition-all shadow-lg shadow-brand-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isUploading ? (
                     <>
@@ -369,19 +369,19 @@ const AdminDashboard = () => {
             </div>
 
             {extractedData && (
-              <div className="bg-emerald-600 p-8 rounded-[2.5rem] shadow-xl shadow-emerald-100 text-white relative overflow-hidden">
+              <div className="bg-brand-600 p-8 rounded-[2.5rem] shadow-xl shadow-brand-100 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5" />
                   Ready to Publish
                 </h3>
-                <p className="text-emerald-50/80 text-sm mb-6 leading-relaxed">
+                <p className="text-brand-50/80 text-sm mb-6 leading-relaxed">
                   Your document has been processed. Review the metadata and
                   preview before pushing live.
                 </p>
                 <button
                   onClick={handlePublish}
-                  className="w-full bg-white text-emerald-700 font-black py-4 rounded-2xl hover:bg-emerald-50 transition-all shadow-md active:scale-95"
+                  className="w-full bg-white text-brand-700 font-black py-4 rounded-2xl hover:bg-brand-50 transition-all shadow-md active:scale-95"
                 >
                   Publish to Blog
                 </button>
@@ -394,7 +394,7 @@ const AdminDashboard = () => {
             <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                  <FileText className="w-6 h-6 text-emerald-600" />
+                  <FileText className="w-6 h-6 text-brand-600" />
                   Blog Metadata
                 </h2>
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
@@ -417,12 +417,12 @@ const AdminDashboard = () => {
                       })
                     }
                     placeholder="Enter blog title"
-                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:bg-white focus:border-emerald-500/30 transition-all text-slate-700 font-medium"
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
-                    Category <span className="text-emerald-500">*</span>
+                    Category <span className="text-brand-500">*</span>
                   </label>
                   <input
                     list="categories"
@@ -434,7 +434,7 @@ const AdminDashboard = () => {
                       })
                     }
                     placeholder="Select or type custom category"
-                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:bg-white focus:border-emerald-500/30 transition-all text-slate-700 font-medium"
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium"
                   />
                   <datalist id="categories">
                     <option value="Data Migration" />
@@ -470,9 +470,9 @@ const AdminDashboard = () => {
                     />
                     <label
                       htmlFor="thumbnail-upload"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all active:scale-95"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-brand-300 hover:shadow-sm cursor-pointer transition-all active:scale-95"
                     >
-                      <Upload className="w-4 h-4 text-emerald-600" />
+                      <Upload className="w-4 h-4 text-brand-600" />
                       Upload Custom Thumbnail
                     </label>
                     <p className="text-xs text-slate-400 mt-2">
@@ -496,18 +496,18 @@ const AdminDashboard = () => {
                     })
                   }
                   placeholder="Short summary for SEO..."
-                  className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:bg-white focus:border-emerald-500/30 transition-all text-slate-700 font-medium resize-none"
+                  className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium resize-none"
                 ></textarea>
               </div>
 
               <div className="border-t border-slate-50 pt-8">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <Eye className="w-5 h-5 text-emerald-600" />
+                    <Eye className="w-5 h-5 text-brand-600" />
                     Content Preview
                   </h3>
                   {extractedData && (
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg">
+                    <span className="text-xs font-bold text-brand-600 bg-brand-50 px-3 py-1.5 rounded-lg">
                       {extractedData.wordCount} Words Extracted
                     </span>
                   )}

@@ -45,7 +45,7 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
       <div
         className={`flex items-center py-2.5 px-3 cursor-pointer rounded-xl transition-all group mb-1 ${
           isSelected
-            ? "bg-emerald-600 text-white shadow-lg shadow-emerald-100 ring-2 ring-emerald-600/20"
+            ? "bg-brand-600 text-white shadow-lg shadow-brand-100 ring-2 ring-brand-600/20"
             : "hover:bg-zinc-100/80 text-zinc-600"
         }`}
         style={{ marginLeft: `${level * 16}px` }}
@@ -84,7 +84,7 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
               className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                 isSelected
                   ? "bg-white/20 text-white"
-                  : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                  : "bg-brand-50 text-brand-600 border border-brand-100"
               }`}
             >
               {totalCount}
@@ -147,7 +147,7 @@ const LicenseUsageBar = ({ status }) => {
         </h3>
         <Button
           variant="link"
-          className="h-auto p-0 text-[10px] font-black text-emerald-600 uppercase tracking-tighter hover:no-underline hover:text-emerald-700"
+          className="h-auto p-0 text-[10px] font-black text-brand-600 uppercase tracking-tighter hover:no-underline hover:text-brand-700"
           onClick={() => (window.location.href = "/pricing")}
         >
           Upgrade Plan
@@ -173,7 +173,7 @@ const LicenseUsageBar = ({ status }) => {
             <div
               className={cn(
                 "h-full transition-all duration-700 ease-out",
-                itemPercent > 90 ? "bg-rose-500" : "bg-emerald-500",
+                itemPercent > 90 ? "bg-rose-500" : "bg-brand-500",
               )}
               style={{ width: `${itemPercent}%` }}
             />
@@ -198,7 +198,7 @@ const LicenseUsageBar = ({ status }) => {
             <div
               className={cn(
                 "h-full transition-all duration-700 ease-out",
-                storagePercent > 90 ? "bg-rose-500" : "bg-emerald-500",
+                storagePercent > 90 ? "bg-rose-500" : "bg-brand-500",
               )}
               style={{ width: `${storagePercent}%` }}
             />
@@ -583,7 +583,7 @@ const FilePreview = ({ session, onReset }) => {
         {/* Left Panel: Navigation */}
         <aside className="w-[380px] border-r border-zinc-100 flex flex-col bg-zinc-50/30 shrink-0">
           <div className="p-6 border-b border-zinc-100 flex items-center gap-4 bg-white">
-            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-100 shrink-0">
+            <div className="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center shadow-xl shadow-brand-100 shrink-0">
               <img
                 src={logo}
                 alt="Logo"
@@ -625,7 +625,7 @@ const FilePreview = ({ session, onReset }) => {
                     className={cn(
                       "w-full flex items-center justify-between p-3 rounded-2xl border transition-all",
                       hideEmpty
-                        ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+                        ? "bg-brand-50 border-brand-100 text-brand-700"
                         : "bg-white border-zinc-100 text-zinc-500 hover:bg-zinc-50",
                     )}
                   >
@@ -633,7 +633,7 @@ const FilePreview = ({ session, onReset }) => {
                       <div
                         className={cn(
                           "w-2 h-2 rounded-full",
-                          hideEmpty ? "bg-emerald-500" : "bg-zinc-300",
+                          hideEmpty ? "bg-brand-500" : "bg-zinc-300",
                         )}
                       />
                       <span className="text-[11px] font-black uppercase tracking-wider">
@@ -647,7 +647,7 @@ const FilePreview = ({ session, onReset }) => {
                 <div
                   className={`flex items-center py-3 px-4 cursor-pointer rounded-2xl transition-all border ${
                     selectedFolder === null
-                      ? "bg-emerald-50 border-emerald-100 text-emerald-900 shadow-sm"
+                      ? "bg-brand-50 border-brand-100 text-brand-900 shadow-sm"
                       : "bg-white border-zinc-100 hover:bg-zinc-50 text-zinc-600"
                   }`}
                   onClick={() => setSelectedFolder(null)}
@@ -656,7 +656,7 @@ const FilePreview = ({ session, onReset }) => {
                     size={20}
                     className={
                       selectedFolder === null
-                        ? "text-emerald-500"
+                        ? "text-brand-500"
                         : "text-zinc-400"
                     }
                   />
@@ -734,7 +734,7 @@ const FilePreview = ({ session, onReset }) => {
                       label: "Folders Detected",
                       value: folders.length,
                       icon: Folder,
-                      color: "bg-emerald-500",
+                      color: "bg-brand-500",
                     },
                     {
                       label: "File Size",
@@ -791,7 +791,7 @@ const FilePreview = ({ session, onReset }) => {
                           className="flex items-center justify-between p-6 hover:bg-zinc-50/80 rounded-[24px] group transition-all"
                         >
                           <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 bg-zinc-100 rounded-2xl flex items-center justify-center text-zinc-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
+                            <div className="w-12 h-12 bg-zinc-100 rounded-2xl flex items-center justify-center text-zinc-400 group-hover:bg-brand-50 group-hover:text-brand-500 transition-colors">
                               <Folder size={24} />
                             </div>
                             <div>
@@ -832,7 +832,7 @@ const FilePreview = ({ session, onReset }) => {
                       </span>
                     )}
                     {selectedMessages.size > 0 && (
-                      <span className="text-sm font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 animate-in zoom-in-95 duration-200 shrink-0">
+                      <span className="text-sm font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full border border-brand-100 animate-in zoom-in-95 duration-200 shrink-0">
                         {selectedMessages.size} selected
                       </span>
                     )}
@@ -862,7 +862,7 @@ const FilePreview = ({ session, onReset }) => {
                           e.target.value ? parseInt(e.target.value) : null,
                         )
                       }
-                      className="h-12 px-4 rounded-xl border-none bg-zinc-50 font-bold text-sm text-zinc-600 focus:ring-2 focus:ring-emerald-500/20"
+                      className="h-12 px-4 rounded-xl border-none bg-zinc-50 font-bold text-sm text-zinc-600 focus:ring-2 focus:ring-brand-500/20"
                     >
                       <option value="">Year</option>
                       {Array.from({ length: 25 }, (_, i) => 2026 - i).map(
@@ -881,7 +881,7 @@ const FilePreview = ({ session, onReset }) => {
                           e.target.value ? parseInt(e.target.value) : null,
                         )
                       }
-                      className="h-12 px-4 rounded-xl border-none bg-zinc-50 font-bold text-sm text-zinc-600 focus:ring-2 focus:ring-emerald-500/20"
+                      className="h-12 px-4 rounded-xl border-none bg-zinc-50 font-bold text-sm text-zinc-600 focus:ring-2 focus:ring-brand-500/20"
                     >
                       <option value="">Month</option>
                       {[
@@ -942,10 +942,10 @@ const FilePreview = ({ session, onReset }) => {
                               className={cn(
                                 "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
                                 hasAnySelectedInView && isAllSelectedInView
-                                  ? "bg-emerald-500 border-emerald-500 text-white"
+                                  ? "bg-brand-500 border-brand-500 text-white"
                                   : hasAnySelectedInView
-                                    ? "bg-emerald-100 border-emerald-500 text-emerald-600"
-                                    : "border-zinc-200 hover:border-emerald-500",
+                                    ? "bg-brand-100 border-brand-500 text-brand-600"
+                                    : "border-zinc-200 hover:border-brand-500",
                               )}
                             >
                               {hasAnySelectedInView && isAllSelectedInView ? (
@@ -956,7 +956,7 @@ const FilePreview = ({ session, onReset }) => {
                             </button>
                           </th>
                           <th
-                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer hover:text-emerald-600 transition-colors"
+                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer hover:text-brand-600 transition-colors"
                             onClick={() => handleSort("from")}
                           >
                             <div className="flex items-center gap-1">
@@ -972,7 +972,7 @@ const FilePreview = ({ session, onReset }) => {
                             </div>
                           </th>
                           <th
-                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer hover:text-emerald-600 transition-colors"
+                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer hover:text-brand-600 transition-colors"
                             onClick={() => handleSort("subject")}
                           >
                             <div className="flex items-center gap-1">
@@ -988,7 +988,7 @@ const FilePreview = ({ session, onReset }) => {
                             </div>
                           </th>
                           <th
-                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest text-right whitespace-nowrap cursor-pointer hover:text-emerald-600 transition-colors"
+                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest text-right whitespace-nowrap cursor-pointer hover:text-brand-600 transition-colors"
                             onClick={() => handleSort("date")}
                           >
                             <div className="flex items-center justify-end gap-1">
@@ -1013,7 +1013,7 @@ const FilePreview = ({ session, onReset }) => {
                             className={cn(
                               "group hover:bg-zinc-50/80 transition-all cursor-pointer relative",
                               selectedMessages.has(msg.entryId) &&
-                                "bg-emerald-50/30",
+                                "bg-brand-50/30",
                             )}
                           >
                             <td className="px-6 py-6 w-12">
@@ -1021,8 +1021,8 @@ const FilePreview = ({ session, onReset }) => {
                                 className={cn(
                                   "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
                                   selectedMessages.has(msg.entryId)
-                                    ? "bg-emerald-500 border-emerald-500 text-white"
-                                    : "border-zinc-200 group-hover:border-emerald-500",
+                                    ? "bg-brand-500 border-brand-500 text-white"
+                                    : "border-zinc-200 group-hover:border-brand-500",
                                 )}
                               >
                                 {selectedMessages.has(msg.entryId) && (
@@ -1032,7 +1032,7 @@ const FilePreview = ({ session, onReset }) => {
                             </td>
                             <td className="px-10 py-6 min-w-[250px]">
                               <div className="flex items-center gap-4">
-                                <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-transparent group-hover:bg-emerald-200 transition-colors" />
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-transparent group-hover:bg-brand-200 transition-colors" />
                                 <div className="flex flex-col min-w-0">
                                   <span className="text-[15px] font-black text-zinc-800 truncate">
                                     {msg.from || "Unknown"}
@@ -1092,18 +1092,18 @@ const FilePreview = ({ session, onReset }) => {
         </div>
 
         <div className="flex items-center gap-10">
-          <div className="hidden xl:flex items-center gap-4 px-6 py-3 bg-emerald-50/50 border border-emerald-100/50 rounded-3xl">
-            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-200">
+          <div className="hidden xl:flex items-center gap-4 px-6 py-3 bg-brand-50/50 border border-brand-100/50 rounded-3xl">
+            <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 shadow-sm border border-brand-200">
               <Check size={14} strokeWidth={4} />
             </div>
-            <span className="text-sm font-black text-emerald-800 tracking-tight">
+            <span className="text-sm font-black text-brand-800 tracking-tight">
               Analysis Complete
             </span>
           </div>
 
           <Button
             onClick={() => setIsExportDialogOpen(true)}
-            className="h-16 px-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg shadow-[0_16px_32px_-12px_rgba(16,185,129,0.5)] transition-all hover:-translate-y-1 active:scale-95 gap-4 group"
+            className="h-16 px-12 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-black text-lg shadow-[0_16px_32px_-12px_rgba(59,130,246,0.5)] transition-all hover:-translate-y-1 active:scale-95 gap-4 group"
           >
             Export / Download
             <Rocket

@@ -24,9 +24,15 @@ import {
   UserCheck,
   Clock,
   Headphones,
+  FileUp, // Correct name for UploadFile
+  CloudUpload, // Standard name
+  ShieldCheck as VerifiedUser, // Alias for better naming
+  Bolt,
+  Headset, // Correct name for SupportAgent
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import conversionVideo from "../../assets/Website_Color_Scheme_and_Video.mp4";
+import imagePng from "../../assets/image.png";
 import ExportDialog from "../ExportDialog";
 import licenseService from "../../services/licenseService";
 import {
@@ -179,8 +185,12 @@ const Hero = ({ onUploadComplete }) => {
         licenseStatus?.tier === "Professional" &&
         !passedFile?._storageLimitAccepted
       ) {
-        const total = licenseStatus.totalStorageAllotted ?? licenseStatus.TotalStorageAllotted ?? 0;
-        const used = licenseStatus.totalStorageUsed ?? licenseStatus.TotalStorageUsed ?? 0;
+        const total =
+          licenseStatus.totalStorageAllotted ??
+          licenseStatus.TotalStorageAllotted ??
+          0;
+        const used =
+          licenseStatus.totalStorageUsed ?? licenseStatus.TotalStorageUsed ?? 0;
         const remaining = total - used;
         if (targetFile.size > remaining) {
           setPendingFile(targetFile);
@@ -336,76 +346,27 @@ const Hero = ({ onUploadComplete }) => {
   };
 
   return (
-    <section className="py-12 md:py-4 px-4 md:px-6 lg:px-12 bg-white flex flex-col items-center min-h-[600px] justify-center">
-      {/* Main Heading & Tagline */}
-      <div className="text-center mb-12 max-w-4xl mx-auto space-y-1">
-        <h1 className="text-xl md:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
-          Convert OST to PST Online
+    <section className="relative bg-[#f8fbff] pt-6 md:pt-12 pb-8 md:pb-16 px-4 md:px-8 flex flex-col items-center justify-center min-h-[500px] lg:min-h-[calc(100vh-5rem)] overflow-hidden">
+      {/* Fully Immersive Blueish Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#e0f2fe] via-[#f0f7ff] to-[#eef7ff] pointer-events-none" />
+      
+      {/* Dynamic Glow Elements */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-200/20 blur-[130px] rounded-full -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-brand-100/30 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/4" />
+      
+      <div className="max-w-6xl mx-auto text-center relative z-10">
+        <h1 className="text-2xl md:text-4xl lg:text-5xl font-black mb-2 md:mb-4 tracking-tight leading-[1.1] text-slate-900">
+          Convert <span className="header-text-gradient">OST to PST</span>{" "}
+          Online 
         </h1>
-        <p className="text-slate-500 text-lg md:text-xl font-medium max-w-3xl mx-auto leading-relaxed">
-          {/* An easy and free online method to convert OST to PST files instantly &
-          securely. */}
+        <p className="text-xs md:text-base mb-3 md:mb-8 max-w-2xl mx-auto font-semibold leading-relaxed text-slate-500 px-2">
         Drag, upload, preview, and export your Outlook data safely from any browser.
         </p>
-        {/* <div className="flex flex-wrap justify-center gap-3">
-          <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
-            <Lock className="w-4 h-4 text-emerald-500" /> SSL Secured
-          </button>
-          <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
-            <Zap className="w-4 h-4 text-emerald-500" /> No Outlook Required
-          </button>
-          <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
-            <Cloud className="w-4 h-4 text-emerald-500" /> Cloud Based
-          </button>
-          <button className="flex items-center gap-2 bg-white text-slate-600 px-4 py-2 rounded-full border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 transition-colors text-sm font-medium shadow-sm">
-            <Gift className="w-4 h-4 text-emerald-500" /> Free Conversion
-          </button>
-        </div> */}
-      </div>
 
-      <div className="w-full max-w-6xl bg-white rounded-[40px] shadow-2xl shadow-emerald-500/10 border border-slate-100 p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-8 items-stretch">
-        {/* Left Side: Video Content */}
-        {!uploading && !completedSession && (
-          <div className="w-full md:w-[45%] bg-gradient-to-br from-[#F0F7FF] via-[#E1F1FF] to-[#D0E8FF] rounded-[30px] overflow-hidden relative flex items-center justify-center border border-white/60 shadow-xl shadow-blue-500/5 group/video aspect-video md:aspect-auto">
-            {/* Decorative Background Elements */}
-            <div className="absolute top-1/4 -left-10 w-40 h-40 bg-blue-400/10 blur-[80px] rounded-full pointer-events-none group-hover/video:bg-blue-400/20 transition-colors duration-700"></div>
-            <div className="absolute bottom-1/4 -right-10 w-40 h-40 bg-emerald-400/10 blur-[80px] rounded-full pointer-events-none group-hover/video:bg-emerald-400/20 transition-colors duration-700"></div>
-
-            {/* Mirror Effect/Reflection */}
-            <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent pointer-events-none"></div>
-
-            {/* Video Tag */}
-            {/* <div className="absolute top-6 left-6 z-20 flex items-center gap-2 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white shadow-sm">
-              <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div>
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
-                Live Preview
-              </span>
-            </div> */}
-
-            <video
-              src={conversionVideo}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover relative z-10 opacity-95 group-hover/video:scale-[1.01] transition-transform duration-700 ease-out"
-            />
-          </div>
-        )}
-
-        {/* Right Side: Upload Interaction */}
-        <div
-          className={`w-full ${uploading || completedSession ? "md:w-full" : "md:w-[55%]"} flex flex-col`}
-        >
+        <div className="max-w-[900px] mx-auto rounded-[32px] md:rounded-[40px] bg-white border border-blue-100/50 shadow-[0_30px_60px_-15px_rgba(14,165,233,0.12)] overflow-hidden relative">
           <div
             {...getRootProps()}
-            className={`
-              w-full border-2 border-dashed rounded-[30px] p-4
-              flex flex-col items-center justify-center text-center
-              transition-all duration-300 relative
-              ${isDragActive ? "border-emerald-500 bg-emerald-50/30" : "border-slate-200 bg-white shadow-inner shadow-slate-50/30"}
-              ${uploading || completedSession ? "border-none bg-white shadow-none" : "hover:border-emerald-400 group cursor-pointer"}
-            `}
+            className={`py-6 px-4 md:p-8 relative z-10 transition-all ${isDragActive ? "bg-brand-50/50" : ""}`}
           >
             <input
               {...getInputProps()}
@@ -414,85 +375,58 @@ const Hero = ({ onUploadComplete }) => {
 
             {/* Default/Idle State */}
             {!uploading && !completedSession && (
-              <div className="space-y-6 flex flex-col items-center">
-                <div className="space-y-2">
-                  <h2 className="text-2xl md:text-3xl font-black text-slate-800">
-                    Upload your OST File
-                  </h2>
-                  <p className="text-slate-400 text-sm font-medium">
-                    Preview Converted OST file in few simple steps
+              <div className="flex flex-col items-center py-2 md:py-4">
+                <div className="mb-2 md:mb-4 flex justify-center max-w-[220px] md:max-w-[400px] pointer-events-none">
+                  <img
+                    src={imagePng}
+                    alt="OST to PST Conversion"
+                    className="w-full h-auto object-contain scale-100"
+                  />
+                </div>
+                <h3 className="text-xl md:text-3xl lg:text-[32px] font-black mb-0.5 text-slate-900 tracking-tight leading-tight">
+                  Upload your OST File
+                </h3>
+                <p className="text-slate-500 font-bold text-xs md:text-base lg:text-lg mb-3 md:mb-6">
+                  Preview Converted OST file in few simple steps
+                </p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isSignedIn) {
+                      clerk.openSignIn();
+                    } else {
+                      open();
+                    }
+                  }}
+                  className="bg-[#0ea5e9] hover:bg-[#0284c7] text-white px-8 md:px-12 py-3.5 md:py-4 rounded-xl md:rounded-[20px] font-black text-lg md:text-xl shadow-[0_15px_30px_-5px_rgba(14,165,233,0.3)] transition-all hover:-translate-y-1 active:scale-[0.98] flex items-center gap-3 md:gap-4 mx-auto group w-full max-w-[260px] md:max-w-none justify-center"
+                >
+                  <FileUp className="w-5 h-5 md:w-8 md:h-8 group-hover:rotate-6 transition-transform" />
+                  Upload OST File
+                </button>
+                <div className="mt-4 md:mt-6 flex flex-col gap-1 md:gap-2">
+                  <p className="uppercase tracking-[0.25em] font-bold text-[8px] md:text-[10px] text-slate-400">
+                    50MB UPLOAD FILE SIZE LIMIT
                   </p>
-                </div>
-
-                {/* Upload Icon Container */}
-                <div className="relative mt-8 mb-4">
-                  <div className="w-24 h-24 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center relative z-10">
-                    <FileText className="w-12 h-12 text-slate-400" />
-                  </div>
-                  <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-white rounded-full shadow-lg border border-slate-50 flex items-center justify-center z-20">
-                    <UploadCloud className="w-6 h-6 text-emerald-500" />
-                  </div>
-                  {/* Decorative glow */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full -z-0"></div>
-                </div>
-
-                {/* Action Area */}
-                <div className="flex flex-col items-center gap-4 w-full">
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!isSignedIn) {
-                        clerk.openSignIn();
-                      } else {
-                        open();
-                      }
-                    }}
-                    className="w-full max-w-[280px] h-14 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-emerald-500/20 group-hover:scale-[1.02] transition-transform"
-                  >
-                    Upload OST File
-                  </Button>
-
-                  <div className="space-y-1 mt-4">
-                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
-                      50GB upload file size limit
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      By Uploading the OST file you agree to our{" "}
-                      <a href="#" className="underline hover:text-emerald-600">
+                  <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-[9px] md:text-xs font-semibold text-slate-500">
+                    <p>
+                      By uploading the OST file you agree to our{" "}
+                      <a
+                        className="text-[#0ea5e9] font-bold hover:underline"
+                        href="#"
+                      >
                         Privacy Policy
                       </a>
                     </p>
-                    <p className="text-[10px] text-slate-400">
-                      For Unlimited size use{" "}
+                    <span className="hidden md:inline text-slate-300">|</span>
+                    <p>
+                      For unlimited size use{" "}
                       <a
+                        className="text-[#0ea5e9] font-bold hover:underline"
                         href="#"
-                        className="text-rose-500 font-bold hover:underline"
                       >
                         Desktop Software
                       </a>
                     </p>
-                  </div>
-
-                  {/* Feature Highlights Section */}
-                  <div className="flex gap-4 mt-8 w-full max-w-[400px]">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50/50 rounded-xl border border-emerald-100/50 group/item hover:bg-emerald-50 transition-colors">
-                      <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="text-[10px] font-bold text-slate-600 text-left leading-tight">
-                        No credit card required
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50/50 rounded-xl border border-emerald-100/50 group/item hover:bg-emerald-50 transition-colors">
-                      <Zap className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="text-[10px] font-bold text-slate-600 text-left leading-tight">
-                        15 days free trial
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50/50 rounded-xl border border-emerald-100/50 group/item hover:bg-emerald-50 transition-colors">
-                      <UserCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="text-[10px] font-bold text-slate-600 text-left leading-tight">
-                        Sign up under your control
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -500,259 +434,112 @@ const Hero = ({ onUploadComplete }) => {
 
             {/* Processing / Complete State */}
             {(uploading || completedSession) && (
-              <div className="w-full animate-in fade-in duration-500 bg-white rounded-2xl p-2 md:p-6 text-center shadow-none md:shadow-sm">
-                {/* File Info Card */}
-                <div className="border border-slate-100 bg-slate-50/50 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm mb-10 w-full text-left">
-                  <div className="flex items-center gap-6 w-full md:w-auto overflow-hidden">
-                    {/* File Icon */}
-                    <div className="w-14 h-16 bg-white border border-slate-200 rounded flex flex-col items-center justify-center shadow-sm shrink-0">
-                      <span className="text-[10px] font-black text-emerald-600 leading-none mb-0.5">
-                        OST
-                      </span>
-                      <File className="w-6 h-6 text-emerald-600" />
-                    </div>
-
-                    {/* File Details Grid */}
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-8 gap-y-2 w-full text-left">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-slate-900">
-                          File Name:
-                        </span>
-                        <span
-                          className="text-sm text-slate-500 truncate max-w-[120px]"
-                          title={file?.name}
-                        >
-                          {file?.name || "Unknown"}
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-slate-900">
-                          File Size:
-                        </span>
-                        <span className="text-sm text-slate-500">
-                          {file ? formatFileSize(file.size) : "-"}
-                        </span>
-                      </div>
-                      <div className="flex flex-col lg:col-span-1 col-span-2">
-                        <span className="text-xs font-bold text-slate-900">
-                          File Format:
-                        </span>
-                        <span className="text-sm text-slate-500 truncate">
-                          {file?.name?.split(".").pop() || "ost"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status / Progress on the right */}
-                  <div className="flex flex-col items-end shrink-0 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
+              <div className="w-full animate-in fade-in duration-500 text-center">
+                {/* File Info / Progress Area */}
+                <div className="flex flex-col items-center gap-6 md:gap-8">
+                  <div className="w-20 h-20 md:w-28 md:h-28 bg-brand-50 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-inner border border-brand-100">
                     {completedSession ? (
-                      <span className="text-sm font-bold text-emerald-600 whitespace-nowrap">
-                        File Uploaded Successfully.
-                      </span>
+                      <CheckCircle2 className="w-12 h-12 md:w-16 md:h-16 text-brand-500" />
                     ) : (
-                      <div className="w-full md:w-48 flex flex-col items-end gap-1.5 shrink-0">
-                        <span className="text-xs font-bold text-emerald-600">
-                          {uploadPhase === "processing"
-                            ? "Converting"
-                            : "Uploading"}
-                          ... {progress}%
-                        </span>
-                        <Progress
-                          value={progress}
-                          className="h-1.5 bg-slate-200 rounded-full w-full"
-                          indicatorClassName="bg-gradient-to-r from-emerald-500 to-emerald-400 delay-100"
-                        />
-                        <span
-                          className="text-[10px] text-slate-400 font-medium truncate w-full text-right"
-                          title={uploadDetail}
-                        >
-                          {uploadDetail || "Processing..."}
-                        </span>
-                      </div>
+                      <RotateCw className="w-12 h-12 md:w-16 md:h-16 text-brand-600 animate-spin" />
                     )}
                   </div>
-                </div>
 
-                {/* Stepper Header */}
-                <div className="flex justify-between items-start w-full max-w-lg mx-auto mb-12 relative">
-                  {/* Connecting Line */}
-                  <div className="absolute top-4 left-10 right-10 h-[2px] bg-slate-100 -z-10">
-                    <div
-                      className="h-full bg-emerald-400 transition-all duration-500 ease-in-out"
-                      style={{
-                        width:
-                          isDownloadingPst || finishedPstDownload
-                            ? "100%"
-                            : completedSession || uploadPhase === "complete"
-                              ? "50%"
-                              : "0%",
-                      }}
-                    ></div>
-                  </div>
-
-                  {/* Step 1: Upload */}
-                  <div className="flex flex-col items-center gap-2 bg-white px-2">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-emerald-100 text-emerald-600 shadow-sm border border-emerald-200">
-                      1
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {uploadPhase === "uploading" ? (
-                        <RotateCw className="w-4 h-4 text-emerald-500 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      )}
-                      <span className="text-xs font-bold text-slate-600">
-                        File Uploaded (OST)
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Step 2: Convert */}
-                  <div className="flex flex-col items-center gap-2 bg-white px-2 z-10">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors border ${
-                        uploadPhase === "processing" ||
-                        uploadPhase === "complete" ||
-                        completedSession
-                          ? "bg-emerald-100 text-emerald-600 border-emerald-200 shadow-sm"
-                          : "bg-slate-50 text-slate-400 border-slate-100"
-                      }`}
-                    >
-                      2
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {uploadPhase === "processing" && !completedSession ? (
-                        <RotateCw className="w-4 h-4 text-emerald-500 animate-spin" />
-                      ) : completedSession || uploadPhase === "complete" ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      ) : null}
-                      <span
-                        className={`text-xs font-bold ${
-                          uploadPhase === "processing" ||
-                          uploadPhase === "complete" ||
-                          completedSession
-                            ? "text-slate-600"
-                            : "text-slate-400"
-                        }`}
-                      >
-                        Preview OST File
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Step 3: Convert */}
-                  <div className="flex flex-col items-center gap-2 bg-white px-2 z-10">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors border ${
-                        isDownloadingPst || finishedPstDownload
-                          ? "bg-emerald-100 text-emerald-600 border-emerald-200 shadow-sm"
-                          : "bg-slate-50 text-slate-400 border-slate-100"
-                      }`}
-                    >
-                      3
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {isDownloadingPst ? (
-                        <RotateCw className="w-4 h-4 text-emerald-500 animate-spin" />
-                      ) : finishedPstDownload ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      ) : null}
-                      <span
-                        className={`text-xs font-bold ${
-                          isDownloadingPst || finishedPstDownload
-                            ? "text-slate-600"
-                            : "text-slate-400"
-                        }`}
-                      >
-                        Convert
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Message / Actions */}
-                {completedSession ? (
-                  <div className="text-center space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                    <h3 className="text-2xl md:text-3xl font-black text-slate-800 flex items-center justify-center gap-2">
-                      OST File Uploaded Successfully!!
+                  <div className="space-y-4">
+                    <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900">
+                      {completedSession
+                        ? "File Uploaded Successfully!"
+                        : "Processing Your File..."}
                     </h3>
-                    <p className="text-slate-600 text-sm md:text-[15px] font-medium leading-relaxed">
-                      You can Download the converted file as per your
-                      requirement.
-                      <br />
-                      Select an option below to continue with your file.
+                    <p className="text-slate-500 font-semibold text-lg">
+                      {file?.name} ({formatFileSize(file?.size || 0)})
                     </p>
+                  </div>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6">
-                      <Button
+                  {!completedSession && (
+                    <div className="w-full max-w-md space-y-4">
+                      <div className="flex justify-between items-center text-sm font-black text-brand-600 uppercase tracking-widest">
+                        <span>
+                          {uploadPhase === "processing"
+                            ? "Finalizing"
+                            : "Uploading"}
+                        </span>
+                        <span>{progress}%</span>
+                      </div>
+                      <Progress
+                        value={progress}
+                        className="h-3 bg-slate-100 rounded-full overflow-hidden"
+                        indicatorClassName="bg-brand-500"
+                      />
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        {uploadDetail || "Preparing conversion..."}
+                      </p>
+                    </div>
+                  )}
+
+                  {completedSession ? (
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDirectPstDownload();
                         }}
                         disabled={isDownloadingPst}
-                        className="w-full sm:w-auto px-8 h-12 bg-white text-emerald-600 border-2 border-emerald-500 hover:bg-emerald-50 font-bold rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2"
+                        className="w-full sm:w-auto bg-white border-2 border-brand-500 text-brand-600 px-8 py-4 rounded-2xl font-extrabold text-lg shadow-xl hover:bg-brand-50 transition-all flex items-center justify-center gap-2"
                       >
                         {isDownloadingPst && (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-5 h-5 animate-spin" />
                         )}
-                        {isDownloadingPst
-                          ? "Preparing..."
-                          : "Convert & Download PST"}
-                      </Button>
-                      <Button
+                        Convert & Download PST
+                      </button>
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           if (onUploadComplete)
                             onUploadComplete(completedSession);
                         }}
-                        className="w-full sm:w-auto px-8 h-12 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:scale-[1.02] transition-all"
+                        className="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-8 py-4 rounded-2xl font-extrabold text-lg shadow-xl shadow-brand-500/30 transition-all flex items-center justify-center gap-2"
                       >
-                        Preview & Convert
-                      </Button>
+                        Preview OST File
+                      </button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex justify-center mt-6">
-                    <Button
-                      variant="ghost"
+                  ) : (
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCancel();
                       }}
-                      className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 h-10 px-8 font-bold text-xs uppercase tracking-widest rounded-full relative z-50 pointer-events-auto cursor-pointer"
+                      className="text-rose-500 font-black text-sm uppercase tracking-widest hover:text-rose-600 transition-colors"
                     >
                       Cancel Conversion
-                    </Button>
-                  </div>
-                )}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Secondary Features Row - Outside dashed box */}
-          {!uploading && !completedSession && !file && (
-            <div className="flex flex-wrap gap-6 mt-6 w-full justify-center text-slate-500 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="flex items-center gap-1.5 px-2 py-1">
-                <Lock className="w-3.5 h-3.5 text-emerald-500/80 shrink-0" />
-                <span className="text-[10px] font-bold tracking-wide whitespace-nowrap uppercase">
-                  100% Secure & Private
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2 py-1">
-                <Zap className="w-3.5 h-3.5 text-emerald-500/80 shrink-0" />
-                <span className="text-[10px] font-bold tracking-wide whitespace-nowrap uppercase">
-                  Instant Conversion
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2 py-1">
-                <Headphones className="w-3.5 h-3.5 text-emerald-500/80 shrink-0" />
-                <span className="text-[10px] font-bold tracking-wide whitespace-nowrap uppercase">
-                  24/7 Tech Support
-                </span>
-              </div>
+          {/* Footer of the Card */}
+          <div className="bg-[#fcfdfe] border-t border-slate-50 grid grid-cols-2 lg:grid-cols-4 divide-x divide-slate-100 py-1.5 md:py-3 px-2 md:px-8">
+            <div className="flex items-center justify-center gap-1.5 md:gap-3 text-[8px] md:text-[10px] font-black text-slate-400 p-1.5 md:p-2 group">
+              <ShieldCheck className="w-3 h-3 md:w-4 md:h-4 text-[#0ea5e9]" />
+              SECURE
             </div>
-          )}
+            <div className="flex items-center justify-center gap-1.5 md:gap-3 text-[8px] md:text-[10px] font-black text-slate-400 p-1.5 md:p-2 group">
+              <Bolt className="w-3 h-3 md:w-4 md:h-4 text-[#0ea5e9]" />
+              INSTANT
+            </div>
+            <div className="flex items-center justify-center gap-1.5 md:gap-3 text-[8px] md:text-[10px] font-black text-slate-400 p-1.5 md:p-2 group">
+              <Clock className="w-3 h-3 md:w-4 md:h-4 text-[#0ea5e9]" />
+              24/7 TECH
+            </div>
+            <div className="flex items-center justify-center gap-1.5 md:gap-3 text-[8px] md:text-[10px] font-black text-slate-400 p-1.5 md:p-2 group">
+              <span className="text-[#0ea5e9] bg-[#e0effe] px-1.5 py-0.5 rounded-sm font-black text-[7px] md:text-[10px]">
+                PRO
+              </span>
+              UPGRADE
+            </div>
+          </div>
         </div>
       </div>
 
@@ -797,6 +584,7 @@ const Hero = ({ onUploadComplete }) => {
               Cancel
             </Button>
             <Button
+              variant="ghost"
               onClick={() => {
                 setIsStorageLimitDialogOpen(false);
                 if (pendingFile) {
@@ -804,7 +592,7 @@ const Hero = ({ onUploadComplete }) => {
                   handleConvert(pendingFile);
                 }
               }}
-              className="px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              className="px-6 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold"
             >
               Continue Upload
             </Button>

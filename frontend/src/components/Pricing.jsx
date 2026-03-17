@@ -116,10 +116,10 @@ const toolComparison = [
   },
 ];
 
-
 const formatStatusStorage = (bytes) => {
   if (!bytes) return "0 GB";
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
 };
 
@@ -136,10 +136,10 @@ const PricingCard = ({
   activeDetails = null,
 }) => (
   <div
-    className={`relative flex flex-col h-full p-8 bg-white rounded-xl shadow-lg border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${isActive ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-gray-200"} ${recommended ? "ring-2 ring-yellow-400 z-10" : ""}`}
+    className={`relative flex flex-col h-full p-8 bg-white rounded-xl shadow-lg border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${isActive ? "border-brand-500 ring-2 ring-brand-500/20" : "border-gray-200"} ${recommended ? "ring-2 ring-yellow-400 z-10" : ""}`}
   >
     {isActive && (
-      <div className="absolute -top-4 right-4 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg animate-bounce">
+      <div className="absolute -top-4 right-4 bg-brand-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg animate-bounce">
         Current Plan
       </div>
     )}
@@ -153,12 +153,11 @@ const PricingCard = ({
       <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
       <p className="text-sm text-gray-500">{description}</p>
       {isActive && activeDetails && (
-        <div className="mt-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100 animate-pulse">
-           ACTIVE: {activeDetails}
+        <div className="mt-2 text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded border border-brand-100 animate-pulse">
+          ACTIVE: {activeDetails}
         </div>
       )}
     </div>
-
 
     <div className="mb-8">
       <div className="flex items-baseline gap-1">
@@ -171,7 +170,7 @@ const PricingCard = ({
       {features.map((feature, index) => (
         <li key={index} className="flex items-start gap-3">
           {feature.included ? (
-            <div className="mt-0.5 min-w-[18px] text-green-500">
+            <div className="mt-0.5 min-w-[18px] text-brand-500">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -216,7 +215,7 @@ const PricingCard = ({
     <Button
       disabled={isActive || isLoading}
       onClick={onClick}
-      className={`w-full py-6 font-bold text-md rounded-md transition-colors ${isActive ? "bg-emerald-100 text-emerald-600 border-emerald-200 cursor-default" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
+      className={`w-full py-6 font-bold text-md rounded-md transition-colors ${isActive ? "bg-brand-100 text-brand-600 border-brand-200 cursor-default" : "bg-brand-600 hover:bg-brand-700 text-white"}`}
     >
       {isLoading ? (
         <Loader2 className="w-5 h-5 animate-spin" />
@@ -278,15 +277,16 @@ const Pricing = () => {
       // Check for usage restriction and show popup
       if (data && (data.isUsageRestricted || data.IsUsageRestricted)) {
         toast.warning("Usage Limit Reached", {
-          description: "You have reached your plan's usage limits. Please upgrade your plan or contact support to continue.",
+          description:
+            "You have reached your plan's usage limits. Please upgrade your plan or contact support to continue.",
           duration: 10000,
           action: {
             label: "Upgrade Now",
             onClick: () => {
-                 const el = document.getElementById('pricing-slider');
-                 if(el) el.scrollIntoView({ behavior: 'smooth' });
-            }
-          }
+              const el = document.getElementById("pricing-slider");
+              if (el) el.scrollIntoView({ behavior: "smooth" });
+            },
+          },
         });
       }
     } catch (error) {
@@ -327,11 +327,10 @@ const Pricing = () => {
         // Refetch updated status from backend
         fetchStatus();
       } else if (response) {
-         toast.success("Subscription request generated!", {
+        toast.success("Subscription request generated!", {
           description: response.message || "Your request is being processed.",
         });
       }
-
     } catch (error) {
       console.error("Purchase error:", error);
       toast.error("Failed to initiate purchase", {
@@ -383,16 +382,18 @@ const Pricing = () => {
   ];
 
   return (
-    <div className="bg-gray-50 flex flex-col font-sans">
-      <div className="bg-gray-50 pt-16 md:pt-28 pb-8 md:pb-12 text-center px-4">
-        <h1 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 md:mb-6 tracking-tight leading-tight">
-          Choose the Right Plan for Your Needs
+    <div className="bg-gray-50 flex flex-col font-sans min-h-screen">
+      {/* Hero Section Container */}
+      <div className="min-h-[calc(100vh-5rem)] flex flex-col justify-center py-4 md:py-8">
+        <div className="bg-gray-50 pt-1 md:pt-2 pb-6 text-center px-4 w-full">
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-slate-900 mb-0 tracking-tight leading-tight">
+          Choose the <span className="header-text-gradient">Right Plan</span>{" "}
+          for Your Needs
         </h1>
         <div className="relative inline-block">
-          <p className="text-gray-500 font-medium max-w-2xl mx-auto text-sm md:text-base relative z-10">
+          <p className="text-gray-500 font-medium max-w-2xl mx-auto text-[10px] relative z-10 leading-tight">
             Trusted by IT professionals worldwide. All licenses come with a
-            <br />
-            <span className="text-emerald-600 font-semibold border-b-2 border-emerald-200/50">
+            <span className="text-brand-600 font-semibold ml-1">
               30-day money-back guarantee.
             </span>
           </p>
@@ -400,11 +401,11 @@ const Pricing = () => {
       </div>
 
       {/* Customization Section */}
-      <div className="max-w-4xl mx-auto px-4 w-full mb-12">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5" />
+      <div className="max-w-4xl mx-auto px-4 w-full mb-1">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2 md:px-4 md:py-2">
+          <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <span className="w-7 h-7 bg-brand-100 text-brand-600 rounded-lg flex items-center justify-center">
+              <Shield className="w-4 h-4" />
             </span>
             Customize Your Requirements
           </h2>
@@ -412,7 +413,9 @@ const Pricing = () => {
             <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700 flex justify-between">
                 OST File Limit
-                <span className="text-emerald-600 font-bold">{totalItems} Files</span>
+                <span className="text-brand-600 font-bold">
+                  {totalItems} Files
+                </span>
               </label>
               <input
                 type="range"
@@ -421,7 +424,7 @@ const Pricing = () => {
                 step="1"
                 value={totalItems}
                 onChange={(e) => setTotalItems(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-brand-500"
               />
               <div className="flex justify-between text-[10px] text-gray-400 font-medium">
                 <span>1 File</span>
@@ -432,7 +435,7 @@ const Pricing = () => {
             <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700 flex justify-between">
                 Storage (GB)
-                <span className="text-emerald-600 font-bold">{storageGB} GB</span>
+                <span className="text-brand-600 font-bold">{storageGB} GB</span>
               </label>
               <input
                 type="range"
@@ -441,7 +444,7 @@ const Pricing = () => {
                 step="1"
                 value={storageGB}
                 onChange={(e) => setStorageGB(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-brand-500"
               />
               <div className="flex justify-between text-[10px] text-gray-400 font-medium">
                 <span>0 GB</span>
@@ -452,7 +455,9 @@ const Pricing = () => {
             <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700 flex justify-between">
                 Validity (Days)
-                <span className="text-emerald-600 font-bold">{totalDays} Days</span>
+                <span className="text-brand-600 font-bold">
+                  {totalDays} Days
+                </span>
               </label>
               <input
                 type="range"
@@ -461,7 +466,7 @@ const Pricing = () => {
                 step="30"
                 value={totalDays}
                 onChange={(e) => setTotalDays(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-brand-500"
               />
               <div className="flex justify-between text-[10px] text-gray-400 font-medium">
                 <span>30D</span>
@@ -473,8 +478,8 @@ const Pricing = () => {
       </div>
 
       {/* Pricing Cards Section */}
-      <div className="max-w-7xl mx-auto px-4 w-full pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 w-full pb-1">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 lg:gap-4 max-w-6xl mx-auto">
           {/* Personal Plan */}
           <PricingCard
             title="Personal"
@@ -499,17 +504,24 @@ const Pricing = () => {
             recommended={true}
             isActive={isProfessional}
             isLoading={purchasingPlan === 2}
-            activeDetails={isProfessional ? (
-              <div className="flex flex-col gap-1">
-                <div>{`UPLOADED: ${(status.totalItemsUsed ?? status.TotalItemsUsed)?.toLocaleString()} / ${(status.totalItemsAllotted ?? status.TotalItemsAllotted)?.toLocaleString()} OST Files`}</div>
-                <div>{`STORAGE: ${formatStatusStorage(status.totalStorageUsed ?? status.TotalStorageUsed)} / ${formatStatusStorage(status.totalStorageAllotted ?? status.TotalStorageAllotted)} Storage Used`}</div>
-                {(status.isUsageRestricted || status.IsUsageRestricted || status.hitFileCountLimit || status.HitFileCountLimit || status.hitSizeLimit || status.HitSizeLimit) && (
-                   <div className="text-red-600 font-black text-[9px] mt-1 bg-red-50 p-1 rounded border border-red-200">
+            activeDetails={
+              isProfessional ? (
+                <div className="flex flex-col gap-1">
+                  <div>{`UPLOADED: ${(status.totalItemsUsed ?? status.TotalItemsUsed)?.toLocaleString()} / ${(status.totalItemsAllotted ?? status.TotalItemsAllotted)?.toLocaleString()} OST Files`}</div>
+                  <div>{`STORAGE: ${formatStatusStorage(status.totalStorageUsed ?? status.TotalStorageUsed)} / ${formatStatusStorage(status.totalStorageAllotted ?? status.TotalStorageAllotted)} Storage Used`}</div>
+                  {(status.isUsageRestricted ||
+                    status.IsUsageRestricted ||
+                    status.hitFileCountLimit ||
+                    status.HitFileCountLimit ||
+                    status.hitSizeLimit ||
+                    status.HitSizeLimit) && (
+                    <div className="text-red-600 font-black text-[9px] mt-1 bg-red-50 p-1 rounded border border-red-200">
                       LIMIT REACHED!
-                   </div>
-                )}
-              </div>
-            ) : null}
+                    </div>
+                  )}
+                </div>
+              ) : null
+            }
             onClick={() => handlePurchase(1, 199, 2)}
             features={[
               { text: "Advanced conversion & filters", included: true },
@@ -520,8 +532,6 @@ const Pricing = () => {
               { text: "Commercial use license", included: true },
             ]}
           />
-
-
 
           {/* Technical Plan */}
           <PricingCard
@@ -542,37 +552,34 @@ const Pricing = () => {
             ]}
           />
         </div>
+      </div>
 
-        {/* Trust Badges */}
-        <div className="mt-12 flex flex-wrap justify-center items-center gap-8 md:gap-16 text-gray-500 grayscale opacity-80">
-          <div className="flex items-center gap-2">
-            <Lock className="w-5 h-5" />
-            <span className="text-xs font-bold uppercase tracking-wide">
-              Secure SSL Checkout
-            </span>
+      {/* Trust Badges Bar */}
+      <div className="w-full bg-white border-y border-gray-100 py-2 mb-10">
+        <div className="max-w-7xl mx-auto px-4 flex flex-wrap justify-center items-center gap-6 md:gap-10 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400">
+          <div className="flex items-center gap-1.5 group cursor-default">
+            <Lock className="w-3.5 h-3.5 text-brand-600 group-hover:scale-110 transition-transform" />
+            <span>Secure SSL Checkout</span>
           </div>
-          <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5" />
-            <span className="text-xs font-bold uppercase tracking-wide">
-              Visa / MasterCard / PayPal
-            </span>
+          <div className="flex items-center gap-1.5 group cursor-default">
+            <CreditCard className="w-3.5 h-3.5 text-brand-600 group-hover:scale-110 transition-transform" />
+            <span>Visa / MasterCard / PayPal</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Award className="w-5 h-5" />
-            <span className="text-xs font-bold uppercase tracking-wide">
-              Microsoft Certified Partner
-            </span>
+          <div className="flex items-center gap-1.5 group cursor-default">
+            <Award className="w-3.5 h-3.5 text-brand-600 group-hover:scale-110 transition-transform" />
+            <span>Microsoft Certified Partner</span>
           </div>
         </div>
       </div>
+    </div>
 
       {/* Custom Solution Banner */}
-      <div className="w-full bg-emerald-600 py-16 px-4">
+      <div className="w-full bg-brand-600 py-10 px-4">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <h2 className="text-3xl font-bold text-white">
             Need a Custom Solution?
           </h2>
-          <p className="text-emerald-50 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-brand-50 max-w-2xl mx-auto leading-relaxed">
             For high-volume enterprise licenses, government agencies, or
             specific deployment requirements, our dedicated sales team is here
             to assist you with tailored pricing.
@@ -580,13 +587,13 @@ const Pricing = () => {
           <div className="flex justify-center gap-4 pt-4">
             <Button
               variant="outline"
-              className="border-2 border-emerald-400 text-white hover:bg-emerald-700 bg-transparent px-8 py-6 font-bold rounded-md"
+              className="border-2 border-brand-400 text-white hover:bg-brand-700 bg-transparent px-8 py-6 font-bold rounded-md"
             >
               Contact Sales
             </Button>
             <Button
               variant="outline"
-              className="border-2 border-emerald-400 text-white hover:bg-emerald-700 bg-transparent px-8 py-6 font-bold rounded-md"
+              className="border-2 border-brand-400 text-white hover:bg-brand-700 bg-transparent px-8 py-6 font-bold rounded-md"
             >
               Request a Quote
             </Button>
@@ -600,7 +607,7 @@ const Pricing = () => {
           <div className=" rounded-t-lg py-10 px-4">
             <h2 className="text-5xl font-bold text-slate-800 text-center mb-2 tracking-tight">
               Compare All Plans{" "}
-              <span className="text-emerald-600">Side by Side</span>
+              <span className="text-brand-600">Side by Side</span>
             </h2>
             <p className="text-gray-500 text-sm text-center max-w-xl mx-auto">
               Not sure which OST to PST converter license is right for you?
@@ -619,7 +626,7 @@ const Pricing = () => {
                     <div>Personal</div>
                     <div className="text-xs font-normal opacity-90">$49</div>
                   </th>
-                  <th className="p-4 bg-emerald-600 text-white text-center font-bold border-l border-emerald-500 w-[20%] shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
+                  <th className="p-4 bg-brand-600 text-white text-center font-bold border-l border-brand-500 w-[20%] shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
                     <div>Corporate</div>
                     <div className="text-xs font-normal opacity-90">$199</div>
                   </th>
@@ -639,7 +646,7 @@ const Pricing = () => {
                     <td className="p-4 text-center">
                       {typeof feature.personal === "boolean" ? (
                         feature.personal ? (
-                          <span className="text-emerald-500 font-bold text-lg leading-none">
+                          <span className="text-brand-500 font-bold text-lg leading-none">
                             ✓
                           </span>
                         ) : (
@@ -653,19 +660,19 @@ const Pricing = () => {
                         </div>
                       )}
                     </td>
-                    <td className="p-4 text-center bg-emerald-50/20">
+                    <td className="p-4 text-center bg-brand-50/20">
                       {typeof feature.corporate === "boolean" ? (
                         feature.corporate ? (
-                          <span className="text-emerald-600 font-bold text-lg leading-none">
+                          <span className="text-brand-600 font-bold text-lg leading-none">
                             ✓
                           </span>
                         ) : (
-                          <span className="text-emerald-200 font-bold text-lg leading-none">
+                          <span className="text-brand-200 font-bold text-lg leading-none">
                             ✕
                           </span>
                         )
                       ) : (
-                        <div className="text-xs text-emerald-700 font-bold">
+                        <div className="text-xs text-brand-700 font-bold">
                           {feature.corporate}
                         </div>
                       )}
@@ -673,7 +680,7 @@ const Pricing = () => {
                     <td className="p-4 text-center">
                       {typeof feature.technical === "boolean" ? (
                         feature.technical ? (
-                          <span className="text-emerald-500 font-bold text-lg leading-none">
+                          <span className="text-brand-500 font-bold text-lg leading-none">
                             ✓
                           </span>
                         ) : (
@@ -700,19 +707,26 @@ const Pricing = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
-              Why is our <span className="text-emerald-600">Pricing better?</span>
+              Why is our <span className="text-brand-600">Pricing better?</span>
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto">
-              We offer premium enterprise features at a fraction of the cost of traditional tools.
+              We offer premium enterprise features at a fraction of the cost of
+              traditional tools.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
             {/* Header */}
             <div className="hidden md:contents">
-              <div className="p-6 bg-slate-50 border-b border-gray-200 font-bold text-slate-800">Features</div>
-              <div className="p-6 bg-slate-50 border-b border-l border-gray-200 font-bold text-slate-800 text-center">Other Tools</div>
-              <div className="p-6 bg-emerald-50 border-b border-l border-emerald-100 font-bold text-emerald-700 text-center">Our Tools</div>
+              <div className="p-6 bg-slate-50 border-b border-gray-200 font-bold text-slate-800">
+                Features
+              </div>
+              <div className="p-6 bg-slate-50 border-b border-l border-gray-200 font-bold text-slate-800 text-center">
+                Other Tools
+              </div>
+              <div className="p-6 bg-brand-50 border-b border-l border-brand-100 font-bold text-brand-700 text-center">
+                Our Tools
+              </div>
             </div>
 
             {toolComparison.map((item, index) => (
@@ -721,17 +735,21 @@ const Pricing = () => {
                 <div className="md:hidden p-4 bg-slate-50 font-bold text-slate-800 border-t border-gray-200 first:border-t-0">
                   {item.feature}
                 </div>
-                
+
                 {/* Desktop/Row Layout */}
                 <div className="p-6 border-b border-gray-100 last:md:border-b-0 hidden md:block text-gray-600 font-medium">
                   {item.feature}
                 </div>
                 <div className="p-6 border-b border-l border-gray-100 last:md:border-b-0 text-center text-gray-400">
-                  <span className="md:hidden font-semibold text-gray-500 mr-2">Other Tools:</span>
+                  <span className="md:hidden font-semibold text-gray-500 mr-2">
+                    Other Tools:
+                  </span>
                   {item.others}
                 </div>
-                <div className="p-6 border-b border-l border-emerald-50 bg-emerald-50/30 last:md:border-b-0 text-center font-bold text-emerald-600">
-                  <span className="md:hidden font-semibold text-emerald-700 mr-2">Our Tools:</span>
+                <div className="p-6 border-b border-l border-brand-50 bg-brand-50/30 last:md:border-b-0 text-center font-bold text-brand-600">
+                  <span className="md:hidden font-semibold text-brand-700 mr-2">
+                    Our Tools:
+                  </span>
                   {item.ours}
                 </div>
               </React.Fragment>
@@ -755,8 +773,8 @@ const Pricing = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
             {faqs.map((faq, index) => (
               <div key={index} className="space-y-3 group">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-emerald-600 transition-colors flex items-start gap-3">
-                  <span className="text-emerald-500 mt-1">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors flex items-start gap-3">
+                  <span className="text-brand-500 mt-1">
                     <svg
                       width="20"
                       height="20"
@@ -788,7 +806,7 @@ const Pricing = () => {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-white font-bold text-lg">
-              <div className="w-6 h-6 bg-emerald-500 rounded flex items-center justify-center">
+              <div className="w-6 h-6 bg-brand-500 rounded flex items-center justify-center">
                 <svg
                   className="w-4 h-4 text-white"
                   fill="none"

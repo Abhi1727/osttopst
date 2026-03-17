@@ -1151,7 +1151,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                 if (totalFolderSize > 0)
                 {
-                    var success = await _licenseClient.UpdateStorageAsync(userId, "1", totalFolderSize);
+                    var success = await _licenseClient.UpdateStorageAsync(userId, totalFolderSize);
                     if (!success) throw new Exception("License storage limit exceeded");
                 }
 
@@ -1305,7 +1305,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                     // (Item count = OST files, tracked per upload only)
                                     if (batchCount >= 50)
                                     {
-                                        var sSuccess = await _licenseClient.UpdateStorageAsync(licenseId, "1", accumulatedSize);
+                                        var sSuccess = await _licenseClient.UpdateStorageAsync(licenseId, accumulatedSize);
                                         if (!sSuccess) throw new Exception("License storage limit exceeded");
                                         accumulatedSize = 0;
                                         batchCount = 0;
@@ -1325,7 +1325,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             // Final storage update for remaining items
                             if (batchCount > 0)
                             {
-                                var sSuccess = await _licenseClient.UpdateStorageAsync(licenseId, "1", accumulatedSize);
+                                var sSuccess = await _licenseClient.UpdateStorageAsync(licenseId, accumulatedSize);
                                 if (!sSuccess) throw new Exception("License storage limit exceeded");
                             }
                             // LogDebug($"ExportAllAsync: Successfully extracted {index} messages");
@@ -1414,7 +1414,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         if (folderTotalSize > 0)
         {
-            var sSuccess = await _licenseClient.UpdateStorageAsync(licenseId, "1", folderTotalSize);
+            var sSuccess = await _licenseClient.UpdateStorageAsync(licenseId, folderTotalSize);
             if (!sSuccess) throw new Exception("License storage limit exceeded");
         }
 

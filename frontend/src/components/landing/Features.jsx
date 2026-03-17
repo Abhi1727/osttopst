@@ -1,71 +1,83 @@
 import React from "react";
-import { Lock, FolderTree, FileText, Shield } from "lucide-react";
+import { Lock, FolderTree, FileText, Shield, ArrowRight } from "lucide-react";
 
-const FeatureCard = ({ icon: Icon, title, description, badgeColor }) => (
-  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-start gap-4 hover:shadow-md transition-shadow">
-    <div className={`p-3 rounded-2xl ${badgeColor}`}>
-      <Icon className="w-6 h-6 text-emerald-700" />
+const FeatureCard = ({ icon: Icon, title, description }) => (
+  <div className="bg-white p-6 md:p-10 rounded-2xl md:rounded-3xl border border-slate-100 flex flex-col items-center text-center gap-4 md:gap-6 hover:shadow-2xl hover:shadow-brand-500/10 transition-all hover:-translate-y-1 group">
+    <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center group-hover:bg-brand-500 group-hover:text-white transition-colors">
+      <Icon className="w-8 h-8 text-brand-600 group-hover:text-white" />
     </div>
-    <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-    <p className="text-slate-500 text-sm leading-relaxed">{description}</p>
+    <div className="space-y-2 md:space-y-4">
+      <h3 className="text-lg md:text-2xl font-black text-slate-900 leading-tight">{title}</h3>
+      <p className="text-slate-500 text-sm md:text-base font-semibold leading-relaxed">
+        {description}
+      </p>
+    </div>
   </div>
 );
 
 const Features = () => {
   const features = [
     {
-      icon: Lock,
-      title: "Crash of Exchange Server",
+      icon: Shield,
+      title: "100% Secure & Private",
       description:
-"A crash of Exchange can cause orphaning of your OST files, so they won't be recognized or available. Our software will allow for the conversion of your orphaned file to a portable, viewable PST file, enabling you to immediately access your data again.",      badgeColor: "bg-emerald-50",
+        "Your data is processed locally and securely. We prioritize privacy and security, ensuring your files never leave your system during the conversion process.",
+      badgeColor: "bg-brand-50",
     },
     {
       icon: FolderTree,
       title: "Deleted or Expired Office 365 Account",
       description:
-"At the time of expiration of an Office 365 account, the link to the local OST file is effectively broken. You can use our converter to save the complete email history from your account and convert your data from OST to PST prior to getting rid of your account and losing access to your data.",      badgeColor: "bg-emerald-50",
+        "At the time of expiration of an Office 365 account, the link to the local OST file is effectively broken. You can use our converter to save the complete email history from your account and convert your data from OST to PST prior to getting rid of your account and losing access to your data.",
+      badgeColor: "bg-brand-50",
     },
     {
-      icon: FileText,
-      title: "Account Migration & Your Email",
+      icon: FolderTree,
+      title: "Maintain Folder Structure",
       description:
-"OST files are linked to a specific computer and profile, making converting email data into PST format very important to be able to make the data portable. In this way, you will be able to import your converted data from PST back into Outlook on any new computer or laptop that has Outlook.",      badgeColor: "bg-emerald-50",
+        "The software preserves the original internal structure of OST files during conversion. All folders and subfolders are kept exactly as they were, ensuring no data reorganization is needed.",
+      badgeColor: "bg-brand-50",
     },
     {
       icon: FileText,
       title: "Seamless Email Platform Migration",
       description:
-"Are you migrating from Exchange to Gmail or any other 365 tenant? The best way to extract data from the existing email service is by converting the data stored in your OST file to PST format.",    },
+        "Are you migrating from Exchange to Gmail or any other 365 tenant? The best way to extract data from the existing email service is by converting the data stored in your OST file to PST format.",
+      badgeColor: "bg-brand-50",
+    },
     {
       icon: FileText,
       title: "Repair Corrupt Files",
       description:
-"There are many occurrences of OST header damage due to power failure, syncing issues, etc. The software has built-in repair functionality. It repairs the actual file structures throughout the conversion process for maximum recoverability.",     badgeColor: "bg-emerald-50",
+        "There are many occurrences of OST header damage due to power failure, syncing issues, etc. The software has built-in repair functionality. It repairs the actual file structures throughout the conversion process for maximum recoverability.",
+      badgeColor: "bg-brand-50",
     },
     {
       icon: FileText,
-      title: "Long-Term Email Archive",
+      title: "Deep Meta-Data Extraction",
       description:
-"OST files are temporary caches, whereas PSTs are considered permanent archives. When converting existing email data from OST format to PST format for long-term retention, you will have a permanent and secure means to retain the email data for records retention purposes.",      badgeColor: "bg-emerald-50",
+        "Extract every detail including ‘To’, ‘Cc’, ‘Bcc’, ‘Subject’, ‘Sent/Received Date’, and attachments. Pure meta-data preservation ensures your emails remain forensically intact.",
+      badgeColor: "bg-brand-50",
     },
   ];
 
   return (
-    <section className="py-12 md:py-20 px-4 md:px-6 lg:px-12 bg-slate-50/50">
+    <section className="py-10 md:py-24 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-slate-800">
-            Why Use Our Online Tool? 
+        <div className="text-center mb-10 md:mb-20">
+          <h2 className="text-2xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-tight">
+            Why Use Our <span className="header-text-gradient">Online Tool?</span>
           </h2>
+          <p className="mt-2 md:mt-6 text-slate-500 text-sm md:text-lg lg:text-xl font-semibold max-w-2xl mx-auto">
+            Experience the most reliable and efficient OST to PST conversion service available online.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12">
           {features.map((feature, index) => (
             <FeatureCard key={index} {...feature} />
           ))}
         </div>
-
-    
       </div>
     </section>
   );

@@ -103,7 +103,7 @@ public static class SessionEndpoints
 
             // 3. License check to handle background limit hit or external changes
             var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
-            var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+            var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
             
             bool limitHit = licenseStatus.HitFileCountLimit || licenseStatus.HitSizeLimit || licenseStatus.HitTimePeriodLimit;
 

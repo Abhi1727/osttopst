@@ -53,7 +53,7 @@ public static class ConversionEndpoints
                 return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);
             }
             if(moduleStatus == ModuleLicenseType.Active){
-                var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
                 if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit)
                 {
                     return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
@@ -104,12 +104,12 @@ public static class ConversionEndpoints
                     if (!session.IsPaid)
                     {
                         session.IsPaid = true;
-                        var storageSuccess = await licenseClient.UpdateStorageAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString(), session.Size);
-                        var itemsSuccess = await licenseClient.UpdateItemsAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                        var storageSuccess = await licenseClient.UpdateStorageAsync(userEmail, session.Size);
+                        var itemsSuccess = await licenseClient.UpdateItemsAsync(userEmail);
 
                         if (!storageSuccess || !itemsSuccess)
                         {
-                            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
                             return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
                         }
                     }
@@ -187,7 +187,7 @@ public static class ConversionEndpoints
                 }
 
                 if(moduleStatus == ModuleLicenseType.Active){
-                    var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                    var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
                     if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit)
                     {
                         return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
@@ -215,12 +215,12 @@ public static class ConversionEndpoints
                     if (!session.IsPaid)
                     {
                         session.IsPaid = true;
-                        var storageSuccess = await licenseClient.UpdateStorageAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString(), session.Size);
-                        var itemsSuccess = await licenseClient.UpdateItemsAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                        var storageSuccess = await licenseClient.UpdateStorageAsync(userEmail, session.Size);
+                        var itemsSuccess = await licenseClient.UpdateItemsAsync(userEmail);
 
                         if (!storageSuccess || !itemsSuccess)
                         {
-                            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+                            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
                             return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
                         }
                     }
@@ -273,7 +273,7 @@ public static class ConversionEndpoints
 
             // License check
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
-            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, ((int)Tool.ConvertOSTToPST).ToString());
+            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
             if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit)
             {
                 return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);

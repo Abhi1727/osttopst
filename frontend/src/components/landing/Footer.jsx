@@ -18,8 +18,8 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-slate-50 border-t border-slate-200 py-12 px-6 lg:px-12">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+    <footer className="border-t border-slate-200 py-8 px-4 md:px-6 lg:px-12 bg-white">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 md:gap-6">
         <div className="flex items-center gap-2 text-slate-600">
           <img src={logo} alt="Logo" className="w-4 h-4 object-contain" />
           <span className="text-sm font-semibold">
@@ -30,28 +30,28 @@ const Footer = () => {
         <div className="flex gap-8 text-sm text-slate-500 font-medium">
           <a
             href="/privacy-policy"
-            className="hover:text-emerald-600 transition-colors"
+            className="hover:text-brand-600 transition-colors"
           >
             Privacy Policy
           </a>
           <a
             href="/terms-conditions"
-            className="hover:text-emerald-600 transition-colors"
+            className="hover:text-brand-600 transition-colors"
           >
             Terms & Conditions
           </a>
-          <a href="/faq" className="hover:text-emerald-600 transition-colors">
+          <a href="/faq" className="hover:text-brand-600 transition-colors">
             FAQ
           </a>
           <a
             href="/support"
-            className="hover:text-emerald-600 transition-colors"
+            className="hover:text-brand-600 transition-colors"
           >
             Contact
           </a>
           <a
             href="/admin/blogs"
-            className="text-emerald-600/50 hover:text-emerald-600 transition-colors font-bold"
+            className="text-brand-600/50 hover:text-brand-600 transition-colors font-bold"
           >
             Admin
           </a>
@@ -62,7 +62,7 @@ const Footer = () => {
             <a
               key={index}
               href={social.href}
-              className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-100 hover:text-emerald-600 transition-all duration-300 cursor-pointer group"
+              className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-brand-100 hover:text-brand-600 transition-all duration-300 cursor-pointer group"
               aria-label={social.label}
             >
               <img

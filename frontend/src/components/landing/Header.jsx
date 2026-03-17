@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,78 +7,112 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/clerk-react";
+import { Menu, X } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const Header = () => {
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const navItems = [
+    { label: "Premium Plans", path: "/our-plans" },
+    { label: "How It Works", path: "/how-it-works" },
+    { label: "FAQ", path: "/#faq" },
+    { label: "Support", path: "/support" },
+  ];
+
+  const handleNavClick = (path) => {
+    navigate(path);
+    setIsMenuOpen(false);
+  };
 
   return (
-    <header className="flex h-20 items-center justify-between px-6 lg:px-12 border-b border-border/10 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+    <header className="flex h-14 md:h-16 items-center justify-between px-4 md:px-8 border-b border-border/10 bg-white/80 backdrop-blur-md sticky top-0 z-50">
       <div
-        className="flex items-center gap-3 cursor-pointer"
+        className="flex items-center gap-2 md:gap-3 cursor-pointer"
         onClick={() => navigate("/")}
       >
-        <div className="p-2 rounded-lg bg-emerald-100/50">
+        <div className="p-1.5 rounded-lg bg-brand-100/50">
           <img
             src={logo}
             alt="OST to PST Converter"
-            className="w-6 h-6 object-contain"
+            className="w-5 h-5 md:w-6 md:h-6 object-contain"
           />
         </div>
-        <span className="text-xl font-bold tracking-tight text-slate-800">
-          OST TO PST Converter
+        <span className="text-sm md:text-lg font-bold tracking-tight text-slate-800">
+          OST TO PST
         </span>
       </div>
 
-      <nav className="hidden md:flex items-center gap-8">
-        {["Premium Plans", "How It Works", "FAQ", "Support"].map((item) => (
+      {/* Desktop Nav */}
+      <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+        {navItems.map((item) => (
           <span
-            key={item}
-            onClick={() => {
-              if (item === "Premium Plans") navigate("/our-plans");
-              if (item === "How It Works") navigate("/how-it-works");
-              if (item === "Support") navigate("/support");
-            }}
-            className={`cursor-pointer text-sm font-medium transition-colors ${
-              item === "Premium Plans" ||
-              item === "How It Works" ||
-              item === "Support"
-                ? "text-slate-900 font-semibold hover:text-emerald-600"
-                : "text-slate-600 hover:text-emerald-600"
-            }`}
+            key={item.label}
+            onClick={() => handleNavClick(item.path)}
+            className="cursor-pointer text-sm font-semibold text-slate-600 hover:text-brand-600 transition-colors"
           >
-            {item}
+            {item.label}
           </span>
         ))}
       </nav>
 
-      <div className="flex items-center gap-4">
-        <Button className="hidden lg:flex bg-amber-400 hover:bg-amber-500 text-slate-900 font-semibold px-6 shadow-md shadow-amber-400/20">
+      <div className="flex items-center gap-3 md:gap-4">
+        <Button className="hidden lg:flex bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-5 h-9 md:h-10 text-xs md:text-sm">
           Try Desktop Version
         </Button>
 
-        <SignedOut>
-          <SignInButton mode="modal">
-            <Button
-              variant="outline"
-              className="border-slate-300 text-slate-700 hover:text-emerald-600 hover:border-emerald-600"
-            >
-              Sign In
-            </Button>
-          </SignInButton>
-        </SignedOut>
+        <div className="flex items-center">
+          <SignedOut>
+            <SignInButton mode="modal">
+              <Button
+                variant="outline"
+                className="h-8 md:h-10 px-3 md:px-4 text-xs md:text-sm border-slate-300 text-slate-700 font-bold"
+              >
+                Sign In
+              </Button>
+            </SignInButton>
+          </SignedOut>
 
-        <SignedIn>
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                userButtonAvatarBox: "h-9 w-9 ring-2 ring-emerald-100",
-              },
-            }}
-          />
-        </SignedIn>
+          <SignedIn>
+            <UserButton
+              afterSignOutUrl="/"
+              appearance={{
+                elements: {
+                  userButtonAvatarBox: "h-8 w-8 md:h-9 md:w-9 ring-2 ring-brand-100",
+                },
+              }}
+            />
+          </SignedIn>
+        </div>
+
+        {/* Hamburger Toggle */}
+        <button
+          className="md:hidden p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div className="absolute top-14 left-0 w-full bg-white border-b border-slate-100 shadow-xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200 md:hidden">
+          {navItems.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => handleNavClick(item.path)}
+              className="text-left py-3 px-4 text-sm font-bold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+            >
+              {item.label}
+            </button>
+          ))}
+          <div className="h-px bg-slate-100 mx-4 my-1" />
+          <Button className="w-full bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-6 rounded-xl text-sm">
+            Try Desktop Version
+          </Button>
+        </div>
+      )}
     </header>
   );
 };

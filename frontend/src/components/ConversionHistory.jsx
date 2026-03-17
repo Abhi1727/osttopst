@@ -59,14 +59,14 @@ const ConversionHistory = ({ onRestore }) => {
   if (isLoading)
     return (
       <div className="flex items-center justify-center p-12">
-        <RefreshCcw className="w-8 h-8 text-emerald-500 animate-spin" />
+        <RefreshCcw className="w-8 h-8 text-brand-500 animate-spin" />
       </div>
     );
 
   if (sessions.length === 0) {
     console.log("[ConversionHistory] No sessions found, returning null");
     return (
-      <div className="text-center p-12 bg-white rounded-3xl border border-zinc-100 shadow-sm mt-12">
+      <div className="text-center p-12 rounded-3xl border border-zinc-100 shadow-sm mt-12">
         <History className="w-12 h-12 text-zinc-200 mx-auto mb-4" />
         <h3 className="font-bold text-zinc-900">No Recent Conversions</h3>
         <p className="text-zinc-500 text-sm">
@@ -77,10 +77,10 @@ const ConversionHistory = ({ onRestore }) => {
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden mt-12">
+    <div className="rounded-3xl border border-zinc-100 shadow-sm overflow-hidden mt-12">
       <div className="p-6 border-b border-zinc-50 bg-zinc-50/50 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <History className="w-5 h-5 text-emerald-600" />
+          <History className="w-5 h-5 text-brand-600" />
           <h3 className="font-black text-zinc-900 tracking-tight">
             Recent Conversions
           </h3>
@@ -103,7 +103,7 @@ const ConversionHistory = ({ onRestore }) => {
           >
             <div className="flex items-center gap-4">
               <div
-                className={`p-3 rounded-2xl ${session.status === "Uploaded" ? "bg-emerald-50 text-emerald-600" : "bg-zinc-50 text-zinc-400"}`}
+                className={`p-3 rounded-2xl ${session.status === "Uploaded" ? "bg-brand-50 text-brand-600" : "bg-zinc-50 text-zinc-400"}`}
               >
                 <FileText className="w-5 h-5" />
               </div>
@@ -121,7 +121,7 @@ const ConversionHistory = ({ onRestore }) => {
                   <span
                     className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
                       session.status === "Uploaded"
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "bg-brand-100 text-brand-700"
                         : session.status === "Assembling"
                           ? "bg-blue-100 text-blue-700"
                           : "bg-zinc-100 text-zinc-500"
@@ -138,7 +138,7 @@ const ConversionHistory = ({ onRestore }) => {
                 <Button
                   size="sm"
                   onClick={() => onRestore(session)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2 font-bold px-4"
+                  className="bg-brand-600 hover:bg-brand-700 text-white rounded-xl gap-2 font-bold px-4"
                 >
                   <Download className="w-4 h-4" />
                   Re-convert

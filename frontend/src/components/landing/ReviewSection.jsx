@@ -95,18 +95,18 @@ const ReviewSection = () => {
   };
 
   return (
-    <section className="py-16 px-4 md:px-6 lg:px-8 bg-white flex flex-col items-center">
+    <section className="py-12 md:py-20 px-4 md:px-6 lg:px-8 flex flex-col items-center">
       <div className="w-full max-w-6xl">
         {/* Heading Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-heading font-black text-slate-800 mb-2">
+        <div className="text-center mb-10 md:mb-16">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-heading font-black text-slate-800 mb-2">
             What customers are saying about
           </h2>
           <h3 className="text-2xl md:text-3xl font-heading font-medium text-slate-600 mb-4">
             {/* Kernel OST to PST Converter */}
           </h3>
           <div className="flex items-center justify-center gap-2">
-            <div className="flex gap-0.5 text-emerald-600 fill-emerald-600">
+            <div className="flex items-center justify-center gap-2 text-brand-600 fill-brand-600">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
@@ -125,12 +125,12 @@ const ReviewSection = () => {
           <div className="w-full">
             {loading ? (
               <div className="h-64 flex items-center justify-center bg-slate-50 rounded-3xl border border-slate-100">
-                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
               </div>
             ) : reviews.length > 0 ? (
               <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] transition-all hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] relative overflow-hidden group">
                 {/* Decorative Accent */}
-                <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute top-0 left-0 w-2 h-full bg-brand-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                 <h4 className="text-xl font-heading font-black text-slate-800 mb-6 border-b border-slate-50 pb-4">
                   {reviews[0].comment.split(".")[0].length < 50
@@ -154,11 +154,11 @@ const ReviewSection = () => {
                         Verified Business User
                       </p>
                     </div>
-                    <div className="flex gap-0.5 text-emerald-600 fill-emerald-600 pt-1">
+                    <div className="flex gap-0.5 text-brand-600 fill-brand-600 pt-1">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-4 h-4 ${i < reviews[0].rating ? "fill-current" : "text-emerald-200"}`}
+                          className={`w-4 h-4 ${i < reviews[0].rating ? "fill-current" : "text-brand-200"}`}
                         />
                       ))}
                     </div>
@@ -166,7 +166,7 @@ const ReviewSection = () => {
                 </div>
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center bg-slate-50 rounded-3xl border border-slate-100 text-emerald-400 gap-4">
+              <div className="h-64 flex flex-col items-center justify-center bg-slate-50 rounded-3xl border border-slate-100 text-brand-400 gap-4">
                 <MessageSquare className="w-12 h-12 opacity-20" />
                 <p className="font-medium">
                   No reviews yet. Be the first to share!
@@ -194,11 +194,11 @@ const ReviewSection = () => {
                   </span>
                   <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-emerald-600 rounded-full transition-all duration-1000 ease-out"
+                      className="h-full bg-brand-600 rounded-full transition-all duration-1000 ease-out"
                       style={{ width: `${percentage}%` }}
                     ></div>
                   </div>
-                  <span className="w-12 text-[13px] font-bold text-emerald-600">
+                  <span className="w-12 text-[13px] font-bold text-brand-600">
                     {percentage}%
                   </span>
                 </div>
@@ -208,14 +208,14 @@ const ReviewSection = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-16">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6 mt-12 md:mt-16">
           <button
             onClick={() => setShowForm(!showForm)}
-            className="text-emerald-600 font-bold text-[15px] hover:underline"
+            className="text-brand-600 font-bold text-[15px] hover:underline"
           >
             {showForm ? "Cancel review" : "Write a review"}
           </button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-10 h-14 rounded-full shadow-lg shadow-emerald-600/20 transition-all hover:scale-[1.02] text-md">
+          <Button className="bg-brand-600 hover:bg-brand-700 text-white font-black px-10 h-14 rounded-full shadow-lg shadow-brand-600/20 transition-all hover:scale-[1.02] text-md">
             View all reviews
           </Button>
         </div>
@@ -227,7 +227,7 @@ const ReviewSection = () => {
             className="mt-12 max-w-2xl mx-auto animate-in fade-in slide-in-from-top-4 duration-500"
           >
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
-              <h3 className="text-xl font-bold text-emerald-600 mb-1">
+              <h3 className="text-xl font-bold text-brand-600 mb-1">
                 Write a review
               </h3>
               <p className="text-slate-500 text-sm mb-6">
@@ -252,7 +252,7 @@ const ReviewSection = () => {
                         className="focus:outline-none transition-transform hover:scale-110"
                       >
                         <Star
-                          className={`w-8 h-8 ${star <= (hoverRating || newReview.rating) ? "text-emerald-600 fill-emerald-600" : "text-slate-200 fill-slate-200"}`}
+                          className={`w-8 h-8 ${star <= (hoverRating || newReview.rating) ? "text-brand-600 fill-brand-600" : "text-slate-200 fill-slate-200"}`}
                         />
                       </button>
                     ))}
@@ -293,7 +293,7 @@ const ReviewSection = () => {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:shadow-emerald-600/30"
+                  className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold h-12 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-brand-600/20 transition-all hover:shadow-brand-600/30"
                 >
                   {submitting ? (
                     "Submitting..."

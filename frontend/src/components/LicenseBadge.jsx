@@ -58,19 +58,19 @@ const LicenseBadge = () => {
 
   if (normalizedTier === "professional") {
     return (
-      <div className="flex flex-col items-end gap-1 px-1">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] font-black shadow-sm shadow-emerald-500/20 border border-emerald-400/30 animate-in fade-in zoom-in duration-500 tracking-wider">
-          <Sparkles className="w-3 h-3" />
+      <div className="flex flex-col items-start lg:items-end gap-1 px-1">
+        <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 text-white text-[9px] font-black shadow-sm shadow-brand-500/20 border border-brand-400/30 tracking-wider">
+          <Sparkles className="w-2.5 h-2.5" />
           <span>PROFESSIONAL PLAN</span>
         </div>
-        <div className="flex gap-2 text-[9px] font-bold text-emerald-700 bg-emerald-50/50 px-2 py-0.5 rounded-md border border-emerald-100/50 uppercase tracking-tight">
+        <div className="flex gap-2 text-[8px] font-black text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded-md border border-brand-100 tracking-tight">
           <span className="flex items-center gap-1">
-            <Shield className="w-2.5 h-2.5" />
-            {usedItems.toLocaleString()} / {totalItems?.toLocaleString()} Files
+            <Shield className="w-2 h-2 text-brand-500" />
+            {usedItems.toLocaleString()} / {totalItems?.toLocaleString()}
           </span>
-          <span className="w-px h-2 bg-emerald-200 self-center"></span>
+          <span className="w-px h-2 bg-brand-200 self-center"></span>
           <span className="flex items-center gap-1">
-            <ShieldCheck className="w-2.5 h-2.5" />
+            <ShieldCheck className="w-2 h-2 text-brand-500" />
             {formatStorage(usedStorage)} / {formatStorage(totalStorage)}
           </span>
         </div>
@@ -82,7 +82,7 @@ const LicenseBadge = () => {
   if (normalizedTier === "demo") {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 shadow-sm">
-        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+        <ShieldCheck className="w-3.5 h-3.5 text-brand-500" />
         <span>TRIAL ACTIVE</span>
       </div>
     );

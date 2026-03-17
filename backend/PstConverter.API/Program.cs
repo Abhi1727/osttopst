@@ -314,7 +314,7 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
             email != null ? "QueryParam" : (user.FindFirstValue(ClaimTypes.Email) != null ? "ClaimTypes.Email" : "Fallback"));
     }
 
-    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId, ((int)Tool.ConvertOSTToPST).ToString());
+    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId);
     return Results.Ok(status);
 })
 

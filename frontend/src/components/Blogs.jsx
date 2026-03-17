@@ -32,7 +32,7 @@ const CategoryPill = ({ label, active, onClick }) => (
     onClick={onClick}
     className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${
       active
-        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
+        ? "bg-brand-600 text-white shadow-lg shadow-brand-200"
         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
     }`}
   >
@@ -52,13 +52,13 @@ const BlogCard = ({ post, onClick }) => (
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
       />
       <div className="absolute top-4 left-4">
-        <span className="bg-white/90 backdrop-blur-sm text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-100 uppercase tracking-wider">
+        <span className="bg-white/90 backdrop-blur-sm text-brand-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-brand-100 uppercase tracking-wider">
           {post.category}
         </span>
       </div>
     </div>
     <div className="p-6 flex flex-col flex-1">
-      <h3 className="text-xl font-bold text-slate-900 mb-3 line-clamp-2 group-hover:text-emerald-600 transition-colors">
+      <h3 className="text-xl font-bold text-slate-900 mb-3 line-clamp-2 group-hover:text-brand-600 transition-colors">
         {post.title}
       </h3>
       <p className="text-sm text-slate-500 line-clamp-3 mb-6 leading-relaxed">
@@ -69,15 +69,15 @@ const BlogCard = ({ post, onClick }) => (
         <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold uppercase tracking-widest">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5 flex-nowrap">
-              <User className="w-3 h-3 text-emerald-500" />
+              <User className="w-3 h-3 text-brand-500" />
               <span className="truncate max-w-[80px]">{post.author}</span>
             </span>
             <span className="flex items-center gap-1.5 flex-nowrap">
-              <Calendar className="w-3 h-3 text-emerald-500" />
+              <Calendar className="w-3 h-3 text-brand-500" />
               {post.date}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-emerald-600 font-bold group/read ml-2">
+          <div className="flex items-center gap-1.5 text-brand-600 font-bold group/read ml-2">
             Read{" "}
             <ArrowRight className="w-3 h-3 group-hover/read:translate-x-1 transition-transform" />
           </div>
@@ -142,7 +142,7 @@ const Blogs = () => {
       <div className="container mx-auto px-4 text-center mb-16 max-w-4xl relative">
         <button
           onClick={() => navigate("/admin/blogs")}
-          className="absolute -top-12 right-4 md:-right-12 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 p-3 rounded-2xl transition-all group flex items-center gap-2 border border-emerald-100 shadow-sm"
+          className="absolute -top-12 right-4 md:-right-12 bg-brand-50 text-brand-600 hover:bg-brand-100 p-3 rounded-2xl transition-all group flex items-center gap-2 border border-brand-100 shadow-sm"
           title="Admin Dashboard"
         >
           <ShieldCheck className="w-5 h-5" />
@@ -151,7 +151,7 @@ const Blogs = () => {
           </span>
         </button>
         <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
-          Blog & <span className="text-emerald-600">Resources</span>
+          Blog & <span className="text-brand-600">Resources</span>
         </h1>
         <p className="text-lg text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
           Expert insights, tips, and guides on OST to PST conversion, email data
@@ -166,7 +166,7 @@ const Blogs = () => {
             placeholder="Search articles..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 rounded-full border border-gray-100 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all text-slate-700 shadow-sm"
+            className="w-full pl-12 pr-4 py-4 rounded-full border border-gray-100 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500/30 transition-all text-slate-700 shadow-sm"
           />
         </div>
       </div>
@@ -215,7 +215,7 @@ const Blogs = () => {
           <div className="mt-20 text-center">
             <button
               onClick={handleLoadMore}
-              className="bg-emerald-600 text-white font-black px-12 py-5 rounded-full hover:bg-emerald-700 transition-all hover:shadow-2xl hover:shadow-emerald-200 hover:-translate-y-1 active:translate-y-0 shadow-lg shadow-emerald-100"
+              className="bg-brand-600 text-white font-black px-12 py-5 rounded-full hover:bg-brand-700 transition-all hover:shadow-2xl hover:shadow-brand-200 hover:-translate-y-1 active:translate-y-0 shadow-lg shadow-brand-100"
             >
               Load More Articles
             </button>
@@ -224,16 +224,16 @@ const Blogs = () => {
       </div>
 
       {/* Newsletter Section */}
-      <div className="mt-20 py-24 bg-emerald-600 relative overflow-hidden">
+      <div className="mt-20 py-24 bg-brand-600 relative overflow-hidden">
         {/* Abstract design elements */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500 rounded-full -translate-y-1/2 translate-x-1/2 opacity-20 blur-[100px]"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-800 rounded-full translate-y-1/2 -translate-x-1/2 opacity-20 blur-[100px]"></div>
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500 rounded-full -translate-y-1/2 translate-x-1/2 opacity-20 blur-[100px]"></div>
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-brand-800 rounded-full translate-y-1/2 -translate-x-1/2 opacity-20 blur-[100px]"></div>
 
         <div className="container mx-auto px-4 relative z-10 text-center text-white max-w-4xl">
           <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">
             Stay Updated with Our Newsletter
           </h2>
-          <p className="text-emerald-50/90 text-xl mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
+          <p className="text-brand-50/90 text-xl mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
             Get the latest tips, guides, and updates delivered directly to your
             inbox. Join 5000+ Outlook experts.
           </p>
@@ -262,7 +262,7 @@ const Blogs = () => {
           </form>
         </div>
           <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-white text-center mt-10">Ask the Expert !</h1>
-          <p className="text-emerald-50/90 text-xl max-w-2xl mx-auto font-medium leading-relaxed text-center">Submit your problem related to the OST File or Outlook, and our expert will guide you!</p>
+          <p className="text-brand-50/90 text-xl max-w-2xl mx-auto font-medium leading-relaxed text-center">Submit your problem related to the OST File or Outlook, and our expert will guide you!</p>
           <button className="bg-[#FFB800] hover:bg-white text-slate-900 font-black px-12 py-5 rounded-full transition-all shadow-xl hover:scale-[1.02] active:scale-95 whitespace-nowrap mx-auto block mt-5" onClick={() => navigate("/support")}>Contact Us</button>
       </div>
     </div>

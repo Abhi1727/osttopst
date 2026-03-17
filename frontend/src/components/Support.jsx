@@ -22,13 +22,13 @@ const SupportCard = ({
 }) => (
   <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full hover:shadow-md transition-shadow relative overflow-hidden group">
     {badge && (
-      <span className="absolute top-4 right-4 bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 border border-emerald-100">
-        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+      <span className="absolute top-4 right-4 bg-brand-50 text-brand-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 border border-brand-100">
+        <span className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse"></span>
         {badge}
       </span>
     )}
-    <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-100 transition-colors">
-      <Icon className="w-6 h-6 text-emerald-600" />
+    <div className="w-12 h-12 bg-brand-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand-100 transition-colors">
+      <Icon className="w-6 h-6 text-brand-600" />
     </div>
     <h3 className="text-lg font-bold text-slate-900 mb-3">{title}</h3>
     <p className="text-slate-500 text-sm leading-relaxed mb-8 flex-1">
@@ -36,7 +36,7 @@ const SupportCard = ({
     </p>
     <a
       href={linkUrl}
-      className="text-emerald-600 font-semibold text-sm flex items-center gap-2 hover:gap-3 transition-all"
+      className="text-brand-600 font-semibold text-sm flex items-center gap-2 hover:gap-3 transition-all"
     >
       {linkText} <ArrowRight className="w-4 h-4" />
     </a>
@@ -49,7 +49,7 @@ const Support = () => {
       {/* Hero Section */}
       <div className="pt-20 pb-16 px-4 text-center max-w-4xl mx-auto">
         <h1 className="text-4xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight">
-          How can we <span className="text-emerald-600">help?</span>
+          How can we <span className="text-brand-600">help?</span>
         </h1>
         <p className="text-slate-500 max-w-2xl mx-auto mb-10">
           Search for error codes, tutorials, and configuration guides to get
@@ -63,9 +63,9 @@ const Support = () => {
             <input
               type="text"
               placeholder="Search for articles, error codes, or FAQs..."
-              className="w-full pl-12 pr-32 py-4 rounded-full border-none shadow-lg shadow-slate-200/50 focus:ring-2 focus:ring-emerald-500/20 text-slate-700 bg-white"
+              className="w-full pl-12 pr-32 py-4 rounded-full border-none shadow-lg shadow-slate-200/50 focus:ring-2 focus:ring-brand-500/20 text-slate-700 bg-white"
             />
-            <Button className="absolute right-2 top-2 bottom-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-6">
+            <Button className="absolute right-2 top-2 bottom-2 bg-brand-600 hover:bg-brand-700 text-white rounded-full px-6">
               Search
             </Button>
           </div>
@@ -74,15 +74,15 @@ const Support = () => {
         {/* Popular Topics */}
         <div className="flex flex-wrap justify-center gap-2 text-xs font-medium text-slate-400">
           <span>Popular:</span>
-          <a href="#" className="text-emerald-600 hover:underline">
+          <a href="#" className="text-brand-600 hover:underline">
             License Recovery
           </a>
           <span>•</span>
-          <a href="#" className="text-emerald-600 hover:underline">
+          <a href="#" className="text-brand-600 hover:underline">
             Outlook Error 0x8004010F
           </a>
           <span>•</span>
-          <a href="#" className="text-emerald-600 hover:underline">
+          <a href="#" className="text-brand-600 hover:underline">
             Batch Conversion
           </a>
         </div>
@@ -152,7 +152,7 @@ const Support = () => {
               },
             ].map((item, index) => (
               <div key={index} className="relative">
-                <div className="text-5xl font-black text-emerald-600 mb-4 select-none text-center">
+                <div className="text-5xl font-black text-brand-600 mb-4 select-none text-center">
                   {item.step}
                 </div>
                 <div className="relative -mt-8 pt-2">
@@ -187,8 +187,8 @@ const Support = () => {
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 bg-brand-50 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Mail className="w-5 h-5 text-brand-600" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -201,8 +201,8 @@ const Support = () => {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 bg-brand-50 rounded-full flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-5 h-5 text-brand-600" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -243,7 +243,7 @@ const Support = () => {
                   Subject
                 </label>
                 <div className="relative">
-                  <select className="w-full h-12 pl-4 pr-10 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none appearance-none text-sm">
+                  <select className="w-full h-12 pl-4 pr-10 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none appearance-none text-sm">
                     <option>Technical Support</option>
                     <option>Sales Inquiry</option>
                     <option>Billing Issue</option>
@@ -258,12 +258,12 @@ const Support = () => {
                   Your Message
                 </label>
                 <textarea
-                  className="w-full min-h-[120px] p-4 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm resize-none"
+                  className="w-full min-h-[120px] p-4 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm resize-none"
                   placeholder="How can we help you today?"
                 ></textarea>
               </div>
 
-              <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 text-md shadow-lg shadow-emerald-600/20">
+              <Button className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold h-12 text-md shadow-lg shadow-brand-600/20">
                 Send Message
               </Button>
 

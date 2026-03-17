@@ -58,8 +58,8 @@ const EXPORT_FORMATS = [
     label: "HTML",
     description: "Web page",
     icon: Globe,
-    color: "from-emerald-500/20 to-emerald-600/10 border-emerald-500/30",
-    iconColor: "text-emerald-400",
+    color: "from-brand-500/20 to-brand-600/10 border-brand-500/30",
+    iconColor: "text-brand-400",
   },
   {
     id: "MBox",
@@ -74,8 +74,8 @@ const EXPORT_FORMATS = [
     label: "CSV",
     description: "Spreadsheet",
     icon: FileText,
-    color: "from-green-500/20 to-green-600/10 border-green-500/30",
-    iconColor: "text-green-400",
+    color: "from-blue-500/20 to-blue-600/10 border-blue-500/30",
+    iconColor: "text-brand-400",
   },
   {
     id: "XML",
@@ -318,7 +318,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
           {/* Header */}
           <div className="bg-zinc-50 border-b border-zinc-100 p-8 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-200">
+              <div className="w-12 h-12 rounded-2xl bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-200">
                 <Download className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -346,7 +346,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
           <div className="p-8 space-y-8">
             {splitFiles.length > 0 ? (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 text-emerald-600 mb-6">
+                <div className="flex items-center gap-3 text-brand-600 mb-6">
                   <CheckCircle2 className="w-6 h-6" />
                   <h3 className="font-extrabold text-xl text-zinc-900">
                     Your Split Files Are Ready
@@ -360,7 +360,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                     >
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-white rounded-lg shadow-sm">
-                          <FileText className="w-5 h-5 text-emerald-500" />
+                          <FileText className="w-5 h-5 text-brand-500" />
                         </div>
                         <span className="font-bold text-zinc-700 text-sm truncate max-w-[250px]">
                           {file}
@@ -375,7 +375,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                             user?.primaryEmailAddress?.emailAddress
                           )
                         }
-                        className="bg-zinc-200 hover:bg-emerald-100 text-zinc-700 hover:text-emerald-700 rounded-xl px-4 py-2 font-black transition-colors"
+                        className="bg-zinc-200 hover:bg-brand-100 text-zinc-700 hover:text-brand-700 rounded-xl px-4 py-2 font-black transition-colors"
                       >
                         <Download className="w-4 h-4 mr-2" /> Download
                       </Button>
@@ -387,7 +387,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
               <>
                 {/* Direct Export Section */}
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-emerald-600">
+                  <div className="flex items-center gap-3 text-brand-600">
                     <Mail className="w-5 h-5" />
                     <h3 className="font-extrabold text-lg text-zinc-900">
                       Direct Message Extraction
@@ -406,15 +406,15 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                           className={cn(
                             "relative p-4 rounded-2xl border-2 transition-all text-left flex items-start gap-4",
                             isSelected
-                              ? "bg-emerald-50 border-emerald-500 shadow-md"
-                              : "bg-white border-zinc-100 hover:border-zinc-200",
+                              ? "bg-brand-50 border-brand-500 ring-4 ring-brand-500/10"
+                              : "bg-white border-zinc-100 hover:border-brand-300",
                           )}
                         >
                           <div
                             className={cn(
                               "p-2 rounded-xl shrink-0",
                               isSelected
-                                ? "bg-emerald-600 text-white"
+                                ? "bg-brand-600 text-white"
                                 : "bg-zinc-50 text-zinc-400",
                             )}
                           >
@@ -425,7 +425,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                               className={cn(
                                 "text-sm font-black block tracking-tight",
                                 isSelected
-                                  ? "text-emerald-900"
+                                  ? "text-brand-900"
                                   : "text-zinc-900",
                               )}
                             >
@@ -444,7 +444,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                     <Button
                       onClick={handleExport}
                       disabled={isExporting || isConverting}
-                      className="w-full h-16 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg shadow-xl shadow-emerald-200 transition-all active:scale-[0.98] gap-3"
+                      className="w-full h-16 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-black text-lg shadow-xl shadow-brand-200 transition-all active:scale-[0.98] gap-3"
                     >
                       {isExporting ? (
                         <div className="flex flex-col items-center gap-1">
@@ -490,14 +490,14 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                 {isOstSource && (
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 text-zinc-900">
-                      <Rocket className="w-5 h-5 text-emerald-600" />
+                      <Rocket className="w-5 h-5 text-brand-600" />
                       <h3 className="font-extrabold text-lg">
                         Full Format Conversion
                       </h3>
                     </div>
                     <p className="text-sm font-bold text-zinc-500 leading-relaxed">
                       Download your entire data file fully converted to{" "}
-                      <span className="text-emerald-600">{targetFormat}</span>{" "}
+                      <span className="text-brand-600">{targetFormat}</span>{" "}
                       format, preserving all structure.
                     </p>
                     <div className="flex flex-col gap-2 mb-4">
@@ -508,7 +508,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                         value={splitSizeMb}
                         onChange={(e) => setSplitSizeMb(e.target.value)}
                         disabled={isConverting || isExporting}
-                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-100 bg-zinc-50 focus:bg-white text-zinc-900 font-bold focus:border-emerald-500 transition-all outline-none"
+                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-100 bg-zinc-50 focus:bg-white text-zinc-900 font-bold focus:border-brand-500 transition-all outline-none"
                       >
                         <option value="">Don't Split (Single File)</option>
                         <option value="200">Split into 200 MB chunks</option>
@@ -523,7 +523,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                         onClick={handleConvert}
                         disabled={isConverting || isExporting}
                         variant="outline"
-                        className="w-full h-16 rounded-2xl border-2 border-emerald-600 text-emerald-600 font-extrabold text-lg hover:bg-emerald-50 transition-all active:scale-[0.98] gap-3"
+                        className="w-full h-16 rounded-2xl border-2 border-brand-600 text-brand-600 font-extrabold text-lg hover:bg-brand-50 transition-all active:scale-[0.98] gap-3"
                       >
                         {isConverting ? (
                           <div className="flex flex-col items-center gap-1">

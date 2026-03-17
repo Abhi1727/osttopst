@@ -54,7 +54,7 @@ const SessionGuardModal = ({ isOpen, onClose, onHome, onExport }) => {
         <DialogFooter className="flex-col sm:flex-col gap-2 mt-4">
           <Button
             onClick={onExport}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl gap-2"
+            className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold h-12 rounded-xl gap-2"
           >
             <Download size={18} />
             Export File

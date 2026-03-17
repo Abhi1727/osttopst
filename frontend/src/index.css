@@ -32,13 +32,38 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-heading: "Poppins", system-ui, sans-serif;
-  --font-display: "Playfair Display", serif;
+  --font-plus-jakarta: "Plus Jakarta Sans", sans-serif;
+  --font-sans: var(--font-plus-jakarta);
+  --font-heading: var(--font-plus-jakarta);
+  --font-display: var(--font-plus-jakarta);
   --font-montserrat: "Montserrat", sans-serif;
   --font-open-sans: "Open Sans", sans-serif;
   --font-roboto: "Roboto", sans-serif;
   --font-lato: "Lato", sans-serif;
+
+  --color-brand-50: #f0f7ff;
+  --color-brand-100: #e0effe;
+  --color-brand-200: #bae0fd;
+  --color-brand-300: #7cc8fb;
+  --color-brand-400: #38acf7;
+  --color-brand-500: #0ea5e9;
+  --color-brand-600: #0284c7;
+  --color-brand-700: #0369a1;
+  --color-brand-800: #075985;
+  --color-brand-900: #0c4a6e;
+  --color-brand-950: #0b1120;
+
+  --color-accent-orange: #f97316;
+  --color-accent-orange-hover: #ea580c;
+  --color-accent-purple: #7c3aed;
+  --color-accent-deep-purple: #4c1d95;
+  --color-brand-600: #0ea5e9;
+  --color-brand-500: #38bdf8;
+
+  --radius-xl: 14px;
+  --radius-2xl: 20px;
+  --radius-3xl: 32px;
+  --radius-4xl: 48px;
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
@@ -71,17 +96,34 @@
       transform: translateY(0);
     }
   }
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
   @keyframes pulse-glow {
     0%,
     100% {
       opacity: 0.5;
-      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
     }
     50% {
       opacity: 1;
-      box-shadow: 0 0 40px rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 40px rgba(14, 165, 233, 0.4);
     }
   }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
 
 @layer base {
@@ -92,19 +134,19 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 158 64% 52%; /* Emerald 500 */
+    --primary: 199 89% 48%; /* Sky 500 (Matches Brand) */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 158 64% 52%;
+    --accent: 199 89% 48%;
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 158 64% 52%;
+    --ring: 199 89% 48%;
     --radius: 1rem;
   }
 
@@ -115,19 +157,19 @@
     --card-foreground: 213 31% 91%;
     --popover: 224 71% 4%;
     --popover-foreground: 213 31% 91%;
-    --primary: 160 84% 39%; /* Emerald 600 */
+    --primary: 201 98% 39%; /* Sky 600 (Matches Brand Dark) */
     --primary-foreground: 210 40% 98%;
     --secondary: 222 47% 11%;
     --secondary-foreground: 210 40% 98%;
     --muted: 215 27% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 160 84% 39%;
+    --accent: 201 98% 39%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --border: 215 27% 17%;
     --input: 215 27% 17%;
-    --ring: 160 84% 39%;
+    --ring: 201 98% 39%;
   }
 
   * {
@@ -135,7 +177,8 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-white text-slate-800 selection:bg-brand-500/30 antialiased;
+    font-family: var(--font-sans);
     font-feature-settings:
       "rlig" 1,
       "calt" 1,
@@ -153,21 +196,21 @@
   h5,
   h6 {
     @apply font-heading font-semibold tracking-tight;
-    line-height: 1.2;
+    line-height: 1.1;
   }
 
   h1 {
-    @apply text-4xl md:text-5xl lg:text-6xl;
+    @apply text-3xl md:text-5xl lg:text-6xl;
   }
   h2 {
-    @apply text-3xl md:text-4xl;
+    @apply text-2xl md:text-3xl lg:text-4xl;
   }
   h3 {
-    @apply text-2xl md:text-3xl;
+    @apply text-xl md:text-2xl lg:text-3xl;
   }
 
   p {
-    @apply leading-relaxed;
+    @apply leading-snug md:leading-relaxed text-sm md:text-base;
     color: hsl(var(--foreground) / 0.9);
   }
 
@@ -181,7 +224,7 @@
   html,
   body,
   #root {
-    @apply min-h-screen w-full text-base antialiased;
+    @apply min-h-screen w-full text-base antialiased overflow-x-hidden;
   }
 }
 
@@ -189,12 +232,16 @@
   @apply bg-background/50 backdrop-blur-xl border border-border/50 shadow-2xl;
 }
 
+@utility professional-gradient {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%, #f0f9ff 100%);
+}
+
 @utility glass-panel-hover {
   @apply hover:bg-background/70 transition-all duration-300;
 }
 
 @utility text-glow {
-  text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  text-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
 }
 
 @utility elevation-low {
@@ -233,9 +280,37 @@
   @apply transition-all duration-300 ease-in-out;
 }
 
-@layer utilities {
-  /* other utilities if any */
-}
+  .hero-ambient-gradient {
+    background: radial-gradient(
+        circle at 50% 0%,
+        rgba(14, 165, 233, 0.08) 0%,
+        transparent 70%
+      );
+  }
+
+  .tech-dark-gradient {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  }
+
+  .ambient-glow {
+    background: radial-gradient(
+      circle at center,
+      rgba(14, 165, 233, 0.05) 0%,
+      transparent 70%
+    );
+  }
+
+  .header-text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-brand-500;
+  }
+
+  .card-dark-elevated {
+    @apply bg-white border border-slate-200 shadow-2xl;
+  }
+
+  .btn-orange {
+    @apply bg-[#f97316] hover:bg-[#ea580c] text-white transition-all duration-300 shadow-lg shadow-orange-500/20;
+  }
 
 /* Global utility for hiding scrollbar */
 .no-scrollbar {
@@ -275,7 +350,7 @@
 }
 
 .blog-content-rich blockquote {
-  @apply border-l-0 bg-emerald-900 p-10 rounded-[2rem] text-white font-black text-2xl md:text-3xl italic my-12 shadow-xl;
+  @apply border-l-0 bg-brand-900 p-10 rounded-[2rem] text-white font-black text-2xl md:text-3xl italic my-12 shadow-xl;
 }
 
 .blog-content-rich ul,
@@ -289,7 +364,7 @@
 
 .blog-content-rich ul li::before {
   content: "";
-  @apply absolute left-0 top-3 w-2.5 h-2.5 bg-emerald-500 rounded-full;
+  @apply absolute left-0 top-3 w-2.5 h-2.5 bg-brand-500 rounded-full;
 }
 
 .blog-content-rich strong {
