@@ -9,6 +9,7 @@ using System.Threading.RateLimiting; // This is for rate limiting
 using Microsoft.Extensions.DependencyInjection; // This is for dependency injection
 using Microsoft.AspNetCore.Mvc; // This is for [FromQuery] and other MVC attributes
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.Caching.Distributed;
 using PstConverter.Models;
 
 // Initialize Aspose.Email License
@@ -71,7 +72,15 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
+
+// Also configure the global JSON options for minimal APIs (Results.Ok, etc.)
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+});
 builder.Services.AddMemoryCache();// This is for memory cache
 builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();// This is for storage pool
 builder.Services.AddScoped<PstService>();// This is for pst service
@@ -250,24 +259,31 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
-// Initialize Database Schema (Add missing columns if needed)
-using (var scope = app.Services.CreateScope())
+// Initialize Database Schema and Data Repair
+try 
 {
+    using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<AppDbContext>();
-        DbInitializer.Initialize(context);
-        // Repair: Recalculate item counts from actual session counts (fixes old email-counting bug)
-        var cache = services.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>();
-        await DbInitializer.RecalculateItemsUsedAsync(context, cache);
-        // DbInitializer.ClearAllData(context); // Clear once as requested - Commented out to persist data
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while initializing the database.");
-    }
+    var context = services.GetRequiredService<AppDbContext>();
+    
+    Console.WriteLine("[STARTUP] Initializing Database...");
+    DbInitializer.Initialize(context);
+    
+    var cache = services.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>();
+    Console.WriteLine("[STARTUP] Running Data Repair...");
+    await DbInitializer.RecalculateItemsUsedAsync(context, cache);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[STARTUP ERROR] Critical failure during initialization: {ex.Message}");
+    // We log but continue to app.Run() to allow manual diagnostics if possible
+}
+
+if (app.Environment.IsDevelopment())
+{
+    Console.WriteLine("=================================================");
+    Console.WriteLine("   PST CONVERTER API - SYSTEM READY             ");
+    Console.WriteLine("=================================================");
 }
 
 app.UseDefaultFiles();
@@ -304,6 +320,7 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
     var licenseId = email
                  ?? user.FindFirstValue(ClaimTypes.Email)
                  ?? user.FindFirstValue("email")
+                 ?? user.Identity?.Name
                  ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
                  ?? "anonymous";
 
@@ -331,6 +348,7 @@ app.MapPost("/api/license/subscription", async (
     var licenseId = email
                  ?? user.FindFirstValue(ClaimTypes.Email)
                  ?? user.FindFirstValue("email")
+                 ?? user.Identity?.Name
                  ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
                  ?? "anonymous";
 
@@ -369,10 +387,18 @@ app.MapControllers(); // Register attribute-routed API controllers like BlogsCon
 // Fallback to index.html for SPA-style routing (useful if we serve React from here, though we are decoupled)
 app.MapFallbackToFile("index.html");
 
-Console.WriteLine("=================================================");
-Console.WriteLine("   PST CONVERTER API - SYSTEM READY             ");
-Console.WriteLine("=================================================");
-Console.WriteLine($"URL: http://localhost:5000");
-Console.WriteLine($"Time: {DateTime.Now}");
-Console.WriteLine("-------------------------------------------------");
+// ── DEV UTILITY: Reset usage counters ─────────────────────────────────────
+// POST /api/dev/reset-usage?email=your@email.com
+app.MapPost("/api/dev/reset-usage", async (AppDbContext db, IDistributedCache cache, [FromQuery] string email) =>
+{
+    var license = await db.MockLicenses.FirstOrDefaultAsync(l => l.LicenseId == email.ToLower());
+    if (license == null) return Results.NotFound($"No license record for {email}");
+    license.TotalItemsUsed = 0;
+    license.TotalStorageUsed = 0;
+    license.LastUpdated = DateTime.UtcNow;
+    await db.SaveChangesAsync();
+    await cache.RemoveAsync($"license_status_{email.ToLower()}");
+    return Results.Ok(new { message = "Usage reset", allotted = license.TotalItemsAllotted, used = license.TotalItemsUsed });
+});
+
 app.Run();

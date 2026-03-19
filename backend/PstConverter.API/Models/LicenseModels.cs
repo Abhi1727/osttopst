@@ -1,5 +1,6 @@
 using System;
 using System.Reflection.Metadata;
+using System.Text.Json.Serialization;
 
 namespace PstConverter.Models
 {
@@ -58,13 +59,21 @@ namespace PstConverter.Models
 
             string normalized = str.Trim().Trim('"');
 
-            if (normalized.Equals("Professional", StringComparison.OrdinalIgnoreCase))
+            if (normalized.Equals("Professional", StringComparison.OrdinalIgnoreCase) || 
+                normalized.Equals("Active", StringComparison.OrdinalIgnoreCase) ||
+                normalized.Equals("true", StringComparison.OrdinalIgnoreCase))
             {
                 return LicenseTier.Professional;
             }
             else if (normalized.Equals("Demo", StringComparison.OrdinalIgnoreCase))
             {
                 return LicenseTier.Demo;
+            }
+            else if (normalized.Equals("DemoExpired", StringComparison.OrdinalIgnoreCase) ||
+                     normalized.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
+                     normalized.Equals("false", StringComparison.OrdinalIgnoreCase))
+            {
+                return LicenseTier.DemoExpired;
             }
             return LicenseTier.DemoExpired;
         }
@@ -344,6 +353,7 @@ namespace PstConverter.Models
     //THIS IS FOR DETAILED LICENSE STATUS (used to show plan limits on frontend)
     public class DetailedLicenseStatus
     {
+        public int ModuleId { get; set; }
         public LicenseTier Tier { get; set; }
         public bool CanConvert { get; set; }
         public int ExportFileLimit { get; set; }
@@ -357,6 +367,26 @@ namespace PstConverter.Models
         public bool HitSizeLimit { get; set; }
         public bool HitFileCountLimit { get; set; }
         public bool IsUsageRestricted => HitTimePeriodLimit || HitSizeLimit || HitFileCountLimit;
+    }
+
+    // THIS IS FOR THE LICENSE SERVER'S GenerateSubscriptionRequest response format
+    // The license server uses short property names (TotalItems, Storage, TotalDays)
+    public class LicenseServerQuota
+    {
+        [JsonPropertyName("TotalItems")]
+        public string? TotalItems { get; set; }
+
+        [JsonPropertyName("Storage")]
+        public string? Storage { get; set; }
+
+        [JsonPropertyName("TotalDays")]
+        public string? TotalDays { get; set; }
+
+        [JsonPropertyName("ModuleId")]
+        public string? ModuleId { get; set; }
+
+        [JsonPropertyName("PlanId")]
+        public string? PlanId { get; set; }
     }
 }
 

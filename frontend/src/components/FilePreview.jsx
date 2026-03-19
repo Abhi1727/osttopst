@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -12,6 +12,19 @@ import {
   Rocket,
   Trash2,
   Minus,
+  Plus,
+  Archive,
+  Printer,
+  Ban,
+  Clock,
+  MoreHorizontal,
+  Calendar,
+  HelpCircle,
+  X,
+  FileText,
+  FolderOpen,
+  Menu,
+  LayoutDashboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,12 +34,13 @@ import ExportDialog from "./ExportDialog";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { fileService } from "../services/fileService";
 import licenseService from "../services/licenseService";
+import { conversionService } from "../services/conversionService";
 import { toast } from "sonner";
 import SessionGuardModal from "./SessionGuardModal";
 import logo from "@/assets/logo.png";
-import { useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
+const TreeNode = ({ node, level = 0, onSelect, selectedId, onDepthChange }) => {
   const [isOpen, setIsOpen] = useState(node.isOpen || node.level < 2);
   const hasChildren = node.subFolders && node.subFolders.length > 0;
   const isSelected = selectedId === node.folderId;
@@ -40,61 +54,65 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
     return sum(node);
   }, [node]);
 
+  const handleToggle = () => {
+    const nextOpen = !isOpen;
+    setIsOpen(nextOpen);
+    // bubble depth change: children are at level + 1
+    onDepthChange?.(level + 1, nextOpen);
+  };
+
   return (
     <div>
       <div
-        className={`flex items-center py-2.5 px-3 cursor-pointer rounded-xl transition-all group mb-1 ${
+        className={`flex items-center gap-2 py-2 pr-4 cursor-pointer rounded-none transition-all group mb-0.5 ${
           isSelected
-            ? "bg-brand-600 text-white shadow-lg shadow-brand-100 ring-2 ring-brand-600/20"
-            : "hover:bg-zinc-100/80 text-zinc-600"
+            ? "bg-[#0ea5e9]/10 border-l-2 border-[#0ea5e9] text-[#0ea5e9]"
+            : "text-slate-600 hover:bg-slate-50 border-l-2 border-transparent"
         }`}
-        style={{ marginLeft: `${level * 16}px` }}
+        style={{ paddingLeft: `${4 + level * 16}px` }}
         onClick={() => {
           onSelect(node);
-          if (hasChildren) setIsOpen(!isOpen);
+          if (hasChildren) handleToggle();
         }}
       >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span
-            className={`w-4 h-4 flex items-center justify-center transition-transform duration-200 ${
-              isSelected ? "text-white/70" : "text-zinc-400"
-            } ${isOpen ? "rotate-90" : ""}`}
-          >
-            {hasChildren && <ChevronRight size={14} />}
-          </span>
-          <span
-            className={`flex-shrink-0 ${isSelected ? "text-white" : "text-zinc-400"}`}
-          >
-            <Folder
-              size={18}
-              fill={isSelected ? "rgba(255,255,255,0.2)" : "currentColor"}
-              className={`${isSelected ? "" : "opacity-40"} transition-all`}
-            />
-          </span>
-          <span
-            className={`text-[13px] font-bold truncate ${isSelected ? "text-white" : "text-zinc-700"}`}
-          >
-            {node.displayName}
-          </span>
-        </div>
+        {/* Chevron */}
+        <span
+          className={`w-4 h-4 flex-shrink-0 flex items-center justify-center transition-transform duration-200 ${
+            isSelected ? "text-[#0ea5e9]" : "text-slate-400"
+          } ${isOpen && hasChildren ? "rotate-90" : ""}`}
+        >
+          {hasChildren && <ChevronRight size={14} />}
+        </span>
 
+        {/* Folder icon */}
+        <span className={`flex-shrink-0 ${isSelected ? "text-[#0ea5e9]" : "text-blue-400/70"}`}>
+          {isOpen ? <FolderOpen size={15} /> : <Folder size={15} />}
+        </span>
+
+        {/* Name */}
+        <span
+          className={`flex-1 min-w-0 text-[13px] font-semibold truncate ${
+            isSelected ? "text-[#0ea5e9]" : "text-slate-700"
+          }`}
+        >
+          {node.displayName}
+        </span>
+
+        {/* Badge */}
         {totalCount > 0 && (
-          <div className="flex items-center gap-1.5 ml-2">
-            <span
-              className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                isSelected
-                  ? "bg-white/20 text-white"
-                  : "bg-brand-50 text-brand-600 border border-brand-100"
-              }`}
-            >
-              {totalCount}
-            </span>
-          </div>
+          <span
+            className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+              isSelected ? "bg-[#0ea5e9]/20 text-[#0ea5e9]" : "bg-slate-100 text-slate-400"
+            }`}
+          >
+            {totalCount}
+          </span>
         )}
       </div>
+
+      {/* Children */}
       {isOpen && hasChildren && (
-        <div className="relative ml-[15px]">
-          <div className="absolute left-[8px] top-0 bottom-3 w-[1.5px] bg-zinc-100" />
+        <div className="mt-0.5 space-y-0.5">
           {node.subFolders.map((child) => (
             <TreeNode
               key={child.folderId}
@@ -102,6 +120,7 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
               level={level + 1}
               onSelect={onSelect}
               selectedId={selectedId}
+              onDepthChange={onDepthChange}
             />
           ))}
         </div>
@@ -113,99 +132,226 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId }) => {
 const LicenseUsageBar = ({ status }) => {
   if (!status) return null;
 
-  const usedItems = status.totalItemsUsed ?? status.TotalItemsUsed ?? 0;
-  const allottedItems =
-    status.totalItemsAllotted ?? status.TotalItemsAllotted ?? 0;
-  const usedStorage = status.totalStorageUsed ?? status.TotalStorageUsed ?? 0;
-  const allottedStorage =
-    status.totalStorageAllotted ?? status.TotalStorageAllotted ?? 0;
+  const usedItems = Number(status.totalItemsUsed ?? status.TotalItemsUsed ?? 0);
+  const allottedItems = Number(status.totalItemsAllotted ?? status.TotalItemsAllotted ?? -1);
+  const usedStorage = Number(status.totalStorageUsed ?? status.TotalStorageUsed ?? 0);
+  const allottedStorage = Number(status.totalStorageAllotted ?? status.TotalStorageAllotted ?? -1);
+
+  // -1 means the license server hasn't returned real data yet OR it means unlimited.
+  // Hide the bar ONLY if there are literally no values set (e.g. both are nullish before load)
+  // Wait, if allottedItems is -1, it means unlimited, so we DO have data.
+  const hasData = allottedItems !== undefined && allottedStorage !== undefined;
+  if (!hasData) return null;
+
+  const isUnlimitedItems   = allottedItems   === -1;
+  const isUnlimitedStorage = allottedStorage === -1;
 
   const itemPercent =
-    allottedItems > 0 ? Math.min(100, (usedItems / allottedItems) * 100) : 0;
+    !isUnlimitedItems && allottedItems > 0
+      ? Math.min(100, (usedItems / allottedItems) * 100)
+      : 0;
   const storagePercent =
-    allottedStorage > 0
+    !isUnlimitedStorage && allottedStorage > 0
       ? Math.min(100, (usedStorage / allottedStorage) * 100)
       : 0;
 
   const formatStorage = (bytes) => {
-    if (!bytes) return "0 GB";
+    if (bytes === -1) return "∞";
+    if (!bytes && bytes !== 0) return "0 GB";
     if (bytes < 1024 * 1024 * 1024)
       return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
   };
 
   return (
-    <div className="mt-8 pt-8 border-t border-zinc-100 px-1">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.15em] flex items-center gap-2">
-          Your Plan Usage
+    <div className="mt-12 pt-8 border-t border-slate-200">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+          Plan Usage
           {(status.isUsageRestricted || status.IsUsageRestricted || status.hitFileCountLimit || status.HitFileCountLimit) && (
-            <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[8px] animate-pulse">
+            <span className="bg-red-50 text-red-500 border border-red-100 px-2.5 py-1 rounded-full text-[10px] font-bold animate-pulse shadow-sm shadow-red-500/10">
               LIMIT REACHED
             </span>
           )}
         </h3>
-        <Button
-          variant="link"
-          className="h-auto p-0 text-[10px] font-black text-brand-600 uppercase tracking-tighter hover:no-underline hover:text-brand-700"
-          onClick={() => (window.location.href = "/pricing")}
-        >
-          Upgrade Plan
-        </Button>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Items Usage */}
         <div className="space-y-2">
-          <div className="flex justify-between text-[11px] font-bold">
-            <span className="text-zinc-500 uppercase tracking-tighter">
+          <div className="flex justify-between text-[10px] font-medium">
+            <span className="text-slate-400 uppercase tracking-tighter">
               OST Files
             </span>
-            <span
-              className={
-                usedItems >= allottedItems ? "text-rose-500" : "text-zinc-900"
-              }
-            >
-              {usedItems.toLocaleString()} / {allottedItems.toLocaleString()}
+            <span className={!isUnlimitedItems && usedItems >= allottedItems ? "text-red-500" : "text-slate-500"}>
+              {isUnlimitedItems ? `${usedItems} / ∞` : `${usedItems} / ${allottedItems.toLocaleString()}`}
             </span>
           </div>
-          <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-            <div
-              className={cn(
-                "h-full transition-all duration-700 ease-out",
-                itemPercent > 90 ? "bg-rose-500" : "bg-brand-500",
-              )}
-              style={{ width: `${itemPercent}%` }}
-            />
-          </div>
+          {!isUnlimitedItems && (
+            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full transition-all duration-700 ease-out",
+                  itemPercent > 90 ? "bg-red-500" : "bg-blue-500",
+                )}
+                style={{ width: `${itemPercent}%` }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Storage Usage */}
         <div className="space-y-2">
-          <div className="flex justify-between text-[11px] font-bold">
-            <span className="text-zinc-500 uppercase tracking-tighter">
+          <div className="flex justify-between text-[10px] font-medium">
+            <span className="text-slate-400 uppercase tracking-tighter">
               Storage
             </span>
-            <span
-              className={
-                usedStorage >= allottedStorage ? "text-rose-500" : "text-zinc-900"
-              }
-            >
-              {formatStorage(usedStorage)} / {formatStorage(allottedStorage)}
+            <span className={!isUnlimitedStorage && usedStorage >= allottedStorage ? "text-red-500" : "text-slate-500"}>
+              {isUnlimitedStorage
+                ? `${formatStorage(usedStorage)} / ∞`
+                : `${formatStorage(usedStorage)} / ${formatStorage(allottedStorage)}`}
             </span>
           </div>
-          <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-            <div
-              className={cn(
-                "h-full transition-all duration-700 ease-out",
-                storagePercent > 90 ? "bg-rose-500" : "bg-brand-500",
-              )}
-              style={{ width: `${storagePercent}%` }}
-            />
-          </div>
+          {!isUnlimitedStorage && (
+            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full transition-all duration-700 ease-out",
+                  storagePercent > 90 ? "bg-red-500" : "bg-blue-500",
+                )}
+                style={{ width: `${storagePercent}%` }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
+  );
+};
+
+const MessageDetail = ({ message }) => {
+  if (!message) return (
+    <div className="flex-1 flex flex-col items-center justify-center text-slate-300 p-12 text-center bg-white border-l border-slate-200">
+       <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
+          <Mail size={32} className="opacity-20 text-blue-500" />
+       </div>
+       <h3 className="text-xl font-bold text-slate-900 tracking-tight">Select an item to read</h3>
+       <p className="max-w-xs mt-2 text-sm text-slate-500 leading-relaxed font-medium">Choose an email from the list to view its contents, attachments, and metadata.</p>
+    </div>
+  );
+
+  const hasBody = message.bodyHtml || message.bodyText || message.body;
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex-1 flex flex-col min-w-0 h-full bg-white lg:border-l lg:border-slate-100"
+    >
+      {/* Message Header / Toolbar */}
+      <div className="h-16 border-b border-slate-200 flex items-center px-8 justify-between shrink-0 bg-white sticky top-0 z-20">
+         <div className="flex items-center gap-3">
+            <Button variant="ghost" className="h-9 gap-2 text-slate-600 hover:bg-slate-100 font-bold text-xs rounded-xl px-4 border border-slate-200/50 shadow-sm">
+               <Archive size={14} className="text-blue-500" /> Archive
+            </Button>
+            <Button variant="ghost" className="h-9 gap-2 text-slate-600 hover:bg-slate-100 font-bold text-xs rounded-xl px-4 border border-slate-200/50 shadow-sm">
+               <Printer size={14} className="text-slate-400" /> Print
+            </Button>
+            <div className="w-px h-6 bg-slate-200 mx-1" />
+            <Button variant="ghost" className="h-9 gap-2 text-red-600 hover:bg-red-50 font-bold text-xs rounded-xl px-4 border border-red-100/50 shadow-sm">
+               <Trash2 size={14} /> Delete
+            </Button>
+         </div>
+         
+         <div className="flex items-center gap-2">
+            <Button variant="ghost" className="w-9 h-9 p-0 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100">
+               <MoreHorizontal size={18} />
+            </Button>
+         </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-10 max-w-5xl mx-auto">
+          <div className="mb-10">
+             <h1 className="text-3xl font-extrabold text-slate-900 mb-8 leading-tight tracking-tight">
+               {message.subject || "(No Subject)"}
+             </h1>
+             
+             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5 p-4 sm:p-6 bg-slate-50/50 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
+                <div className="w-12 h-12 rounded-full border-2 border-white shadow-md overflow-hidden shrink-0">
+                   <img 
+                     src={`https://api.dicebear.com/7.x/initials/svg?seed=${message.from || '?'}`} 
+                     alt="Avatar"
+                     className="w-full h-full object-cover"
+                   />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-[15px] font-bold text-slate-900 truncate">
+                      {message.from || "Unknown Sender"}
+                    </div>
+                    <div className="text-[11px] font-bold text-slate-400 bg-white border border-slate-100 px-2 py-1 rounded-lg">
+                      {message.date ? new Date(message.date).toLocaleString([], { dateStyle: 'long', timeStyle: 'short' }) : ""}
+                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500 truncate flex items-center gap-2 font-medium">
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Recipient:</span>
+                    <span className="text-blue-600">{message.to || "Unknown"}</span>
+                  </div>
+                </div>
+             </div>
+          </div>
+
+          {/* Message Content */}
+          <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed font-medium min-h-[400px]">
+            {hasBody ? (
+              message.bodyHtml ? (
+                <div 
+                  dangerouslySetInnerHTML={{ __html: message.bodyHtml }}
+                />
+              ) : (
+                <div className="whitespace-pre-wrap">
+                  {message.bodyText || message.body}
+                </div>
+              )
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-300 gap-4">
+                 <FileText size={48} className="opacity-10" />
+                 <p className="text-sm font-bold uppercase tracking-widest opacity-40">No preview available</p>
+              </div>
+            )}
+          </div>
+
+          {/* Attachments Section */}
+          {message.attachments?.length > 0 && (
+            <div className="mt-16 pt-10 border-t border-slate-100">
+               <div className="flex items-center gap-3 mb-8">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Attachments</h3>
+                  <div className="flex-1 h-px bg-slate-50" />
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {message.attachments.map((att, i) => (
+                   <div key={i} className="group p-5 rounded-[1.5rem] bg-white border border-slate-200 hover:border-blue-600/30 hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all">
+                         <FileText size={20} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                         <div className="text-sm font-bold text-slate-900 truncate">
+                            {att.fileName}
+                         </div>
+                         <div className="text-[10px] font-bold text-slate-400 mt-1">
+                            {(att.size / 1024).toFixed(1)} KB
+                         </div>
+                      </div>
+                   </div>
+                 ))}
+               </div>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </motion.div>
   );
 };
 
@@ -215,8 +361,10 @@ const FilePreview = ({ session, onReset }) => {
   const [folders, setFolders] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
@@ -230,6 +378,9 @@ const FilePreview = ({ session, onReset }) => {
   const [licenseTier, setLicenseTier] = useState("");
   const [licenseStatus, setLicenseStatus] = useState(null);
   const timerRef = useRef(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Track max nesting depth of open folders so the sidebar can flex its width
+  const [maxOpenDepth, setMaxOpenDepth] = useState(0);
 
   useEffect(() => {
     const fetchLicense = async () => {
@@ -411,6 +562,7 @@ const FilePreview = ({ session, onReset }) => {
   ) => {
     setSelectedFolder(folder);
     setSelectedMessages(new Set()); // Reset selection when folder changes
+    setSelectedMessage(null); // Reset detail view
     try {
       setLoadingMessages(true);
       const token = await getToken();
@@ -428,6 +580,33 @@ const FilePreview = ({ session, onReset }) => {
       console.error(err);
     } finally {
       setLoadingMessages(false);
+    }
+  };
+
+  const handleMessageSelect = async (msg) => {
+    if (!msg) {
+      setSelectedMessage(null);
+      return;
+    }
+    
+    // Set basic info first for immediate UI response
+    setSelectedMessage(msg);
+    
+    try {
+      setLoadingDetail(true);
+      const token = await getToken();
+      const detail = await fileService.getMessageDetail(
+        session.sessionId,
+        msg.entryId,
+        token
+      );
+      // Update with full detail (including body and attachments)
+      setSelectedMessage(detail);
+    } catch (err) {
+      toast.error("Failed to load message content");
+      console.error(err);
+    } finally {
+      setLoadingDetail(false);
     }
   };
 
@@ -575,544 +754,344 @@ const FilePreview = ({ session, onReset }) => {
         </Button>
       </div>
     );
-  }
+  }  return (
+    <div className="flex-1 bg-white flex flex-col min-h-0 overflow-hidden relative font-sans selection:bg-blue-100 selection:text-blue-900 px-0">
+      <AnimatePresence>
+        {isGuardOpen && (
+          <SessionGuardModal
+            isOpen={true}
+            onClose={() => {
+              setIsGuardOpen(false);
+              resetTimer();
+            }}
+            onHome={onReset}
+            onExport={() => {
+              setIsGuardOpen(false);
+              setIsExportDialogOpen(true);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
-  return (
-    <div className="flex-1 flex flex-col bg-white overflow-hidden border-t border-zinc-100">
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel: Navigation */}
-        <aside className="w-[380px] border-r border-zinc-100 flex flex-col bg-zinc-50/30 shrink-0">
-          <div className="p-6 border-b border-zinc-100 flex items-center gap-4 bg-white">
-            <div className="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center shadow-xl shadow-brand-100 shrink-0">
-              <img
-                src={logo}
-                alt="Logo"
-                className="w-7 h-7 object-contain brightness-0 invert"
-              />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-extrabold text-zinc-900 tracking-tight text-sm truncate">
-                {session?.originalFileName ||
-                  session?.fileName ||
-                  session?.FileName ||
-                  "Archive View"}
-              </span>
-              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.1em] mt-0.5">
-                {(
-                  session?.fileType ||
-                  session?.FileType ||
-                  "OUTLOOK"
-                ).toUpperCase()}{" "}
-                DATA FILE
-              </span>
+      <div className="flex-1 flex flex-col min-h-0 relative z-10 bg-white overflow-hidden">
+        {/* Modern Title Bar (Light) */}
+        <div className="h-14 bg-white flex items-center px-4 md:px-6 justify-between shrink-0 select-none border-b border-slate-100">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              className="md:hidden w-10 h-10 p-0 rounded-xl"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            >
+              <Menu size={20} className="text-slate-600" />
+            </Button>
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">File Preview</span>
             </div>
           </div>
+          
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center bg-slate-50 rounded-xl px-5 py-2 w-full max-w-xl text-[12px] text-slate-400 border border-slate-200/50 group hover:border-blue-200 transition-all focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white">
+              <Search size={14} className="mr-4 text-slate-300 group-hover:text-blue-400 transition-colors" />
+              <input 
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search messages, senders, or attachments..."
+                className="bg-transparent border-none outline-none w-full text-slate-700 placeholder:text-slate-300 font-medium"
+              />
+            </div>
+          </div>
+          
+          <div className="hidden md:flex w-32 justify-end items-center">
+             <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Active</span>
+             </div>
+          </div>
+        </div>
 
-          <ScrollArea className="flex-1 px-4 py-8">
-            {loading ? (
-              <div className="flex flex-col items-center py-12 gap-3 text-zinc-400">
-                <Loader2 className="animate-spin" size={32} />
-                <span className="text-[10px] font-black uppercase tracking-widest">
-                  Scanning folders...
-                </span>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Visibility Toggle */}
-                <div className="px-1 mb-4">
-                  <button
-                    onClick={() => setHideEmpty(!hideEmpty)}
-                    className={cn(
-                      "w-full flex items-center justify-between p-3 rounded-2xl border transition-all",
-                      hideEmpty
-                        ? "bg-brand-50 border-brand-100 text-brand-700"
-                        : "bg-white border-zinc-100 text-zinc-500 hover:bg-zinc-50",
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
+        {/* Global Toolbar */}
+        <div className="h-auto md:h-20 border-b border-slate-100 flex flex-col md:flex-row items-center px-4 md:px-10 py-4 md:py-0 justify-between bg-white shrink-0 gap-4">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-10">
+             <div className="flex items-center gap-2">
+               <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl text-slate-400 hover:text-slate-900 transition-all" onClick={onReset} title="Back to Upload">
+                 <ArrowLeft size={20} />
+               </Button>
+               <div className="w-px h-6 bg-slate-200 mx-1 hidden md:block" />
+               <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl text-slate-300 hover:text-red-500 transition-all" onClick={purgeSession} title="Discard Session">
+                 <Trash2 size={18} />
+               </Button>
+             </div>
+
+             <Button 
+               onClick={() => setIsExportDialogOpen(true)}
+               className="h-10 md:h-12 bg-[#0ea5e9] hover:bg-[#0284c7] rounded-xl md:rounded-2xl text-white flex items-center gap-2 md:gap-3 text-xs md:text-sm font-bold px-4 md:px-8 transition-all shadow-lg shadow-blue-500/30"
+             >
+               <Rocket size={16} /> <span className="hidden sm:inline">Export Results</span><span className="sm:hidden">Export</span>
+             </Button>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-6">
+             <div className="text-right">
+                <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Session ID</div>
+                <div className="text-xs font-bold text-slate-400 font-mono">{session?.sessionId?.substring(0, 8).toUpperCase() || "---"}</div>
+             </div>
+          </div>
+        </div>
+
+        {/* Main content three-pane layout */}
+        <div className="flex-1 flex overflow-hidden min-h-0 bg-white">
+          {/* Sidebar - width expands with open folder depth */}
+          <aside
+            className={cn(
+              "fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-100 flex flex-col py-6 transform transition-all duration-300 ease-in-out md:relative md:translate-x-0 md:z-0",
+              isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+            )}
+            style={{ width: `${Math.min(160 + (maxOpenDepth + 1) * 48, 340)}px` }}
+          >
+             {isSidebarOpen && (
+               <Button 
+                 variant="ghost" 
+                 className="absolute top-4 right-4 md:hidden w-8 h-8 p-0 rounded-full"
+                 onClick={() => setIsSidebarOpen(false)}
+               >
+                 <X size={16} />
+               </Button>
+             )}
+             <div className="mb-6 px-4 flex items-center justify-between">
+                <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">Navigation</span>
+             </div>
+             
+             <ScrollArea className="flex-1">
+                {loading ? (
+                  <div className="flex flex-col items-center py-20 gap-4 text-slate-300">
+                    <Loader2 className="animate-spin text-blue-500/50" size={32} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Indexing data...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
                       <div
-                        className={cn(
-                          "w-2 h-2 rounded-full",
-                          hideEmpty ? "bg-brand-500" : "bg-zinc-300",
-                        )}
-                      />
-                      <span className="text-[11px] font-black uppercase tracking-wider">
-                        Hide System folders
-                      </span>
-                    </div>
-                    {hideEmpty && <Check size={14} strokeWidth={3} />}
-                  </button>
-                </div>
+                        className={`mx-2 flex items-center py-3 px-3 cursor-pointer rounded-2xl transition-all border group ${
+                          selectedFolder === null
+                            ? "bg-white border-slate-200 text-[#0ea5e9] shadow-sm"
+                            : "border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                        }`}
+                        onClick={() => setSelectedFolder(null)}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${selectedFolder === null ? 'bg-[#0ea5e9] text-white shadow-lg shadow-blue-500/20' : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                           <LayoutDashboard size={14} />
+                        </div>
+                        <span className="ml-4 text-[13px] font-bold">Dashboard</span>
+                      </div>
 
-                <div
-                  className={`flex items-center py-3 px-4 cursor-pointer rounded-2xl transition-all border ${
-                    selectedFolder === null
-                      ? "bg-brand-50 border-brand-100 text-brand-900 shadow-sm"
-                      : "bg-white border-zinc-100 hover:bg-zinc-50 text-zinc-600"
-                  }`}
-                  onClick={() => setSelectedFolder(null)}
-                >
-                  <Rocket
-                    size={20}
-                    className={
-                      selectedFolder === null
-                        ? "text-brand-500"
-                        : "text-zinc-400"
-                    }
-                  />
-                  <span className="ml-3 text-sm font-black tracking-tight">
-                    Data File Overview
-                  </span>
-                  {folders.length > 0 && (
-                    <span className="ml-auto bg-zinc-100 text-zinc-500 text-[10px] font-black px-2 py-1 rounded-lg border border-zinc-200/50">
-                      {folders.length} Root
-                    </span>
-                  )}
-                </div>
+                      <div className="space-y-1">
+                        {folders.map((node) => (
+                          <TreeNode
+                            key={node.folderId}
+                            node={node}
+                            onSelect={handleFolderSelect}
+                            selectedId={selectedFolder?.folderId}
+                            onDepthChange={(depth, isOpen) => {
+                              setMaxOpenDepth(prev =>
+                                isOpen ? Math.max(prev, depth) : depth > 0 ? Math.max(0, prev - 1) : prev
+                              );
+                            }}
+                          />
+                        ))}
+                      </div>
+                  </div>
+                )}
+             </ScrollArea>
 
-                <div className="space-y-1">
-                  {folders.map((node) => (
-                    <TreeNode
-                      key={node.folderId}
-                      node={node}
-                      onSelect={handleFolderSelect}
-                      selectedId={selectedFolder?.folderId}
-                    />
-                  ))}
+             {/* Sidebar Info Cards */}
+             <div className="mt-8 space-y-4 px-4">
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                   <div className="flex items-center gap-4 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
+                         <FileText size={20} />
+                      </div>
+                      <div className="min-w-0">
+                         <div className="text-[13px] font-bold text-slate-900 truncate">
+                           {session?.originalFileName || "Session Data"}
+                         </div>
+                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                           Source Archive
+                         </div>
+                      </div>
+                   </div>
+                   <div className="flex items-center justify-between text-[11px] font-bold py-2 border-t border-slate-50">
+                      <span className="text-slate-400 uppercase tracking-widest">File Size</span>
+                      <span className="text-slate-700">{session?.size ? (session.size / (1024 * 1024)).toFixed(1) + " MB" : "---"}</span>
+                   </div>
                 </div>
 
                 <LicenseUsageBar status={licenseStatus} />
-              </div>
-            )}
-          </ScrollArea>
+             </div>
+          </aside>
 
-          <div className="p-6 bg-white border-t border-zinc-100">
-            <div className="bg-zinc-50 rounded-2xl p-5 flex items-center gap-4 border border-zinc-100/50">
-              <div className="p-3 bg-white rounded-xl shadow-sm border border-zinc-100 text-zinc-400">
-                <Folder size={20} />
-              </div>
-              <div className="flex flex-col">
-                <div className="text-sm font-black text-zinc-900 tracking-tight">
-                  {session?.size || session?.Size
-                    ? ((session.size || session.Size) / (1024 * 1024)).toFixed(
-                        1,
-                      ) + " MB"
-                    : "Calculated"}
+          {/* Email List Pane */}
+          <div className={cn(
+            "w-full md:w-[380px] lg:w-[420px] border-r border-slate-100 flex flex-col bg-white shrink-0 overflow-hidden transition-all duration-300",
+            selectedMessage ? "hidden lg:flex" : "flex"
+          )}>
+             {/* List Header/Filter */}
+             <div className="p-8 pb-6 bg-white shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                   <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Inbox</h2>
+                   <div className="flex gap-2">
+                      <Button variant="ghost" className="h-8 px-3 rounded-lg text-blue-600 hover:bg-blue-50 font-bold text-[10px] uppercase tracking-widest">
+                         All <ChevronDown size={12} className="ml-1" />
+                      </Button>
+                   </div>
                 </div>
-                <div className="text-[11px] text-zinc-400 font-bold uppercase tracking-wider">
-                  {folders.length} Root Items
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                   {totalMessageCount} items stored
+                </p>
+             </div>
 
-        {/* Right Panel: Content Preview */}
-        <main className="flex-1 flex flex-col bg-white">
-          {!selectedFolder ? (
-            <ScrollArea className="flex-1 bg-zinc-50/20">
-              <div className="p-12 max-w-5xl mx-auto space-y-12">
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-3xl font-black text-zinc-900 tracking-tight">
-                    Archive Breakdown
-                  </h2>
-                  <p className="text-zinc-500 font-bold">
-                    Comprehensive view of your Outlook data file structure and
-                    contents.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {[
-                    {
-                      label: "Total Messages",
-                      value: totalMessageCount,
-                      icon: Mail,
-                      color: "bg-blue-500",
-                    },
-                    {
-                      label: "Folders Detected",
-                      value: folders.length,
-                      icon: Folder,
-                      color: "bg-brand-500",
-                    },
-                    {
-                      label: "File Size",
-                      value:
-                        session?.size || session?.Size
-                          ? (
-                              (session.size || session.Size) /
-                              (1024 * 1024)
-                            ).toFixed(1) + " MB"
-                          : "---",
-                      icon: Check,
-                      color: "bg-amber-500",
-                    },
-                  ].map((stat, i) => (
-                    <div
-                      key={i}
-                      className="bg-white p-8 rounded-[32px] border border-zinc-100 shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      <div
-                        className={`w-12 h-12 ${stat.color} rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg shadow-${stat.color.split("-")[1]}-100`}
-                      >
-                        <stat.icon size={24} />
-                      </div>
-                      <div className="text-3xl font-black text-zinc-900 mb-1">
-                        {stat.value}
-                      </div>
-                      <div className="text-xs font-black text-zinc-400 uppercase tracking-widest">
-                        {stat.label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-white rounded-[40px] border border-zinc-100 shadow-sm overflow-hidden">
-                  <div className="px-10 py-8 border-b border-zinc-100 bg-zinc-50/50">
-                    <h3 className="font-black text-zinc-900 tracking-tight">
-                      Root Folders Analysis
-                    </h3>
-                  </div>
-                  <div className="p-4">
-                    {folders.map((f, i) => {
-                      const rec_count = (n) =>
-                        (n.messageCount || 0) +
-                        (n.subFolders
-                          ? n.subFolders.reduce(
-                              (acc, c) => acc + rec_count(c),
-                              0,
-                            )
-                          : 0);
-                      const count = rec_count(f);
-                      return (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between p-6 hover:bg-zinc-50/80 rounded-[24px] group transition-all"
-                        >
-                          <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 bg-zinc-100 rounded-2xl flex items-center justify-center text-zinc-400 group-hover:bg-brand-50 group-hover:text-brand-500 transition-colors">
-                              <Folder size={24} />
-                            </div>
-                            <div>
-                              <div className="font-black text-zinc-900">
-                                {f.displayName}
-                              </div>
-                              <div className="text-xs font-bold text-zinc-400">
-                                {f.subFolders?.length || 0} nested
-                                subdirectories
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xl font-black text-zinc-900">
-                              {count}
-                            </div>
-                            <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                              Messages
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          ) : (
-            <>
-              {/* Top Toolbar */}
-              <div className="h-24 px-10 border-b border-zinc-100 flex items-center justify-between gap-8 bg-white shrink-0">
-                <div className="flex flex-col">
-                  <h2 className="text-2xl font-black text-zinc-900 flex items-center gap-3 tracking-tight">
-                    {selectedFolder?.displayName || "Select a folder"}
-                    {filteredMessages.length > 0 && (
-                      <span className="text-sm font-bold text-zinc-400 bg-zinc-50 px-3 py-1 rounded-full border border-zinc-100 shrink-0">
-                        {filteredMessages.length} items
-                      </span>
-                    )}
-                    {selectedMessages.size > 0 && (
-                      <span className="text-sm font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full border border-brand-100 animate-in zoom-in-95 duration-200 shrink-0">
-                        {selectedMessages.size} selected
-                      </span>
-                    )}
-                  </h2>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="relative group w-[300px]">
-                    <Search
-                      className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400"
-                      size={18}
-                    />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search messages..."
-                      className="pl-12 h-12 bg-zinc-50 border-none rounded-xl font-bold"
-                    />
-                  </div>
-
-                  {/* Date Filters */}
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={filter.year || ""}
-                      onChange={(e) =>
-                        handleFilterChange(
-                          "year",
-                          e.target.value ? parseInt(e.target.value) : null,
-                        )
-                      }
-                      className="h-12 px-4 rounded-xl border-none bg-zinc-50 font-bold text-sm text-zinc-600 focus:ring-2 focus:ring-brand-500/20"
-                    >
-                      <option value="">Year</option>
-                      {Array.from({ length: 25 }, (_, i) => 2026 - i).map(
-                        (y) => (
-                          <option key={y} value={y}>
-                            {y}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                    <select
-                      value={filter.month || ""}
-                      onChange={(e) =>
-                        handleFilterChange(
-                          "month",
-                          e.target.value ? parseInt(e.target.value) : null,
-                        )
-                      }
-                      className="h-12 px-4 rounded-xl border-none bg-zinc-50 font-bold text-sm text-zinc-600 focus:ring-2 focus:ring-brand-500/20"
-                    >
-                      <option value="">Month</option>
-                      {[
-                        "Jan",
-                        "Feb",
-                        "Mar",
-                        "Apr",
-                        "May",
-                        "Jun",
-                        "Jul",
-                        "Aug",
-                        "Sep",
-                        "Oct",
-                        "Nov",
-                        "Dec",
-                      ].map((m, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {m}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Content Table */}
-              <ScrollArea className="flex-1">
+             <ScrollArea className="flex-1">
                 {loadingMessages ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-4 text-zinc-200">
-                    <Loader2 className="animate-spin" size={48} />
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">
-                      Loading messages...
-                    </span>
+                  <div className="flex flex-col items-center justify-center py-32 gap-6 text-slate-200">
+                    <Loader2 className="animate-spin text-blue-400" size={40} />
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Loading inbox...</span>
                   </div>
                 ) : filteredMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-4 text-zinc-400 p-20">
-                    <div className="w-20 h-20 bg-zinc-50 rounded-full flex items-center justify-center border border-zinc-100">
-                      <Mail size={32} className="opacity-10" />
+                  <div className="p-16 text-center flex flex-col items-center gap-8">
+                    <div className="w-24 h-24 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-200">
+                       <Mail size={40} className="opacity-50" />
                     </div>
-                    <div className="text-center max-w-xs">
-                      <h3 className="font-bold text-zinc-900">
-                        No content found
-                      </h3>
-                      <p className="text-[13px] leading-relaxed mt-1">
-                        Select a folder from the sidebar or try a different
-                        search term to see messages.
-                      </p>
+                    <div className="space-y-2">
+                       <div className="text-sm font-extrabold text-slate-900">No messages found</div>
+                       <div className="text-[11px] text-slate-400 uppercase tracking-widest font-bold leading-relaxed">Try adjusting your filters or selecting a different folder</div>
                     </div>
                   </div>
                 ) : (
-                  <div className="min-w-full">
-                    <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
-                        <tr className="border-b border-zinc-100">
-                          <th className="px-6 py-5 w-12">
-                            <button
-                              onClick={toggleSelectAll}
-                              className={cn(
-                                "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
-                                hasAnySelectedInView && isAllSelectedInView
-                                  ? "bg-brand-500 border-brand-500 text-white"
-                                  : hasAnySelectedInView
-                                    ? "bg-brand-100 border-brand-500 text-brand-600"
-                                    : "border-zinc-200 hover:border-brand-500",
-                              )}
-                            >
-                              {hasAnySelectedInView && isAllSelectedInView ? (
-                                <Check size={12} strokeWidth={4} />
-                              ) : hasAnySelectedInView ? (
-                                <Minus size={12} strokeWidth={4} />
-                              ) : null}
-                            </button>
-                          </th>
-                          <th
-                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer hover:text-brand-600 transition-colors"
-                            onClick={() => handleSort("from")}
-                          >
-                            <div className="flex items-center gap-1">
-                              From
-                              {sortBy === "from" && (
-                                <ChevronDown
-                                  className={cn(
-                                    "w-3 h-3 transition-transform",
-                                    sortOrder === "asc" && "rotate-180",
-                                  )}
-                                />
-                              )}
-                            </div>
-                          </th>
-                          <th
-                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer hover:text-brand-600 transition-colors"
-                            onClick={() => handleSort("subject")}
-                          >
-                            <div className="flex items-center gap-1">
-                              Subject
-                              {sortBy === "subject" && (
-                                <ChevronDown
-                                  className={cn(
-                                    "w-3 h-3 transition-transform",
-                                    sortOrder === "asc" && "rotate-180",
-                                  )}
-                                />
-                              )}
-                            </div>
-                          </th>
-                          <th
-                            className="px-10 py-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest text-right whitespace-nowrap cursor-pointer hover:text-brand-600 transition-colors"
-                            onClick={() => handleSort("date")}
-                          >
-                            <div className="flex items-center justify-end gap-1">
-                              Date
-                              {sortBy === "date" && (
-                                <ChevronDown
-                                  className={cn(
-                                    "w-3 h-3 transition-transform",
-                                    sortOrder === "asc" && "rotate-180",
-                                  )}
-                                />
-                              )}
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-50">
-                        {filteredMessages.map((msg) => (
-                          <tr
-                            key={msg.entryId}
-                            onClick={() => toggleMessageSelection(msg.entryId)}
-                            className={cn(
-                              "group hover:bg-zinc-50/80 transition-all cursor-pointer relative",
-                              selectedMessages.has(msg.entryId) &&
-                                "bg-brand-50/30",
-                            )}
-                          >
-                            <td className="px-6 py-6 w-12">
-                              <div
-                                className={cn(
-                                  "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
-                                  selectedMessages.has(msg.entryId)
-                                    ? "bg-brand-500 border-brand-500 text-white"
-                                    : "border-zinc-200 group-hover:border-brand-500",
-                                )}
+                  <div className="divide-y divide-slate-100">
+                    {filteredMessages.map((msg) => (
+                      <div 
+                        key={msg.entryId}
+                        onClick={() => handleMessageSelect(msg)}
+                        className={`p-8 cursor-pointer transition-all relative group border-l-[3px] ${
+                          selectedMessage?.entryId === msg.entryId 
+                            ? 'bg-blue-50/50 border-[#0ea5e9] shadow-[inset_0_0_20px_rgba(14,165,233,0.03)]' 
+                            : 'hover:bg-slate-50/80 border-transparent'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-3 gap-4">
+                           <div className="flex items-center gap-4 min-w-0">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleMessageSelection(msg.entryId);
+                                }}
+                                className={`w-5 h-5 rounded-lg border-2 transition-all shrink-0 flex items-center justify-center ${
+                                  selectedMessages.has(msg.entryId) 
+                                    ? 'bg-[#0ea5e9] border-[#0ea5e9] text-white shadow-lg shadow-blue-500/20' 
+                                    : 'border-slate-200 group-hover:border-slate-300 hover:border-blue-500'
+                                }`}
                               >
-                                {selectedMessages.has(msg.entryId) && (
-                                  <Check size={12} strokeWidth={4} />
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-10 py-6 min-w-[250px]">
-                              <div className="flex items-center gap-4">
-                                <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-transparent group-hover:bg-brand-200 transition-colors" />
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-[15px] font-black text-zinc-800 truncate">
-                                    {msg.from || "Unknown"}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-10 py-6">
-                              <span className="text-[15px] font-bold text-zinc-600 leading-snug">
-                                {msg.subject || "(No Subject)"}
+                                {selectedMessages.has(msg.entryId) && <Check size={12} strokeWidth={4} />}
+                              </button>
+                              <span className={`text-[15px] font-bold truncate transition-colors ${selectedMessage?.entryId === msg.entryId ? 'text-[#0ea5e9]' : 'text-slate-900'}`}>
+                                {msg.from || "Unknown Sender"}
                               </span>
-                            </td>
-                            <td className="px-10 py-6 text-right shrink-0">
-                              <span className="text-[13px] font-black text-zinc-400 whitespace-nowrap">
-                                {msg.date
-                                  ? new Date(msg.date).toLocaleDateString()
-                                  : "N/A"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                           </div>
+                           <span className="text-[11px] text-slate-400 whitespace-nowrap shrink-0 mt-1 font-extrabold uppercase bg-slate-100 px-2 py-1 rounded-md">
+                             {msg.date ? new Date(msg.date).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ""}
+                           </span>
+                        </div>
+                        <div className={`text-[13px] mb-2 font-bold truncate leading-snug ${selectedMessage?.entryId === msg.entryId ? 'text-slate-900' : 'text-slate-600'}`}>
+                          {msg.subject || "(No Subject)"}
+                        </div>
+                        <div className="text-[12px] text-slate-400 line-clamp-2 leading-relaxed font-medium">
+                          {msg.body?.substring(0, 120) || "No content preview available for this item..."}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-              </ScrollArea>
-            </>
-          )}
-        </main>
-      </div>
-
-      {/* Bottom Action Bar */}
-      <footer className="h-28 px-12 border-t border-zinc-100 flex items-center justify-between bg-white shrink-0 z-20">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => {
-              onReset();
-            }}
-            className="h-14 px-8 rounded-2xl border-2 border-zinc-100 text-zinc-500 font-black hover:bg-zinc-50 transition-all gap-3 group active:scale-95"
-          >
-            <ArrowLeft
-              size={20}
-              className="group-hover:-translate-x-1 transition-transform"
-            />
-            Keep & Back
-          </Button>
-
-          <Button
-            variant="ghost"
-            onClick={purgeSession}
-            className="h-14 px-8 rounded-2xl text-red-400 font-bold hover:text-red-500 hover:bg-red-50 transition-all gap-3 active:scale-95"
-          >
-            <Trash2 size={20} />
-            Discard Session
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-10">
-          <div className="hidden xl:flex items-center gap-4 px-6 py-3 bg-brand-50/50 border border-brand-100/50 rounded-3xl">
-            <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 shadow-sm border border-brand-200">
-              <Check size={14} strokeWidth={4} />
-            </div>
-            <span className="text-sm font-black text-brand-800 tracking-tight">
-              Analysis Complete
-            </span>
+             </ScrollArea>
           </div>
 
-          <Button
-            onClick={() => setIsExportDialogOpen(true)}
-            className="h-16 px-12 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-black text-lg shadow-[0_16px_32px_-12px_rgba(59,130,246,0.5)] transition-all hover:-translate-y-1 active:scale-95 gap-4 group"
-          >
-            Export / Download
-            <Rocket
-              size={24}
-              className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
-            />
-          </Button>
+          <div className={cn(
+            "flex-1 bg-white flex flex-col min-w-0 relative",
+            !selectedMessage && "hidden md:flex"
+          )}>
+             {selectedFolder === null ? (
+               <ScrollArea className="flex-1 bg-white">
+                 {/* ... (Overview Dashboard remains the same) ... */}
+                 <div className="p-20 max-w-5xl mx-auto space-y-20">
+                   <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="space-y-6">
+                     <div className="w-16 h-16 rounded-[2rem] bg-[#0ea5e9] flex items-center justify-center text-white shadow-2xl shadow-blue-500/30 mb-8 overflow-hidden group">
+                        <Rocket size={32} className="group-hover:scale-125 transition-transform duration-500" />
+                     </div>
+                     <h2 className="text-6xl font-black text-slate-900 tracking-tight leading-[1.05]">Analytics<br/><span className="text-[#0ea5e9]">Overview</span></h2>
+                     <p className="text-slate-500 text-xl font-medium max-w-2xl leading-relaxed">High-fidelity data extraction complete. Source: <span className="text-slate-900 font-bold underline decoration-blue-200 underline-offset-8">{session?.originalFileName}</span>. Select a directory to explore converted items.</p>
+                   </motion.div>
+
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                     {[
+                       { label: "Items Extracted", value: totalMessageCount, icon: Mail, color: "text-[#0ea5e9]", bg: "bg-blue-100/50" },
+                       { label: "Total Folders", value: folders.length, icon: Folder, color: "text-[#0ea5e9]", bg: "bg-blue-100/50" },
+                       { label: "Storage Capacity", value: session?.size ? (session.size / (1024*1024)).toFixed(1) + " MB" : "---", icon: Check, color: "text-[#0ea5e9]", bg: "bg-blue-100/50" },
+                     ].map((stat, i) => (
+                       <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-xl hover:translate-y-[-4px] transition-all group relative overflow-hidden">
+                         <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-8 transform group-hover:rotate-12 transition-transform`}>
+                           <stat.icon size={26} />
+                         </div>
+                         <div className="text-4xl font-black text-slate-900 mb-2">{stat.value}</div>
+                         <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</div>
+                       </div>
+                     ))}
+                   </div>
+
+                   <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-2xl shadow-slate-200/50">
+                      <div className="px-12 py-10 border-b border-slate-100 flex items-center justify-between">
+                         <div>
+                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] mb-1">Directory Structure</h3>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-tight">Top level folder analysis</p>
+                         </div>
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {folders.slice(0, 10).map((f, i) => (
+                          <div key={i} onClick={() => handleFolderSelect(f)} className="flex items-center justify-between px-12 py-8 hover:bg-slate-50 cursor-pointer transition-all group">
+                             <div className="flex items-center gap-8">
+                                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-[#0ea5e9] group-hover:text-white transition-all shadow-sm">
+                                   <Folder size={22} />
+                                </div>
+                                <div className="space-y-1">
+                                   <div className="font-extrabold text-[15px] text-slate-800 group-hover:text-[#0ea5e9] transition-colors">{f.displayName}</div>
+                                   <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Mailbox Sub-folder</div>
+                                </div>
+                             </div>
+                             <div className="flex items-center gap-6">
+                                <div className="text-right">
+                                   <div className="text-lg font-black text-slate-900">{f.messageCount || 0}</div>
+                                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Items</div>
+                                </div>
+                                <ChevronRight size={18} className="text-slate-200 group-hover:text-[#0ea5e9] group-hover:translate-x-1 transition-all" />
+                             </div>
+                          </div>
+                        ))}
+                      </div>
+                   </div>
+                 </div>
+               </ScrollArea>
+             ) : (
+               <div className="relative flex-1 flex flex-col min-w-0 h-full">
+                  {loadingDetail && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center gap-4">
+                       <Loader2 className="animate-spin text-blue-600" size={40} />
+                       <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Loading content...</span>
+                    </div>
+                  )}
+                  <MessageDetail message={selectedMessage} />
+               </div>
+             )}
+          </div>
         </div>
-      </footer>
+      </div>
+
 
       <ExportDialog
         open={isExportDialogOpen}
@@ -1125,19 +1104,6 @@ const FilePreview = ({ session, onReset }) => {
           year: filter.year,
           month: filter.month,
           excludeEmptyFolders: hideEmpty,
-        }}
-      />
-
-      <SessionGuardModal
-        isOpen={isGuardOpen}
-        onClose={() => {
-          setIsGuardOpen(false);
-          resetTimer();
-        }}
-        onHome={onReset}
-        onExport={() => {
-          setIsGuardOpen(false);
-          setIsExportDialogOpen(true);
         }}
       />
     </div>

@@ -30,10 +30,10 @@ const CATEGORIES = [
 const CategoryPill = ({ label, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${
+    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer border ${
       active
-        ? "bg-brand-600 text-white shadow-lg shadow-brand-200"
-        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        ? "bg-brand-600 text-white shadow-xl shadow-brand-100 border-brand-600 scale-105"
+        : "bg-white text-slate-500 border-slate-200 hover:border-brand-300 hover:text-brand-600"
     }`}
   >
     {label}
@@ -43,43 +43,42 @@ const CategoryPill = ({ label, active, onClick }) => (
 const BlogCard = ({ post, onClick }) => (
   <div
     onClick={onClick}
-    className="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col h-full cursor-pointer"
+    className="group bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col h-full cursor-pointer relative"
   >
-    <div className="relative aspect-[16/10] overflow-hidden">
+    <div className="relative aspect-video overflow-hidden m-3 rounded-2xl shadow-inner bg-slate-50">
       <img
         src={post.image}
         alt={post.title}
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
       />
-      <div className="absolute top-4 left-4">
-        <span className="bg-white/90 backdrop-blur-sm text-brand-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-brand-100 uppercase tracking-wider">
+      <div className="absolute top-3 left-3">
+        <span className="bg-white/95 backdrop-blur-md text-brand-700 text-[9px] font-black px-2.5 py-1 rounded-lg border border-brand-100 uppercase tracking-widest shadow-sm">
           {post.category}
         </span>
       </div>
     </div>
-    <div className="p-6 flex flex-col flex-1">
-      <h3 className="text-xl font-bold text-slate-900 mb-3 line-clamp-2 group-hover:text-brand-600 transition-colors">
+    <div className="px-6 pb-6 pt-2 flex flex-col flex-1">
+      <h3 className="text-lg md:text-xl font-black text-slate-900 mb-3 line-clamp-2 group-hover:text-brand-600 transition-colors leading-tight tracking-tight">
         {post.title}
       </h3>
-      <p className="text-sm text-slate-500 line-clamp-3 mb-6 leading-relaxed">
+      <p className="text-sm text-slate-500 line-clamp-2 mb-6 leading-relaxed font-medium">
         {post.summary}
       </p>
 
-      <div className="mt-auto pt-6 border-t border-gray-50">
-        <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold uppercase tracking-widest">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 flex-nowrap">
+      <div className="mt-auto pt-4 border-t border-slate-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 text-[9px] text-slate-400 font-black uppercase tracking-widest">
+            <span className="flex items-center gap-1.5">
               <User className="w-3 h-3 text-brand-500" />
-              <span className="truncate max-w-[80px]">{post.author}</span>
+              <span className="truncate max-w-[80px] text-slate-600">{post.author}</span>
             </span>
-            <span className="flex items-center gap-1.5 flex-nowrap">
+            <span className="flex items-center gap-1.5">
               <Calendar className="w-3 h-3 text-brand-500" />
               {post.date}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-brand-600 font-bold group/read ml-2">
-            Read{" "}
-            <ArrowRight className="w-3 h-3 group-hover/read:translate-x-1 transition-transform" />
+          <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all shadow-sm">
+            <ArrowRight className="w-4 h-4" />
           </div>
         </div>
       </div>
@@ -137,7 +136,7 @@ const Blogs = () => {
   };
 
   return (
-    <div className="bg-white pt-24 pb-0">
+    <div className="bg-white pt-12 pb-0">
       {/* Hero Section */}
       <div className="container mx-auto px-4 text-center mb-16 max-w-4xl relative">
         <button

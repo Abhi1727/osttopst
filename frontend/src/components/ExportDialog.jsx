@@ -310,22 +310,23 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] animate-in fade-in duration-200"
         onClick={onClose}
       />
-      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+      {/* Modal wrapper – bottom-sheet on mobile, centered on md+ */}
+      <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center">
         <div
-          className="w-full max-w-2xl bg-white border border-zinc-200 rounded-3xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 overflow-hidden"
+          className="w-full md:max-w-2xl bg-white border border-zinc-200 rounded-t-3xl md:rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 md:zoom-in-95 duration-200 flex flex-col max-h-[92dvh] md:max-h-[90vh] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="bg-zinc-50 border-b border-zinc-100 p-8 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-200">
-                <Download className="w-6 h-6 text-white" />
+          <div className="bg-zinc-50 border-b border-zinc-100 px-5 py-4 md:p-8 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="w-9 h-9 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-200">
+                <Download className="w-4 h-4 md:w-6 md:h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-black tracking-tight text-zinc-900">
+                <h2 className="text-lg md:text-2xl font-black tracking-tight text-zinc-900">
                   Export Options
                 </h2>
-                <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
+                <p className="text-[11px] md:text-sm font-bold text-zinc-400 uppercase tracking-widest mt-0.5 hidden sm:block">
                   Choose your preferred download format
                 </p>
               </div>
@@ -337,13 +338,14 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                 setSplitFiles([]);
                 onClose();
               }}
-              className="rounded-xl hover:bg-zinc-100 text-zinc-400"
+              className="rounded-xl hover:bg-zinc-100 text-zinc-400 w-8 h-8 md:w-10 md:h-10"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </Button>
           </div>
 
-          <div className="p-8 space-y-8">
+          {/* Scrollable content */}
+          <div className="p-5 md:p-8 space-y-6 md:space-y-8 overflow-y-auto flex-1">
             {splitFiles.length > 0 ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-brand-600 mb-6">
@@ -394,7 +396,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                     </h3>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                     {EXPORT_FORMATS.map((fmt) => {
                       const Icon = fmt.icon;
                       const isSelected = format === fmt.id;
@@ -444,7 +446,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
                     <Button
                       onClick={handleExport}
                       disabled={isExporting || isConverting}
-                      className="w-full h-16 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-black text-lg shadow-xl shadow-brand-200 transition-all active:scale-[0.98] gap-3"
+                      className="w-full h-12 md:h-16 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-black text-base md:text-lg shadow-xl shadow-brand-200 transition-all active:scale-[0.98] gap-3"
                     >
                       {isExporting ? (
                         <div className="flex flex-col items-center gap-1">

@@ -117,9 +117,9 @@ const Faq = () => {
     {
       id: "tech-6",
       category: "Technical",
-      question: "How to convert emails into EML file?",
+      question: "How to merge OST and PST files?",
       answer:
-        "Emails can be saved to EML files by using the Export function in Outlook or by using a conversion service like ours to transform an existing OST cache into a standalone EML file.",
+        "The best way is to convert the OST to a PST first. Once you have two PST files, you can use Outlook's import feature or our service to consolidate the data into one, searchable file.",
     },
     {
       id: "tech-7",
@@ -178,7 +178,7 @@ const Faq = () => {
         {/* Background Blobs matching screenshot style roughly */}
         <div className="absolute top-0 left-0 w-96 h-96 bg-brand-100/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
-        <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+        <h1 className="mb-6">
           Frequently Asked <span className="text-brand-600">Questions</span>
         </h1>
         <p className="text-slate-500 max-w-2xl mx-auto text-sm md:text-base mb-10">
@@ -231,7 +231,7 @@ const Faq = () => {
                 className="group relative flex flex-col space-y-4"
               >
                 <div className="absolute -left-6 top-1 w-1 h-0 bg-brand-500 transition-all duration-500 group-hover:h-full opacity-50 overflow-hidden rounded-full"></div>
-                <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight leading-snug group-hover:text-brand-700 transition-colors">
+                <h3 className="group-hover:text-brand-700">
                   {item.question}
                 </h3>
                 <p className="text-slate-600 text-base md:text-lg leading-relaxed font-medium opacity-90">
@@ -252,7 +252,7 @@ const Faq = () => {
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
 
           <div className="relative z-10 text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-black text-white mb-2">
+            <h2 className="text-white mb-2">
               Couldn't find what you needed?
             </h2>
             <p className="text-brand-100 text-sm md:text-base max-w-lg">

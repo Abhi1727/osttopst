@@ -30,7 +30,7 @@ const SupportCard = ({
     <div className="w-12 h-12 bg-brand-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand-100 transition-colors">
       <Icon className="w-6 h-6 text-brand-600" />
     </div>
-    <h3 className="text-lg font-bold text-slate-900 mb-3">{title}</h3>
+    <h3 className="mb-3">{title}</h3>
     <p className="text-slate-500 text-sm leading-relaxed mb-8 flex-1">
       {description}
     </p>
@@ -48,7 +48,7 @@ const Support = () => {
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* Hero Section */}
       <div className="pt-20 pb-16 px-4 text-center max-w-4xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight">
+        <h1 className="mb-4">
           How can we <span className="text-brand-600">help?</span>
         </h1>
         <p className="text-slate-500 max-w-2xl mx-auto mb-10">
@@ -120,7 +120,7 @@ const Support = () => {
       <div className="max-w-6xl mx-auto px-4 pb-20">
         <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-100">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+            <h2 className="mb-4">
               How does our Support Process Work?
             </h2>
             <p className="text-slate-500 max-w-2xl mx-auto">
@@ -175,7 +175,7 @@ const Support = () => {
           {/* Left Column: Info */}
           <div className="space-y-8">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900 mb-4">
+              <h2 className="mb-4">
                 Contact Us Directly
               </h2>
               <p className="text-slate-500 leading-relaxed">

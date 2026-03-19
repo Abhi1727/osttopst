@@ -89,7 +89,7 @@ public static class MessageEndpoints
         .WithTags("Folder Operations")
         .RequireAuthorization();
         //this is for getting the message detail for the user
-        group.MapGet("/{sessionId}/messages/{entryId}", async (string sessionId, string entryId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/messages/detail", async (string sessionId, [FromQuery] string entryId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             try
@@ -111,7 +111,7 @@ public static class MessageEndpoints
         .WithTags("Message Operations")
         .RequireAuthorization();
         //this is for exporting the message for the user
-        group.MapGet("/{sessionId}/messages/{entryId}/export", (string sessionId, string entryId, [FromQuery] string? format, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/messages/export", (string sessionId, [FromQuery] string entryId, [FromQuery] string? format, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             if (logger.IsEnabled(LogLevel.Information))

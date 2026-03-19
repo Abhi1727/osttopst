@@ -21,75 +21,59 @@ import { toast } from "sonner";
 const comparisonFeatures = [
   {
     name: "Full OST to PST Conversion",
+    free: "Basic Only",
     personal: true,
     corporate: true,
     technical: true,
   },
   {
     name: "Repair Corrupted OST Files",
+    free: "Limited",
     personal: true,
     corporate: true,
     technical: true,
   },
   {
-    name: "PST Splitting (Oversized Files)",
-    personal: false,
-    corporate: true,
-    technical: true,
+    name: "Cloud Priority",
+    free: "Standard",
+    personal: "Priority",
+    corporate: "Priority",
+    technical: "Priority",
   },
   {
-    name: "Deduplication logic",
-    personal: false,
-    corporate: true,
-    technical: true,
+    name: "File Formats",
+    free: "Standard",
+    personal: "All 16+",
+    corporate: "All 16+",
+    technical: "All 16+",
   },
   {
-    name: "Direct Cloud Migration",
-    personal: false,
-    corporate: false,
-    technical: true,
+    name: "Technical Support",
+    free: "Community",
+    personal: "Email",
+    corporate: "Priority",
+    technical: "24/7 Dedicated",
   },
   {
-    name: "Data Retention / Auto-Cleanup",
-    personal: "6 Hours",
-    corporate: "6 Hours",
-    technical: "6 Hours",
+    name: "Bulk Conversion",
+    free: false,
+    personal: "Yes",
+    corporate: "Yes",
+    technical: "Yes",
+  },
+  {
+    name: "Commercial Use",
+    free: false,
+    personal: "Yes",
+    corporate: "Yes",
+    technical: "Yes",
   },
   {
     name: "Number of PCs / Licenses",
-    personal: "1 PC",
-    corporate: "Up to 10 PCs",
-    technical: "Unlimited (Server)",
-  },
-  {
-    name: "Advanced Filters (Date, Folder, Size)",
-    personal: false,
-    corporate: true,
-    technical: true,
-  },
-  {
-    name: "Batch Conversion (Multiple OST Files)",
-    personal: false,
-    corporate: true,
-    technical: true,
-  },
-  {
-    name: "Multiple Output Formats (EML, MSG, PDF)",
-    personal: false,
-    corporate: false,
-    technical: true,
-  },
-  {
-    name: "24/7 Dedicated Support",
-    personal: false,
-    corporate: false,
-    technical: true,
-  },
-  {
-    name: "30-Day Money-Back Guarantee",
-    personal: true,
-    corporate: true,
-    technical: true,
+    free: "1",
+    personal: "1",
+    corporate: "5",
+    technical: "Unlimited",
   },
 ];
 
@@ -117,6 +101,7 @@ const toolComparison = [
 ];
 
 const formatStatusStorage = (bytes) => {
+  if (bytes === -1) return "Unlimited";
   if (!bytes) return "0 GB";
   if (bytes < 1024 * 1024 * 1024)
     return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
@@ -150,7 +135,7 @@ const PricingCard = ({
     )}
 
     <div className="mb-6 min-h-[100px]">
-      <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
+      <h3 className="mb-2">{title}</h3>
       <p className="text-sm text-gray-500">{description}</p>
       {isActive && activeDetails && (
         <div className="mt-2 text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded border border-brand-100 animate-pulse">
@@ -321,8 +306,15 @@ const Pricing = () => {
       );
 
       if (response?.success) {
+        const allotted = response.allottedData ?? response.AllottedData;
+        const totalItemsVal = allotted?.totalItemsAllotted ?? allotted?.TotalItemsAllotted;
+        const totalDaysVal = allotted?.totalDaysAllotted ?? allotted?.TotalDaysAllotted;
+        const totalStorageVal = allotted?.totalStorageAllotted ?? allotted?.TotalStorageAllotted;
+
+        const itemsText = totalItemsVal === -1 ? "Unlimited" : (totalItemsVal?.toLocaleString() ?? requestData.TotalItems);
+        const daysText = totalDaysVal === -1 ? "Unlimited" : (totalDaysVal ?? requestData.TotalDays);
         toast.success("Plan Allotted Successfully!", {
-          description: `Backend confirms: ${response.allottedData?.totalItemsAllotted?.toLocaleString()} items, ${formatStatusStorage(response.allottedData?.totalStorageAllotted)} Storage allotted for ${response.allottedData?.totalDaysAllotted} days.`,
+          description: `Backend confirms: ${itemsText} items, ${formatStatusStorage(totalStorageVal ?? requestData.Storage)} Storage allotted for ${daysText} days.`,
         });
         // Refetch updated status from backend
         fetchStatus();
@@ -350,34 +342,20 @@ const Pricing = () => {
 
   const faqs = [
     {
-      question: "Is the license a one-time payment or a subscription?",
-      answer:
-        "All our current licenses are one-time payments. You will receive a perpetual license for the version you purchase. Corporate and Technical plans also include lifetime free updates.",
+      question: "When do I get my license?",
+      answer: "Licenses are delivered instantly via email after your payment is successfully processed. Please check your inbox (and spam folder) within 5 minutes.",
     },
     {
-      question: "How will I receive my license key?",
-      answer:
-        "License keys are delivered instantly via email once your payment is confirmed. Please check your inbox (and spam folder) within 5 minutes of your purchase.",
+      question: "Can I upgrade my plan at any time?",
+      answer: "Yes, you can upgrade your plan at any time through your user dashboard. You'll only need to pay the difference between your current plan and the new one.",
     },
     {
-      question: "What is the 30-day money-back guarantee policy?",
-      answer:
-        "If the software fails to convert your OST file and our technical support team cannot resolve the issue within 48 hours, we will issue a full refund within 30 days of purchase.",
+      question: "What are the payment methods?",
+      answer: "We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and more. All transactions are processed through secure, encrypted payment gateways.",
     },
     {
-      question: "Can I upgrade my plan later?",
-      answer:
-        "Yes, you can upgrade from Personal to Corporate or Technical at any time by just paying the difference in price. Contact our support team for a custom upgrade link.",
-    },
-    {
-      question: "What payment methods do you accept?",
-      answer:
-        "We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and wire transfers for Corporate and Technical licenses. All transactions are processed through secure, encrypted payment gateways.",
-    },
-    {
-      question: "Do you offer a discount for non-profit organizations?",
-      answer:
-        "Yes, we highly value the work of non-profits. We offer a 30% discount on all our licenses for registered non-profit organizations and educational institutions. Please contact our sales team with your credentials.",
+      question: "Is there a money-back guarantee?",
+      answer: "Yes, all our paid licenses come with a 30-day money-back guarantee if the software fails to meet the technical conversion requirements.",
     },
   ];
 
@@ -386,12 +364,12 @@ const Pricing = () => {
       {/* Hero Section Container */}
       <div className="min-h-[calc(100vh-5rem)] flex flex-col justify-center py-4 md:py-8">
         <div className="bg-gray-50 pt-1 md:pt-2 pb-6 text-center px-4 w-full">
-        <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-slate-900 mb-0 tracking-tight leading-tight">
+        <h1 className="mb-2">
           Choose the <span className="header-text-gradient">Right Plan</span>{" "}
           for Your Needs
         </h1>
-        <div className="relative inline-block">
-          <p className="text-gray-500 font-medium max-w-2xl mx-auto text-[10px] relative z-10 leading-tight">
+        <div className="relative inline-block mt-2">
+          <p className="text-gray-500 font-medium max-w-2xl mx-auto relative z-10">
             Trusted by IT professionals worldwide. All licenses come with a
             <span className="text-brand-600 font-semibold ml-1">
               30-day money-back guarantee.
@@ -403,9 +381,9 @@ const Pricing = () => {
       {/* Customization Section */}
       <div className="max-w-4xl mx-auto px-4 w-full mb-1">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2 md:px-4 md:py-2">
-          <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-            <span className="w-7 h-7 bg-brand-100 text-brand-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-4 h-4" />
+          <h2 className="mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 bg-brand-100 text-brand-600 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5" />
             </span>
             Customize Your Requirements
           </h2>
@@ -479,76 +457,69 @@ const Pricing = () => {
 
       {/* Pricing Cards Section */}
       <div className="max-w-7xl mx-auto px-4 w-full pb-1">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 lg:gap-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
+          {/* Free Plan */}
+          <PricingCard
+            title="Free"
+            price={0}
+            description="Perfect for a quick trial and small file conversions."
+            ctaText="Start Free"
+            features={[
+              { text: "Basic OST to PST conversion", included: true },
+              { text: "1 License", included: true },
+              { text: "Limited file size support", included: true },
+              { text: "Standard Cloud Queue", included: true },
+              { text: "Priority Support", included: false },
+            ]}
+          />
+
           {/* Personal Plan */}
           <PricingCard
             title="Personal"
             price={calculateFinalPrice(49)}
-            description="Perfect for individual users needing to recover their mailbox."
+            description="Perfect for individual users needing consistent recovery."
             isLoading={purchasingPlan === 1}
             onClick={() => handlePurchase(1, 49, 1)}
             features={[
-              { text: "Core OST to PST conversion", included: true },
-              { text: "Single license (1 PC)", included: true },
-              { text: "Repair corrupted headers", included: true },
-              { text: "6-hour data retention", included: true },
-              { text: "No Bulk Split / Migration", included: false },
+              { text: "Priority Cloud Queue", included: true },
+              { text: "Support for All 16+ Formats", included: true },
+              { text: "1 PC / License", included: true },
+              { text: "Advanced Repair logic", included: true },
+              { text: "Email Support", included: true },
             ]}
           />
 
-          {/* Corporate Plan - Mapped to 'Professional' in simple license API for now */}
+          {/* Corporate Plan */}
           <PricingCard
             title="Corporate"
-            price={calculateFinalPrice(199)}
-            description="Ideal for small to medium businesses and corporate offices."
+            price={calculateFinalPrice(99)}
+            description="Ideal for small businesses and corporate offices."
             recommended={true}
             isActive={isProfessional}
             isLoading={purchasingPlan === 2}
-            activeDetails={
-              isProfessional ? (
-                <div className="flex flex-col gap-1">
-                  <div>{`UPLOADED: ${(status.totalItemsUsed ?? status.TotalItemsUsed)?.toLocaleString()} / ${(status.totalItemsAllotted ?? status.TotalItemsAllotted)?.toLocaleString()} OST Files`}</div>
-                  <div>{`STORAGE: ${formatStatusStorage(status.totalStorageUsed ?? status.TotalStorageUsed)} / ${formatStatusStorage(status.totalStorageAllotted ?? status.TotalStorageAllotted)} Storage Used`}</div>
-                  {(status.isUsageRestricted ||
-                    status.IsUsageRestricted ||
-                    status.hitFileCountLimit ||
-                    status.HitFileCountLimit ||
-                    status.hitSizeLimit ||
-                    status.HitSizeLimit) && (
-                    <div className="text-red-600 font-black text-[9px] mt-1 bg-red-50 p-1 rounded border border-red-200">
-                      LIMIT REACHED!
-                    </div>
-                  )}
-                </div>
-              ) : null
-            }
-            onClick={() => handlePurchase(1, 199, 2)}
+            onClick={() => handlePurchase(1, 99, 2)}
             features={[
-              { text: "Advanced conversion & filters", included: true },
-              { text: "PST Splitting & Deduplication", included: true },
-              { text: "Multiple licenses (up to 10)", included: true },
-              { text: "Priority support queue", included: true },
-              { text: "6-hour safe cleanup", included: true },
-              { text: "Commercial use license", included: true },
+              { text: "All Personal Features", included: true },
+              { text: "5 PCs / Licenses", included: true },
+              { text: "Priority Support Queue", included: true },
+              { text: "Bulk Conversion enabled", included: true },
+              { text: "Commercial Use License", included: true },
             ]}
           />
 
           {/* Technical Plan */}
           <PricingCard
             title="Technical"
-            price={calculateFinalPrice(399)}
+            price={calculateFinalPrice(199)}
             description="Best for IT administrators and large scale migrations."
             isLoading={purchasingPlan === 3}
-            onClick={() => handlePurchase(1, 399, 3)}
+            onClick={() => handlePurchase(1, 199, 3)}
             features={[
-              { text: "Bulk conversion & Cloud Migration", included: true },
-              { text: "Server/Admin license (Unlimited)", included: true },
+              { text: "All Corporate Features", included: true },
+              { text: "Unlimited Licenses", included: true },
               { text: "24/7 Dedicated Support", included: true },
-              { text: "PST Split, Dedup & Repair", included: true },
-              {
-                text: "Multiple formats (EML, MSG, PDF)",
-                included: true,
-              },
+              { text: "Direct Cloud Migration", included: true },
+              { text: "Server/Admin License", included: true },
             ]}
           />
         </div>
@@ -576,7 +547,7 @@ const Pricing = () => {
       {/* Custom Solution Banner */}
       <div className="w-full bg-brand-600 py-10 px-4">
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-white">
             Need a Custom Solution?
           </h2>
           <p className="text-brand-50 max-w-2xl mx-auto leading-relaxed">
@@ -605,7 +576,7 @@ const Pricing = () => {
       <div className="w-full bg-white pb-16 px-4">
         <div className="max-w-4xl mx-auto">
           <div className=" rounded-t-lg py-10 px-4">
-            <h2 className="text-5xl font-bold text-slate-800 text-center mb-2 tracking-tight">
+            <h2 className="text-center mb-4">
               Compare All Plans{" "}
               <span className="text-brand-600">Side by Side</span>
             </h2>
@@ -619,20 +590,24 @@ const Pricing = () => {
             <table className="w-full text-left border-collapse min-w-[600px] text-sm md:text-base">
               <thead>
                 <tr>
-                  <th className="p-4 bg-slate-800 text-white font-medium w-[40%]">
+                  <th className="p-4 bg-slate-800 text-white font-medium w-[25%]">
                     Feature
                   </th>
-                  <th className="p-4 bg-slate-800 text-white text-center font-medium border-l border-white/20 w-[20%]">
+                  <th className="p-4 bg-slate-700 text-white text-center font-medium border-l border-white/20 w-[18.75%]">
+                    <div>Free</div>
+                    <div className="text-xs font-normal opacity-90">$0</div>
+                  </th>
+                  <th className="p-4 bg-slate-800 text-white text-center font-medium border-l border-white/20 w-[18.75%]">
                     <div>Personal</div>
                     <div className="text-xs font-normal opacity-90">$49</div>
                   </th>
-                  <th className="p-4 bg-brand-600 text-white text-center font-bold border-l border-brand-500 w-[20%] shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
+                  <th className="p-4 bg-brand-600 text-white text-center font-bold border-l border-brand-500 w-[18.75%] shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
                     <div>Corporate</div>
-                    <div className="text-xs font-normal opacity-90">$199</div>
+                    <div className="text-xs font-normal opacity-90">$99</div>
                   </th>
-                  <th className="p-4 bg-slate-800 text-white text-center font-medium border-l border-white/20 w-[20%]">
+                  <th className="p-4 bg-slate-800 text-white text-center font-medium border-l border-white/20 w-[18.75%]">
                     <div>Technical</div>
-                    <div className="text-xs font-normal opacity-90">$399</div>
+                    <div className="text-xs font-normal opacity-90">$199</div>
                   </th>
                 </tr>
               </thead>
@@ -642,7 +617,18 @@ const Pricing = () => {
                     key={index}
                     className="hover:bg-gray-50/50 transition-colors"
                   >
-                    <td className="p-4 text-gray-600">{feature.name}</td>
+                    <td className="p-4 text-gray-600 font-medium">{feature.name}</td>
+                    <td className="p-4 text-center bg-gray-50/30">
+                      {typeof feature.free === "boolean" ? (
+                        feature.free ? (
+                          <span className="text-brand-500 font-bold text-lg leading-none">✓</span>
+                        ) : (
+                          <span className="text-gray-300 font-bold text-lg leading-none">✕</span>
+                        )
+                      ) : (
+                        <div className="text-xs text-gray-500 font-medium">{feature.free}</div>
+                      )}
+                    </td>
                     <td className="p-4 text-center">
                       {typeof feature.personal === "boolean" ? (
                         feature.personal ? (
@@ -706,7 +692,7 @@ const Pricing = () => {
       <div className="w-full bg-gray-50 py-20 px-4 border-y border-gray-100">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+            <h2 className="mb-4">
               Why is our <span className="text-brand-600">Pricing better?</span>
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto">
@@ -761,7 +747,7 @@ const Pricing = () => {
       <div className="w-full bg-white py-24 px-4 border-t border-gray-100">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-4xl font-bold text-gray-900 tracking-tight">
+            <h2 className="mb-4">
               Billing & Plans FAQ
             </h2>
             <p className="text-gray-500 text-lg max-w-2xl mx-auto">
@@ -801,76 +787,7 @@ const Pricing = () => {
         </div>
       </div>
 
-      {/* Footer Section */}
-      <footer className="bg-[#2B3544] text-gray-300 py-16 px-6 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-white font-bold text-lg">
-              <div className="w-6 h-6 bg-brand-500 rounded flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              OST to PST Converter
-            </div>
-            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
-              Industry-leading mailbox migration and recovery tools for IT
-              professionals and individuals.
-            </p>
-          </div>
-
-          <FooterColumn
-            title="Product"
-            links={[
-              "Desktop Version",
-              "Pricing Plans",
-              "Release Notes",
-              "Security",
-            ]}
-          />
-          <FooterColumn
-            title="Resources"
-            links={[
-              "Knowledge Base",
-              "Video Tutorials",
-              "User Manual",
-              "Sitemap",
-            ]}
-          />
-          <FooterColumn
-            title="Company"
-            links={[
-              { label: "About Us", href: "#" },
-              { label: "Privacy Policy", href: "/privacy-policy" },
-              { label: "Terms & Conditions", href: "/terms-conditions" },
-              { label: "Refund Policy", href: "#" },
-              { label: "Contact Support", href: "/support" },
-            ]}
-          />
-        </div>
-
-        <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-gray-600">
-          <p>
-            © 2026 OST to PST Converter. All rights reserved. Microsoft and
-            Outlook are trademarks of Microsoft Corp.
-          </p>
-          <div className="flex items-center gap-4">
-            <Globe className="w-4 h-4 hover:text-white cursor-pointer transition-colors" />
-            <Share2 className="w-4 h-4 hover:text-white cursor-pointer transition-colors" />
-            <AtSign className="w-4 h-4 hover:text-white cursor-pointer transition-colors" />
-          </div>
-        </div>
-      </footer>
+     
     </div>
   );
 };

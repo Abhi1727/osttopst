@@ -11,9 +11,14 @@ const downloadFile = async (
     `[Download] Initiating download for: ${suggestedName} from ${url}`,
   );
 
+  const isSecure = window.isSecureContext;
+  if (!isSecure && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1")) {
+    console.warn("[Download] Running in an insecure context. Browser may block the download or Clerks cryptographic functions. Please see implementation plan for solutions (e.g. Chrome Flags or HTTPS).");
+  }
+
   const pollForDownload = async () => {
     let attempts = 0;
-    const pollIntervalMs = 3000; // 3s polling for faster responsiveness
+    const pollIntervalMs = 5000; // 5s polling to reduce overhead
     const maxAttempts = 3600; // 3 hours (3s intervals)
     const sessionId = url.split("/file-details/")[1].split("/")[0];
 
@@ -31,53 +36,57 @@ const downloadFile = async (
         },
       );
 
-      if (checkRes.ok) {
-        const status = await checkRes.json();
-        const s = (status.status || "").toLowerCase();
-        const isReady =
-          (suggestedName.endsWith(".zip") &&
-            (s === "uploaded" || s.startsWith("ready"))) ||
-          (suggestedName.endsWith(".pst") &&
-            (status.isConverted || s.startsWith("ready"))) ||
-          (suggestedName.endsWith(".ost") &&
-            (status.isConverted || s.startsWith("ready")));
+        if (checkRes.ok) {
+          const status = await checkRes.json();
+          const s = (status.status || "").toLowerCase();
+          const currentBackendStatus = status.status;
+          const isReady =
+            (suggestedName.endsWith(".zip") &&
+              (s === "uploaded" || s.startsWith("ready"))) ||
+            (suggestedName.endsWith(".pst") &&
+              (status.isConverted || s.startsWith("ready") || s.includes("ready"))) ||
+            (suggestedName.endsWith(".ost") &&
+              (status.isConverted || s.startsWith("ready") || s.includes("ready")));
 
-        if (isReady) {
-          console.log(
-            `[Download] File is ready (status: ${status.status}), starting actual download...`,
-          );
-          if (status.splitFiles && status.splitFiles.length > 0) {
-            return status.splitFiles;
+          if (isReady) {
+            console.log(
+              `[Download] File is ready (status: ${status.status}), starting actual download...`,
+            );
+            if (status.splitFiles && status.splitFiles.length > 0) {
+              return status.splitFiles;
+            }
+            return true;
           }
-          return true;
+
+          if (s === "limitreached") {
+            throw new Error("LICENSE_LIMIT_EXCEEDED");
+          }
+
+          if (s.includes("failed")) {
+            const errMsg = status.message || status.status || "Unknown error";
+            console.error("[Download] Backend reported failure:", errMsg);
+            throw new Error(`Conversion or export failed: ${errMsg}`);
+          }
+
+          // Update detail for progress reporting inside the loop
+          if (onProgress) {
+            const elapsedSec = Math.round((attempts * pollIntervalMs) / 1000);
+            const elapsedStr = elapsedSec < 60 ? `${elapsedSec}s` : `${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`;
+            let displayDetail = currentBackendStatus || `Processing your file... (${elapsedStr} elapsed)`;
+            
+            // Dynamic progress: faster at first, then slower as it reaches limits
+            const pseudoProgress = 5 + (1 - Math.exp(-attempts / 150)) * 90;
+            
+            onProgress({
+              phase: "processing",
+              percent: Math.min(99, pseudoProgress),
+              detail: displayDetail,
+            });
+          }
         }
 
-        if (s === "limitreached" || s === "limitreached") {
-          throw new Error("LICENSE_LIMIT_EXCEEDED");
-        }
-
-        if (s.includes("failed")) {
-          const errMsg = status.message || status.status || "Unknown error";
-          console.error("[Download] Backend reported failure:", errMsg);
-          throw new Error(`Conversion or export failed: ${errMsg}`);
-        }
-      }
-
-      attempts++;
-      if (onProgress) {
-        const elapsedSec = Math.round((attempts * pollIntervalMs) / 1000);
-        const elapsedStr =
-          elapsedSec < 60
-            ? `${elapsedSec}s`
-            : `${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`;
-        onProgress({
-          phase: "processing",
-          percent: Math.min(99, 5 + (attempts / maxAttempts) * 94),
-          detail: `Processing your file... (${elapsedStr} elapsed). Large files may take several minutes.`,
-        });
-      }
-
-      // Wait pollIntervalMs but check signal
+        attempts++;
+        // Wait pollIntervalMs but check signal
       await new Promise((resolve, reject) => {
         const timer = setTimeout(resolve, pollIntervalMs);
         signal?.addEventListener("abort", () => {
@@ -147,7 +156,7 @@ const downloadFile = async (
     });
   }
 
-  console.log("[Download] Using fallback <a> tag download method.");
+  console.log("[Download] Triggering browser download via <a> tag.");
   const downloadToken = await getToken();
   const fullUrl = url.includes("?")
     ? `${url}&token=${downloadToken}`
@@ -156,12 +165,23 @@ const downloadFile = async (
   const a = document.createElement("a");
   a.href = fullUrl;
   a.download = suggestedName;
+  a.target = "_blank"; // Open in new tab to help some browsers handle insecure downloads
   document.body.appendChild(a);
   a.click();
+  
+  if (!isSecure) {
+    if (onProgress) {
+        onProgress({
+            phase: "downloading",
+            percent: 100,
+            detail: "Download triggered. If nothing happens, look for a 'Keep' or 'Unsafe download' warning in your browser's download manager.",
+        });
+    }
+  }
+
   setTimeout(() => {
     document.body.removeChild(a);
-    window.location.reload();
-  }, 1000);
+  }, 5000); // Keep it longer just in case
   return suggestedName;
 };
 
@@ -169,7 +189,7 @@ export const conversionService = {
   async convertToPst(
     sessionId,
     getToken,
-    excludeEmpty = true,
+    excludeEmpty = false,
     onProgress,
     signal,
     email = null,
@@ -242,7 +262,6 @@ export const conversionService = {
     a.click();
     setTimeout(() => {
         document.body.removeChild(a);
-        window.location.reload();
     }, 1000);
   },
 };

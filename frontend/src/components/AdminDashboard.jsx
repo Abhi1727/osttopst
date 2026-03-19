@@ -96,29 +96,41 @@ const AdminDashboard = () => {
         file.type === "application/msword"
       ) {
         // Handle Word Upload with Image Support
-        let firstImage = null;
+        let firstImageFound = false;
         const options = {
-          convertImage: mammoth.images.imgElement((image) => {
+          convertImage: (image) => {
+            const isFirst = !firstImageFound;
+            if (isFirst) firstImageFound = true;
+
             return image.read("base64").then((imageBuffer) => {
               const base64Data =
                 "data:" + image.contentType + ";base64," + imageBuffer;
-              if (!firstImage) {
-                firstImage = base64Data;
+
+              if (isFirst) {
+                // Store first image for thumbnail but don't include in content
+                if (!isManualThumbnail) {
+                  setThumbnailPreview(base64Data);
+                }
+                return {
+                  // Returning an empty element that won't show anything
+                  asElement: {
+                    type: "element",
+                    name: "span",
+                    attributes: { style: "display:none", class: "hidden" },
+                    children: [],
+                  },
+                };
               }
+
               return {
                 src: base64Data,
               };
             });
-          }),
+          },
         };
         const result = await mammoth.convertToHtml({ arrayBuffer }, options);
         content = DOMPurify.sanitize(result.value);
 
-        // Use first image as thumbnail if not manually set
-        if (firstImage && !isManualThumbnail) {
-          setThumbnailPreview(firstImage);
-          toast.info("Auto-extracted first image from document as thumbnail.");
-        }
         // Basic extraction for excerpt (first 160 chars)
         const plainText = result.value.replace(/<[^>]*>/g, "");
         excerpt = plainText.substring(0, 160) + "...";
@@ -266,7 +278,7 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
+            <h1 className="font-black text-slate-900 tracking-tight mb-2">
               SEO <span className="text-brand-600">Admin Panel</span>
             </h1>
             <p className="text-slate-500 font-medium">
@@ -293,7 +305,7 @@ const AdminDashboard = () => {
           {/* Left Column: Upload */}
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <h2 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
                 <Upload className="w-5 h-5 text-brand-600" />
                 Upload Content
               </h2>
@@ -371,7 +383,7 @@ const AdminDashboard = () => {
             {extractedData && (
               <div className="bg-brand-600 p-8 rounded-[2.5rem] shadow-xl shadow-brand-100 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <h3 className="font-bold mb-4 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5" />
                   Ready to Publish
                 </h3>

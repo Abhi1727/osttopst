@@ -96,7 +96,7 @@ const HowItWorks = () => {
             <span className="inline-block bg-brand-100 text-brand-700 text-[10px] sm:text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8">
               Visual Journey
             </span>
-            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black text-slate-900 mb-8 tracking-tighter leading-none">
+            <h1 className="mb-8 overflow-visible">
               How It <span className="text-brand-500">Works</span>
             </h1>
             <p className="text-slate-500 max-w-2xl mx-auto text-lg md:text-xl font-medium leading-relaxed">
@@ -139,7 +139,7 @@ const HowItWorks = () => {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tight">
+            <h2 className="mb-8 tracking-tight">
               Ready to{" "}
               <span className="text-brand-400 text-glow-brand">
                 Simplify

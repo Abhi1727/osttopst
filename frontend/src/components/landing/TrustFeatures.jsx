@@ -19,7 +19,7 @@ const TrustFeatureCard = ({ icon: Icon, title, description }) => (
     <div className="w-10 h-10 md:w-14 md:h-14 bg-brand-50 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:bg-brand-500 group-hover:text-white transition-all">
       <Icon className="w-5 h-5 md:w-7 md:h-7 text-brand-600 group-hover:text-white" />
     </div>
-    <h4 className="font-black text-slate-900 mb-2 md:mb-4 text-lg md:text-xl tracking-tight leading-tight">{title}</h4>
+    <h4 className="font-black text-slate-900 mb-2 md:mb-4 tracking-tight leading-tight">{title}</h4>
     <p className="text-slate-500 font-semibold leading-relaxed text-xs md:text-base">
       {description}
     </p>
@@ -103,13 +103,13 @@ const TrustFeatures = () => {
   ];
 
   return (
-    <section className="py-10 md:py-24">
+    <section className="min-h-screen flex items-center py-20">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="text-center mb-10 md:mb-20">
-          <h2 className="text-2xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-tight tracking-tight">
+          <h2 className="font-black text-slate-900 leading-tight tracking-tight">
             Our Professional <span className="header-text-gradient">Capabilities</span>
           </h2>
-          <p className="mt-2 md:mt-6 text-slate-500 text-sm md:text-lg lg:text-xl font-semibold max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-2 md:mt-6 text-slate-500 font-semibold max-w-2xl mx-auto leading-relaxed">
             Advanced features designed to handle even the most complex Outlook data migration scenarios.
           </p>
         </div>

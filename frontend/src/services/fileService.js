@@ -153,6 +153,7 @@ async function chunkedUpload(
   onProgress,
   password = null,
   signal = null,
+  email = null,
 ) {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   let uploadId = null;
@@ -183,6 +184,7 @@ async function chunkedUpload(
       TotalChunks: totalChunks,
       TotalSize: file.size,
       Password: password || null,
+      Email: email || null,
     }),
   });
 
@@ -335,6 +337,7 @@ function singleUpload(
   onProgress,
   password = null,
   signal = null,
+  email = null,
 ) {
   return new Promise((resolve, reject) => {
     // Wrap in async function to handle token resolution
@@ -411,6 +414,7 @@ function singleUpload(
         const formData = new FormData();
         formData.append("file", file);
         if (password) formData.append("password", password);
+        if (email) formData.append("email", email);
         xhr.send(formData);
       } catch (err) {
         reject(err);
@@ -437,6 +441,7 @@ export const fileService = {
     onProgress,
     password = null,
     signal = null,
+    email = null,
   ) {
     // Normalize onProgress to handle both old-style (percent) and new-style ({ phase, percent, detail })
     const progressHandler = (info) => {
@@ -461,6 +466,7 @@ export const fileService = {
         progressHandler,
         password,
         signal,
+        email,
       );
     } else {
       // Small file → single request (faster for small files)
@@ -470,6 +476,7 @@ export const fileService = {
         progressHandler,
         password,
         signal,
+        email,
       );
     }
   },
@@ -547,6 +554,21 @@ export const fileService = {
         err,
       );
     }
+  },
+
+  async getMessageDetail(sessionId, entryId, token) {
+    const encodedEntryId = encodeURIComponent(entryId);
+    const response = await fetch(
+      `${API_BASE_URL}/file-details/${sessionId}/messages/detail?entryId=${encodedEntryId}`,
+      {
+        headers: getHeaders(token),
+      },
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || "Failed to fetch message details");
+    }
+    return await response.json();
   },
 
   async exportAll(sessionId, format, excludeEmpty, token, email = null) {

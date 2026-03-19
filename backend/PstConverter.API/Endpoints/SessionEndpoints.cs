@@ -69,13 +69,26 @@ public static class SessionEndpoints
             return Results.Ok(new { found = false });
         });
         //this is for checking the status of the session
-        group.MapGet("/{sessionId}/check", async (string sessionId, AppDbContext db, LicenseApiClient licenseClient, ClaimsPrincipal user) =>
+        group.MapGet("/{sessionId}/check", async (string sessionId, AppDbContext db, LicenseApiClient licenseClient, ClaimsPrincipal user, HttpContext httpContext) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var session = await db.ConversionSessions
-                .FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+                .FirstOrDefaultAsync(s => s.SessionId == sessionId && (s.UserId == userId || s.UserId == "anonymous"));
 
-            if (session == null) return Results.NotFound();
+            if (session == null)
+            {
+                var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("SessionEndpoints");
+                logger.LogWarning("Session check failed (404): sessionId={SessionId}, userId={UserId}. Session not found or ownership mismatch.", sessionId, userId);
+                return Results.NotFound();
+            }
+
+            // Claim anonymous session if user is now authenticated
+            if (session.UserId == "anonymous" && userId != "anonymous")
+            {
+                session.UserId = userId;
+                // session.UserEmail can also be updated here if needed, but we keep it simple
+                await db.SaveChangesAsync();
+            }
 
             // If this session was marked as a duplicate after background assembly, return the original session instead.
             if (session.Status == "Duplicate" && !string.IsNullOrEmpty(session.StoreGuid))
@@ -101,24 +114,27 @@ public static class SessionEndpoints
             // If the status starts with "Ready", the background task has definitely finished the file.
             var isSessionReady = (session.Status ?? "").StartsWith("Ready", StringComparison.OrdinalIgnoreCase);
 
-            // 3. License check to handle background limit hit or external changes
-            var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
-            var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-            
-            bool limitHit = licenseStatus.HitFileCountLimit || licenseStatus.HitSizeLimit || licenseStatus.HitTimePeriodLimit;
-
-            // Rate-limit LastAccessedAt updates to once per 60s
-            if ((DateTime.UtcNow - session.LastAccessedAt).TotalSeconds > 60)
+            // 3. License check (Only if not ready to save DB hits)
+            bool limitHit = false;
+            if (!isSessionReady)
             {
-                session.LastAccessedAt = DateTime.UtcNow;
-                await db.SaveChangesAsync();
+                var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
+                var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+                limitHit = licenseStatus.HitFileCountLimit || licenseStatus.HitSizeLimit || licenseStatus.HitTimePeriodLimit;
+
+                if (limitHit && session.Status != "Ready")
+                {
+                    session.Status = "LimitReached";
+                    // Save immediately on status change
+                    await db.SaveChangesAsync();
+                }
             }
 
-            if (limitHit && session.Status != "Ready")
+            // Rate-limit LastAccessedAt updates to once per 5 minutes to further reduce DB noise
+            if ((DateTime.UtcNow - session.LastAccessedAt).TotalMinutes > 5)
             {
-                // Force status to LimitReached if license is hit and it's not already ready
-                session.Status = "LimitReached";
-                await db.SaveChangesAsync();
+                session.LastAccessedAt = DateTime.UtcNow;
+                try { await db.SaveChangesAsync(); } catch { }
             }
 
             return Results.Ok(new
@@ -140,7 +156,7 @@ public static class SessionEndpoints
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var session = await db.ConversionSessions
-                .FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+                .FirstOrDefaultAsync(s => s.SessionId == sessionId && (s.UserId == userId || s.UserId == "anonymous"));
 
             if (session != null)
             {

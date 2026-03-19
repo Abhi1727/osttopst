@@ -96,18 +96,20 @@ function App() {
   return (
     <ErrorBoundary>
       <Toaster position="top-right" />
+      {location.pathname !== "/preview" && (
+        <UnifiedHeader session={session} onReset={handleReset} />
+      )}
       <div
         className={`flex flex-col professional-gradient ${
           location.pathname === "/preview"
-            ? "h-screen overflow-hidden"
-            : "min-h-screen"
+            ? "h-screen overflow-hidden bg-[#1a1a1a]"
+            : "min-h-screen pt-14 md:pt-16"
         }`}
       >
-        <UnifiedHeader session={session} onReset={handleReset} />
 
         <main
           className={`flex-1 flex flex-col ${
-            location.pathname === "/preview" ? "overflow-hidden" : ""
+            location.pathname === "/preview" ? "h-full overflow-hidden" : "pt-14 md:pt-16"
           }`}
         >
           <Routes>

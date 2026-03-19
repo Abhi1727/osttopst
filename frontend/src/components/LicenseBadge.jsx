@@ -46,15 +46,21 @@ const LicenseBadge = () => {
     normalizedTier = "professional";
 
   const formatStorage = (bytes) => {
-    if (!bytes) return "0 GB";
+    if (bytes === -1) return "∞";
+    if (!bytes && bytes !== 0) return "0 GB";
     if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
   };
 
-  const totalItems = status.totalItemsAllotted ?? status.TotalItemsAllotted;
-  const usedItems = status.totalItemsUsed ?? status.TotalItemsUsed ?? 0;
-  const totalStorage = status.totalStorageAllotted ?? status.TotalStorageAllotted;
-  const usedStorage = status.totalStorageUsed ?? status.TotalStorageUsed ?? 0;
+  const rawTotalItems = status.totalItemsAllotted ?? status.TotalItemsAllotted;
+  const rawUsedItems = status.totalItemsUsed ?? status.TotalItemsUsed;
+  const rawTotalStorage = status.totalStorageAllotted ?? status.TotalStorageAllotted;
+  const rawUsedStorage = status.totalStorageUsed ?? status.TotalStorageUsed;
+
+  const totalItems = rawTotalItems != null ? Number(rawTotalItems) : -1;
+  const usedItems = rawUsedItems != null ? Number(rawUsedItems) : 0;
+  const totalStorage = rawTotalStorage != null ? Number(rawTotalStorage) : -1;
+  const usedStorage = rawUsedStorage != null ? Number(rawUsedStorage) : 0;
 
   if (normalizedTier === "professional") {
     return (
@@ -66,7 +72,7 @@ const LicenseBadge = () => {
         <div className="flex gap-2 text-[8px] font-black text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded-md border border-brand-100 tracking-tight">
           <span className="flex items-center gap-1">
             <Shield className="w-2 h-2 text-brand-500" />
-            {usedItems.toLocaleString()} / {totalItems?.toLocaleString()}
+            {usedItems.toLocaleString()} / {totalItems === -1 ? "∞" : totalItems.toLocaleString()}
           </span>
           <span className="w-px h-2 bg-brand-200 self-center"></span>
           <span className="flex items-center gap-1">

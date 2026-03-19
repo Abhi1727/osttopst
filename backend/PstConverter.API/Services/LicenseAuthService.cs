@@ -38,7 +38,7 @@ namespace PstConverter.Services
                 var options = new RestClientOptions(_baseUrl)
                 {
                     RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true,
-                    Timeout = TimeSpan.FromSeconds(30) // 30 seconds timeout
+                    Timeout = TimeSpan.FromSeconds(10) // Reduced timeout for better UX during server downtime
                 };
                 var client = new RestClient(options);
                 var request = new RestRequest("Auth/login", Method.Post);

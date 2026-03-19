@@ -95,14 +95,14 @@ const ReviewSection = () => {
   };
 
   return (
-    <section className="py-12 md:py-20 px-4 md:px-6 lg:px-8 flex flex-col items-center">
+    <section className="min-h-screen flex items-center py-10 md:py-14 px-4 md:px-6 lg:px-8">
       <div className="w-full max-w-6xl">
         {/* Heading Section */}
-        <div className="text-center mb-10 md:mb-16">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-heading font-black text-slate-800 mb-2">
+        <div className="text-center mb-6 md:mb-10">
+          <h2 className="">
             What customers are saying about
           </h2>
-          <h3 className="text-2xl md:text-3xl font-heading font-medium text-slate-600 mb-4">
+          <h3 className="font-heading font-medium text-slate-600 mb-4">
             {/* Kernel OST to PST Converter */}
           </h3>
           <div className="flex items-center justify-center gap-2">
@@ -132,7 +132,7 @@ const ReviewSection = () => {
                 {/* Decorative Accent */}
                 <div className="absolute top-0 left-0 w-2 h-full bg-brand-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-                <h4 className="text-xl font-heading font-black text-slate-800 mb-6 border-b border-slate-50 pb-4">
+                <h4 className="mb-6 border-b border-slate-50 pb-4">
                   {reviews[0].comment.split(".")[0].length < 50
                     ? reviews[0].comment.split(".")[0]
                     : "Highly Recommended Tool"}
@@ -147,7 +147,7 @@ const ReviewSection = () => {
                       "{reviews[0].comment}"
                     </p>
                     <div>
-                      <h5 className="font-heading font-black text-slate-900 text-lg">
+                      <h5 className="text-lg">
                         {reviews[0].userName}
                       </h5>
                       <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -227,7 +227,7 @@ const ReviewSection = () => {
             className="mt-12 max-w-2xl mx-auto animate-in fade-in slide-in-from-top-4 duration-500"
           >
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
-              <h3 className="text-xl font-bold text-brand-600 mb-1">
+              <h3 className="text-brand-600 mb-1">
                 Write a review
               </h3>
               <p className="text-slate-500 text-sm mb-6">

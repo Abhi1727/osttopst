@@ -9,4 +9,5 @@ public class PstMessageSummary
     public DateTime Date { get; set; }
     public long Size { get; set; }
     public bool HasAttachments { get; set; }
+    public string Body { get; set; } = string.Empty;
 }

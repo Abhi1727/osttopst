@@ -61,19 +61,22 @@ public static class DbInitializer
             var licenses = await context.MockLicenses.ToListAsync();
             foreach (var lic in licenses)
             {
+                // Only count sessions that were actually completed (file was ready to download).
+                // Do NOT count sessions that were started but failed/cancelled/errored.
                 var sessionCount = await context.ConversionSessions
-                    .CountAsync(s => s.UserId.ToLower() == lic.LicenseId.ToLower());
+                    .CountAsync(s => s.UserId.ToLower() == lic.LicenseId.ToLower()
+                        && (s.Status == "Completed" || s.Status == "Ready" || s.IsPaid == true));
                 
                 if (lic.TotalItemsUsed != sessionCount)
                 {
                     Console.WriteLine($"[REPAIR] Resetting TotalItemsUsed for {lic.LicenseId}: {lic.TotalItemsUsed} -> {sessionCount}");
                     lic.TotalItemsUsed = sessionCount;
                 }
-
-                // Also evict the stale cache entry
+                
+                // Evict the stale cache entry so the next request re-fetches fresh data
                 if (cache != null)
                 {
-                    try { await cache.RemoveAsync($"allotted_license_{lic.LicenseId.ToLower()}"); }
+                    try { await cache.RemoveAsync($"license_status_{lic.LicenseId.ToLower()}"); }
                     catch { }
                 }
             }

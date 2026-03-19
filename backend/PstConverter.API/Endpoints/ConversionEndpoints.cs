@@ -37,24 +37,24 @@ public static class ConversionEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
 
-            var toolStatus = await licenseClient.GetLicenceStatus(userEmail);
-            // compare tool status with demo expired
-            if (toolStatus == LicenseTier.DemoExpired)
+            // Get comprehensive license status (handles caches, tiers, and limits)
+            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+            
+            if (!status.CanConvert)
             {
-                return Results.Json(new { error = toolStatus }, statusCode: StatusCodes.Status403Forbidden);
+                return Results.Json(new { error = status.Tier }, statusCode: StatusCodes.Status403Forbidden);
             }
 
-            // Get Module License
-            var moduleStatus = await LicenseApiClient.GetModuleVersion();
-
             // compare module status with active and professional tier
-            if (toolStatus == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
+            var moduleStatus = await LicenseApiClient.GetModuleVersion();
+            if (status.Tier == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
             {
                 return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);
             }
-            if(moduleStatus == ModuleLicenseType.Active){
-                var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-                if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit)
+
+            if (moduleStatus == ModuleLicenseType.Active)
+            {
+                if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
                 {
                     return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
                 }
@@ -84,7 +84,7 @@ public static class ConversionEndpoints
                 var (filePath, isReady) = await pstService.ExportAllAsync(sessionId,
                                                                            userId,
                                                                            exportFormat,
-                                                                           toolStatus == LicenseTier.Demo,
+                                                                           status.Tier == LicenseTier.Demo,
                                                                           moduleStatus,
                                                                            folderId,
                                                                            selectedIds,
@@ -101,22 +101,13 @@ public static class ConversionEndpoints
                 var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
                 if (session != null)
                 {
-                    if (!session.IsPaid)
-                    {
-                        session.IsPaid = true;
-                        var storageSuccess = await licenseClient.UpdateStorageAsync(userEmail, session.Size);
-                        var itemsSuccess = await licenseClient.UpdateItemsAsync(userEmail);
-
-                        if (!storageSuccess || !itemsSuccess)
-                        {
-                            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-                            return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
-                        }
-                    }
+                    // Paid status is now set in the PstService background task
                     await db.SaveChangesAsync();
                 }
 
-                return Results.File(filePath, "application/zip", "pst_export.zip", enableRangeProcessing: true);
+                // Use a more standard filename for the export
+                var exportFileName = string.IsNullOrEmpty(sessionId) ? "export.zip" : $"export_{sessionId}.zip";
+                return Results.File(filePath, "application/zip", exportFileName, enableRangeProcessing: true);
             }
             catch (InvalidOperationException ex)
             {
@@ -169,26 +160,26 @@ public static class ConversionEndpoints
 
             try
             {
-                // Get Tool License 
-                var toolStatus = await licenseClient.GetLicenceStatus(userEmail);
-                // compare tool status with demo expired
-                if (toolStatus == LicenseTier.DemoExpired)
+                // Get comprehensive license status (handles caches, tiers, and limits)
+                var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+                
+                if (!status.CanConvert)
                 {
-                    return Results.Json(new { error = toolStatus }, statusCode: StatusCodes.Status403Forbidden);
+                    return Results.Json(new { error = status.Tier }, statusCode: StatusCodes.Status403Forbidden);
                 }
 
                 // Get Module License
                 var moduleStatus = await LicenseApiClient.GetModuleVersion();
 
                 // compare module status with active and professional tier
-                if (toolStatus == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
+                if (status.Tier == LicenseTier.Professional && moduleStatus != ModuleLicenseType.Active)
                 {
                     return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);
                 }
 
-                if(moduleStatus == ModuleLicenseType.Active){
-                    var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-                    if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit)
+                if (moduleStatus == ModuleLicenseType.Active)
+                {
+                    if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
                     {
                         return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
                     }
@@ -196,7 +187,7 @@ public static class ConversionEndpoints
 
                 var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId,
                                                                                            userId, 
-                                                                                           toolStatus == LicenseTier.Demo,
+                                                                                           status.Tier == LicenseTier.Demo,
                                                                                           moduleStatus,
                                                                                            excludeEmptyFolders ?? true, 
                                                                                           userEmail, 
@@ -212,18 +203,7 @@ public static class ConversionEndpoints
                 var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
                 if (session != null)
                 {
-                    if (!session.IsPaid)
-                    {
-                        session.IsPaid = true;
-                        var storageSuccess = await licenseClient.UpdateStorageAsync(userEmail, session.Size);
-                        var itemsSuccess = await licenseClient.UpdateItemsAsync(userEmail);
-
-                        if (!storageSuccess || !itemsSuccess)
-                        {
-                            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-                            return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
-                        }
-                    }
+                    // Paid status is now set in the PstService background task 
                     await db.SaveChangesAsync();
                 }
 
@@ -274,7 +254,7 @@ public static class ConversionEndpoints
             // License check
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
             var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-            if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit)
+            if (!status.CanConvert || status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
             {
                 return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
             }
@@ -287,7 +267,10 @@ public static class ConversionEndpoints
                     var filePath = Path.Combine(pstService.GetUploadDir(), fileName);
                     if (File.Exists(filePath))
                     {
-                        return Results.File(filePath, "application/octet-stream", fileName, enableRangeProcessing: true);
+                        var contentType = fileName.EndsWith(".pst", StringComparison.OrdinalIgnoreCase) 
+                            ? "application/vnd.ms-outlook" 
+                            : "application/octet-stream";
+                        return Results.File(filePath, contentType, fileName, enableRangeProcessing: true);
                     }
                 }
             }

@@ -15,9 +15,18 @@ public static class FileEndpoints
     public static void MapFileEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/file-details");
+        
+        group.MapGet("/diag/claims", (ClaimsPrincipal user) => {
+            return Results.Ok(user.Claims.Select(c => new { c.Type, c.Value }));
+        }).RequireAuthorization();
+
+        group.MapGet("/diag/licenses", async (PstConverter.Data.AppDbContext db) => {
+            var licenses = await db.MockLicenses.ToListAsync();
+            return Results.Ok(licenses);
+        }).AllowAnonymous();
 
         // ======== LEGACY SINGLE-FILE UPLOAD (kept for backward compatibility with small files) ========
-        group.MapPost("/upload", async ([FromForm] IFormFile file, [FromForm] string? password, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapPost("/upload", async ([FromForm] IFormFile file, [FromForm] string? password, [FromForm] string? email, PstService pstService, LicenseApiClient licenseClient, ClaimsPrincipal user, ILogger<Program> logger) =>
         {
             try
             {
@@ -41,7 +50,25 @@ public static class FileEndpoints
                 }
 
                 var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-                var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+                var userEmail = email 
+                    ?? user.FindFirstValue(ClaimTypes.Email) 
+                    ?? user.FindFirstValue("email") 
+                    ?? user.FindFirstValue("primary_email_address")
+                    ?? userId;
+                
+                if (logger.IsEnabled(LogLevel.Information))
+                {
+                   logger.LogInformation("[AUTH DEBUG] User: {UserId}, Identified Email: {Email}", userId, userEmail);
+                }
+
+                // Strict License Check: Reject if prospective upload exceeds limit
+                if (await licenseClient.WillExceedLimitAsync(userEmail, file.Length))
+                {
+                    logger.LogWarning("Upload rejected: File {FileName} ({Size} bytes) would exceed limit for {UserId}", 
+                        file.FileName, file.Length, userId);
+                    return Results.Json(new { error = "LimitReached" }, statusCode: StatusCodes.Status403Forbidden);
+                }
+
                 if (logger.IsEnabled(LogLevel.Information))
                     logger.LogInformation("Processing file for user: {UserId}", userId);
 
@@ -52,7 +79,7 @@ public static class FileEndpoints
                     return Results.BadRequest(new { error = $"The file '{file.FileName}' does not have a valid {ext.ToUpperInvariant().TrimStart('.')} signature." });
                 }
                 var sessionId = await pstService.SaveUploadedFileAsync(stream, file.FileName, userId, file.Length, userEmail, password);
-
+                
                 if (logger.IsEnabled(LogLevel.Information))
                     logger.LogInformation("File uploaded successfully. SessionId: {SessionId}, FileName: {FileName}", sessionId, file.FileName);
                 return Results.Ok(new { sessionId, fileName = file.FileName, size = file.Length, fileType = ext.TrimStart('.') });
@@ -80,6 +107,7 @@ public static class FileEndpoints
         group.MapPost("/upload/init", async (
             [FromBody] InitUploadRequest request,
             PstService pstService,
+            LicenseApiClient licenseClient,
             ClaimsPrincipal user,
             ILogger<Program> logger) =>
         {
@@ -95,7 +123,32 @@ public static class FileEndpoints
                 if (request.TotalChunks <= 0)
                     return Results.BadRequest(new { error = "TotalChunks must be positive" });
 
+                if (logger.IsEnabled(LogLevel.Information))
+                {
+                    var claimsList = string.Join(", ", user.Claims.Select(c => $"{c.Type}={c.Value}"));
+                    logger.LogInformation("[AUTH DIAG] InitChunkedUpload - Claims: {Claims}", claimsList);
+                }
+
                 var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+                var userEmail = request.Email 
+                    ?? user.FindFirstValue(ClaimTypes.Email) 
+                    ?? user.FindFirstValue("email") 
+                    ?? user.FindFirstValue("primary_email_address")
+                    ?? userId;
+
+                if (logger.IsEnabled(LogLevel.Information))
+                {
+                    logger.LogInformation("[AUTH DEBUG] InitChunkedUpload - User: {UserId}, Identified Email: {Email}", userId, userEmail);
+                }
+
+                // Strict License Check: Reject if prospective upload exceeds limit
+                if (await licenseClient.WillExceedLimitAsync(userEmail, request.TotalSize))
+                {
+                    logger.LogWarning("Chunked upload rejected: File {FileName} ({Size} bytes) would exceed limit for {UserId}", 
+                        request.FileName, request.TotalSize, userId);
+                    return Results.Json(new { error = "LimitReached" }, statusCode: StatusCodes.Status403Forbidden);
+                }
+
                 if (logger.IsEnabled(LogLevel.Information))
                 {
                     logger.LogInformation("Init chunked upload: file={FileName}, chunks={TotalChunks}, size={TotalSize}, user={UserId}",
@@ -198,6 +251,7 @@ public static class FileEndpoints
         group.MapPost("/upload/{uploadId}/finalize", async (
             string uploadId,
             PstService pstService,
+            LicenseApiClient licenseClient,
             ClaimsPrincipal user,
             ILogger<Program> logger) =>
         {
@@ -306,4 +360,4 @@ public static class FileEndpoints
 }
 
 // Request DTOs
-public record InitUploadRequest(string FileName, int TotalChunks, long TotalSize, string? Password = null);
+public record InitUploadRequest(string FileName, int TotalChunks, long TotalSize, string? Password = null, string? Email = null);

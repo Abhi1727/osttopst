@@ -65,7 +65,7 @@ const UnifiedHeader = ({ session, onReset }) => {
   };
 
   return (
-    <header className="flex h-14 md:h-16 items-center justify-between px-4 md:px-8 lg:px-12 border-b border-border/10 bg-white/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
+    <header className="flex h-14 md:h-16 items-center justify-between px-4 md:px-8 lg:px-12 border-b border-slate-200 bg-white fixed top-0 left-0 right-0 z-50 shadow-sm transition-all duration-300">
       <div
         className="flex items-center gap-2 md:gap-3 cursor-pointer shrink-0"
         onClick={() => handleNavigation("/")}
@@ -90,7 +90,7 @@ const UnifiedHeader = ({ session, onReset }) => {
             <span
               key={item.label}
               onClick={() => handleNavItemClick(item)}
-              className={`cursor-pointer text-sm font-semibold transition-colors ${
+              className={`cursor-pointer text-sm font-medium transition-colors ${
                 isActive
                   ? "text-brand-600"
                   : "text-slate-600 hover:text-brand-600"
@@ -105,7 +105,7 @@ const UnifiedHeader = ({ session, onReset }) => {
       <div className="flex items-center gap-2 md:gap-4">
         {/* Only show on desktop-ish */}
         <div className="hidden lg:flex items-center gap-4">
-          <Button className="hidden xl:flex bg-[#f97316] hover:bg-[#ea580c] text-white font-extrabold px-6 h-10 rounded-full shadow-lg shadow-orange-500/10 gap-2 transition-all border-none text-xs">
+          <Button className="hidden xl:flex bg-[#f97316] hover:bg-[#ea580c] text-white font-semibold px-6 h-10 rounded-full shadow-lg shadow-orange-500/10 gap-2 transition-all border-none text-xs">
             <Laptop className="w-4 h-4" />
             Get Desktop Tool
           </Button>
@@ -117,7 +117,7 @@ const UnifiedHeader = ({ session, onReset }) => {
               <SignInButton mode="modal">
                 <Button
                   variant="outline"
-                  className="h-9 px-4 text-xs border-slate-300 text-slate-700 font-bold"
+                  className="h-9 px-4 text-xs border-slate-300 text-slate-700 font-medium"
                 >
                   Sign In
                 </Button>
@@ -149,7 +149,7 @@ const UnifiedHeader = ({ session, onReset }) => {
               side="right"
               className="w-[300px] flex flex-col gap-6 pt-10"
             >
-              <SheetTitle className="text-left text-brand-600 font-bold text-lg">
+              <SheetTitle className="text-left text-brand-600 font-semibold text-lg">
                 Navigation
               </SheetTitle>
               
@@ -158,7 +158,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                   <SheetClose key={item.label} asChild>
                     <button
                       onClick={() => handleNavItemClick(item)}
-                      className={`text-left py-3 px-4 text-sm font-bold rounded-xl transition-colors ${
+                      className={`text-left py-3 px-4 text-sm font-medium rounded-xl transition-colors ${
                         location.pathname === item.path
                           ? "bg-brand-50 text-brand-600"
                           : "text-slate-600 hover:bg-slate-50"
@@ -174,12 +174,12 @@ const UnifiedHeader = ({ session, onReset }) => {
 
               <div className="flex flex-col gap-4">
                 <div className="px-4">
-                  <p className="text-[10px] uppercase font-black text-slate-400 mb-3 tracking-widest">Account & License</p>
+                  <p className="text-[10px] uppercase font-semibold text-slate-400 mb-3 tracking-widest">Account & License</p>
                   <LicenseBadge />
                 </div>
                 
                 <div className="flex items-center px-4 justify-between">
-                   <span className="text-sm font-bold text-slate-600">User Profile</span>
+                   <span className="text-sm font-medium text-slate-600">User Profile</span>
                    <SignedIn>
                     <UserButton
                       afterSignOutUrl="/"
@@ -192,7 +192,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                   </SignedIn>
                   <SignedOut>
                     <SignInButton mode="modal">
-                      <Button variant="outline" className="h-9 px-4 text-xs font-bold border-slate-300">
+                      <Button variant="outline" className="h-9 px-4 text-xs font-medium border-slate-300">
                         Sign In
                       </Button>
                     </SignInButton>
@@ -201,7 +201,7 @@ const UnifiedHeader = ({ session, onReset }) => {
               </div>
 
               <div className="mt-auto pb-4">
-                <Button className="w-full bg-[#f97316] hover:bg-[#ea580c] text-white font-extrabold py-6 rounded-xl flex gap-2 shadow-xl shadow-orange-500/10 border-none">
+                <Button className="w-full bg-[#f97316] hover:bg-[#ea580c] text-white font-semibold py-6 rounded-xl flex gap-2 shadow-xl shadow-orange-500/10 border-none">
                   <Laptop className="w-5 h-5" />
                   Get Desktop Tool
                 </Button>

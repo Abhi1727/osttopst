@@ -19,13 +19,13 @@ using Aspose.Email.Mapi;
 namespace PstConverter.Services;
 
 
-public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbContext db, ILogger<PstService> logger, IServiceScopeFactory scopeFactory, LicenseApiClient licenseClient)
+public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbContext db, ILogger<PstService> loggerService, IServiceScopeFactory scopeFactory, LicenseApiClient licenseClient)
 {
     private readonly string _uploadDir = StorageConstants.UploadDir;//for upload directory
     private readonly IPstStoragePool _pool = pool;
     private readonly IDistributedCache _cache = cache;
     private readonly AppDbContext _db = db;
-    private readonly ILogger<PstService> _logger = logger;
+    private readonly ILogger<PstService> _logger = loggerService;
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private readonly LicenseApiClient _licenseClient = licenseClient;
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _uploadLocks = new();
@@ -506,7 +506,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, 
                                                                                              string userId, 
                                                                                              bool isDemo,
-                                                                                             ModuleLicenseType moduleLicenseType,
+                                                                                             ModuleLicenseType _moduleLicenseType,
                                                                                              bool excludeEmptyFolders = false, 
                                                                                              string? userEmail = null, 
                                                                                              bool deduplicate = false, 
@@ -581,14 +581,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
 
-        // --- NEW: LICENSE CHECK BEFORE DEFINING PATHS ---
-        // var licenseId = userEmail ?? userId;
-        // var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
-        // if (!licenseStatus.CanConvert)
-        // {
-        //     throw new InvalidOperationException($"License check failed: {licenseStatus}");
-        // }
-        int exportLimit = -1;//licenseStatus.ExportFileLimit;
+        var licenseId = userEmail ?? userId;
+        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
+        if (!licenseStatus.CanConvert)
+        {
+             throw new Exception("License limit exceeded");
+        }
+        int exportLimit = -1;
         if(isDemo)
         {
             exportLimit = AllConstants.DemoExportLimit;
@@ -615,11 +614,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
 
         // Console.WriteLine($"[CONVERT] Starting BACKGROUND conversion for session {sessionId} to {format}");
-
         if (session != null)
         {
             session.Status = "Converting";
             await _db.SaveChangesAsync();
+        }
+
+        // IMPROVEMENT: Cancel any existing task for this session to prevent resource contention
+        if (_conversionCts.TryRemove(sessionId, out var existingCts))
+        {
+            try { existingCts.Cancel(); existingCts.Dispose(); } catch { }
         }
 
         var cts = new CancellationTokenSource();
@@ -632,9 +636,52 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             var scopedDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             try
             {
-                await _pool.AccessAsync(sessionId, srcPath, async srcStorage =>
+                licenseId ??= "anonymous";
+                var storageTracker = new BatchStorageTracker(licenseId, _licenseClient);
+                
+                // Record item usage immediately upon starting conversion
+                await _licenseClient.UpdateItemsAsync(licenseId);
+                
+                // HYPER FAST PATH: Direct OST to PST conversion (Native implementation)
+                if (!deduplicate && !excludeEmptyFolders && exportLimit == -1)
                 {
-                    if (File.Exists(outputPath)) TryDelete(outputPath);
+                    try 
+                    {
+                        token.ThrowIfCancellationRequested();
+                        if (_logger.IsEnabled(LogLevel.Information))
+                            _logger.LogInformation("[PstService] Using HYPER FAST PATH for session {SessionId}", sessionId);
+                        
+                        // Storage tracking (approximate at start)
+                        var sessionInfo = await scopedDb.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                        if (sessionInfo != null) await storageTracker.UpdateAsync(sessionInfo.Size);
+
+                        using (var storage = PersonalStorage.FromFile(srcPath))
+                        {
+                            storage.SaveAs(outputPath, FileFormat.Pst);
+                        }
+                        
+                        token.ThrowIfCancellationRequested();
+                        await storageTracker.FlushAsync();
+                        
+                        if (sessionInfo != null)
+                        {
+                            sessionInfo.Status = "Ready (Native)";
+                            sessionInfo.IsPaid = true; // Avoid double-counting
+                            await scopedDb.SaveChangesAsync();
+                        }
+                        return;
+                    }
+                    catch (OperationCanceledException) { return; }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning("[PstService] Native ConvertOstToPst failed, falling back: {Message}", ex.Message);
+                        if (File.Exists(outputPath)) TryDelete(outputPath);
+                    }
+                }
+
+                await _pool.AccessAsync(sessionId, srcPath, async srcStorage =>
+                    {
+                        if (File.Exists(outputPath)) TryDelete(outputPath);
 
                         using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
                         {
@@ -648,8 +695,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             if (!deduplicate && !excludeEmptyFolders && exportLimit == -1)
                             {
                                 // FAST PATH: Direct merge (Consolidation)
+                                // This is significantly faster than sequential processing.
+                                sessionInfo!.Status = "Processing: Consolidating data...";
+                                await scopedDb.SaveChangesAsync();
+                                
+                                // Record storage for consolidation path
+                                await storageTracker.UpdateAsync(sessionInfo.Size);
+                                
                                 destStorage.MergeWith([srcPath]);
-                                // For direct merge, we should ideally count items too, but as an approximation we skip or use folder counts
                             }
                             else
                             {
@@ -657,16 +710,18 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                 var folderCounts = excludeEmptyFolders ? new Dictionary<string, int>() : null;
                                 if (excludeEmptyFolders) BuildFolderCountCache(srcStorage.RootFolder, folderCounts!);
 
-                                await CopyFolders(userEmail ?? userId,
-                                            srcStorage.RootFolder,
-                                            destStorage.RootFolder,
-                                            srcStorage,
-                                            excludeEmptyFolders,
-                                            exportLimit,
-                                            seenMessages,
-                                            null,
-                                            folderCounts,
-                                            token);
+                                var limitReached = false;
+                                await CopyFolders(licenseId, srcStorage.RootFolder, destStorage.RootFolder, srcStorage, _licenseClient, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, token, () => limitReached = true, _logger, storageTracker);
+                                
+                                // Final flush for batched storage
+                                await storageTracker.FlushAsync();
+
+                                if (limitReached)
+                                {
+                                    _logger.LogWarning("OST to PST conversion for session {SessionId} stopped early due to license limit.", sessionId);
+                                    var s = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
+                                    if (s != null) s.Status = "Partial: Limit Reached";
+                                }
                             }
 
                             if (splitSizeMb > 0)
@@ -677,8 +732,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                 destStorage.SplitInto(splitSizeMb.Value * 1024 * 1024, tempDir);
                             }
                         }
-                    return true;
-                }, password);
+                        return true;
+                    }, password);
 
                 List<string> splitFilenames = [];
                 if (splitSizeMb > 0)
@@ -705,6 +760,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 if (s != null && !token.IsCancellationRequested)
                 {
                     s.Status = "Ready"; // Clearly mark as ready
+                    s.IsPaid = true;    // Session conversion is paid for
                     if (splitFilenames.Count > 0)
                     {
                         s.SplitFilesJson = System.Text.Json.JsonSerializer.Serialize(splitFilenames);
@@ -750,76 +806,123 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                     FolderInfo source,
                                     FolderInfo destParent,
                                     PersonalStorage srcPst,
+                                    LicenseApiClient licenseClient,
                                     bool excludeEmptyFolders,
                                     int limit,
                                     HashSet<string>? seenHashes,
                                     HashSet<string>? visitedFolders = null,
                                     Dictionary<string, int>? folderCounts = null,
-                                    CancellationToken token = default)
+                                    CancellationToken token = default,
+                                    Action? onLimitReached = null,
+                                    ILogger? logger = null,
+                                    BatchStorageTracker? tracker = null)
     {
+        var log = logger;
         visitedFolders ??= [];
         if (!visitedFolders.Add(source.EntryIdString)) return;
 
-        foreach (var srcFolder in source.GetSubFolders())
+        IEnumerable<FolderInfo>? subFolders = null;
+        try { subFolders = source.GetSubFolders(); }
+        catch (Exception ex) { log?.LogWarning("Failed to get subfolders for {Path}: {Message}", source.DisplayName, ex.Message); }
+
+        if (subFolders == null) return;
+
+        foreach (var srcFolder in subFolders)
         {
-            token.ThrowIfCancellationRequested();
-
-            if (excludeEmptyFolders)
-            {
-                int totalMessages = 0;
-                if (folderCounts != null && folderCounts.TryGetValue(srcFolder.EntryIdString, out int cachedCount))
-                {
-                    totalMessages = cachedCount;
-                }
-                else
-                {
-                    totalMessages = GetTotalMessageCount(srcFolder);
-                }
-                if (totalMessages == 0) continue;
-            }
-
-            // Track item usage for this folder (Removed: Now tracking file upload count instead)
-            var contents = srcFolder.GetContents();
-            if (contents.Count > 0)
-            {
-                // Logic moved to file upload level
-            }
-
-            var newFolder = destParent.AddSubFolder(srcFolder.DisplayName);
-            int folderExportedCount = 0;
-            foreach (var msgInfo in srcFolder.GetContents())
+            try
             {
                 token.ThrowIfCancellationRequested();
-                if (limit > -1 && folderExportedCount >= limit) break;
 
-                // Deduplication optimization: Try to get key from MessageInfo first to avoid expensive extraction
-                string? dedupKey = null;
-                if (seenHashes != null)
+                if (excludeEmptyFolders)
                 {
-                    if (msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_INTERNET_MESSAGE_ID))
+                    int totalMessages = 0;
+                    if (folderCounts != null && folderCounts.TryGetValue(srcFolder.EntryIdString, out int cachedCount))
                     {
-                        dedupKey = msgInfo.Properties[MapiPropertyTag.PR_INTERNET_MESSAGE_ID].GetString();
+                        totalMessages = cachedCount;
                     }
-
-                    if (!string.IsNullOrEmpty(dedupKey) && !seenHashes.Add(dedupKey)) continue;
+                    else
+                    {
+                        totalMessages = GetTotalMessageCount(srcFolder);
+                    }
+                    if (totalMessages == 0) continue;
                 }
 
-                using var msg = srcPst.ExtractMessage(msgInfo.EntryIdString);
+                // Track item usage for this folder (Removed: Now tracking file upload count instead)
+                MessageInfoCollection? contents = null;
+                try { contents = srcFolder.GetContents(); }
+                catch (Exception ex) { log?.LogWarning("Failed to get contents for folder {Path}: {Message}", srcFolder.DisplayName, ex.Message); }
+
+                if (contents == null) continue;
+
+                var newFolder = destParent.AddSubFolder(srcFolder.DisplayName);
                 
-                if (msg != null)
+                int folderExportedCount = 0;
+                foreach (var msgInfo in contents)
                 {
-                    if (seenHashes != null && string.IsNullOrEmpty(dedupKey))
-                    {
-                        var messageId = msg.Headers["Message-ID"] ?? msg.Headers["Message-Id"];
-                        dedupKey = !string.IsNullOrEmpty(messageId) ? messageId : $"{msg.Subject}_{msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME]?.GetDateTime()}";
-                        if (!seenHashes.Add(dedupKey)) continue;
-                    }
+                    token.ThrowIfCancellationRequested();
+                    if (limit > -1 && folderExportedCount >= limit) break;
 
-                    newFolder.AddMessage(msg);
-                    folderExportedCount++;
+                    try
+                    {
+                        // Deduplication optimization
+                        string? dedupKey = null;
+                        if (seenHashes != null)
+                        {
+                            if (msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_INTERNET_MESSAGE_ID))
+                            {
+                                dedupKey = msgInfo.Properties[MapiPropertyTag.PR_INTERNET_MESSAGE_ID].GetString();
+                            }
+
+                            if (!string.IsNullOrEmpty(dedupKey) && !seenHashes.Add(dedupKey)) continue;
+                        }
+
+                        using var msg = srcPst.ExtractMessage(msgInfo.EntryIdString);
+                        
+                        if (msg != null)
+                        {
+                            if (seenHashes != null && string.IsNullOrEmpty(dedupKey))
+                            {
+                                var messageId = msg.Headers["Message-ID"] ?? msg.Headers["Message-Id"];
+                                dedupKey = !string.IsNullOrEmpty(messageId) ? messageId : $"{msg.Subject}_{msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME]?.GetDateTime()}";
+                                if (!seenHashes.Add(dedupKey)) continue;
+                            }
+
+                            var msgSize = msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE)
+                                ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong()
+                                : 0;
+                            
+                            if (tracker != null)
+                            {
+                                if (!await tracker.UpdateAsync(msgSize))
+                                {
+                                    onLimitReached?.Invoke();
+                                    return;
+                                }
+                            }
+                            else if (!await licenseClient.UpdateStorageAsync(licenseId, msgSize))
+                            {
+                                onLimitReached?.Invoke();
+                                return; // Stop recursion for this branch
+                            }
+
+                            newFolder.AddMessage(msg);
+                            folderExportedCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        log?.LogWarning("Skipping corrupted message in folder {Path}: {Message}", srcFolder.DisplayName, ex.Message);
+                        continue;
+                    }
                 }
+                await CopyFolders(licenseId, srcFolder, newFolder, srcPst, licenseClient, excludeEmptyFolders, limit, seenHashes, visitedFolders, folderCounts, token, onLimitReached, log, tracker);
             }
-            await CopyFolders(licenseId, srcFolder, newFolder, srcPst, excludeEmptyFolders, limit, seenHashes, visitedFolders, folderCounts, token);
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                log?.LogError(ex, "Failed to process folder {Path}", srcFolder.DisplayName);
+                continue;
+            }
         }
     }
     /// <summary>
@@ -841,9 +944,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private static int GetTotalMessageCount(FolderInfo folder)
     {
         int count = folder.ContentCount;
-        foreach (var sub in folder.GetSubFolders())
+        IEnumerable<FolderInfo>? subFolders = null;
+        try { subFolders = folder.GetSubFolders(); }
+        catch { }
+
+        if (subFolders != null)
         {
-            count += GetTotalMessageCount(sub);
+            foreach (var sub in subFolders)
+            {
+                count += GetTotalMessageCount(sub);
+            }
         }
         return count;
     }
@@ -957,8 +1067,11 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
             // LogDebug($"GetMessagesAsync: Folder '{folder.DisplayName}', ContentCount={folder.ContentCount}");
             var list = new List<PstMessageSummary>();
-            var contents = folder.GetContents();
-            // LogDebug($"GetMessagesAsync: GetContents() returned {contents.Count} items");
+            MessageInfoCollection? contents = null;
+            try { contents = folder.GetContents(); }
+            catch (Exception ex) { _logger.LogWarning("Failed to get contents for folder {Path}: {Message}", folder.DisplayName, ex.Message); }
+
+            if (contents == null) return Task.FromResult(list);
 
             foreach (var msgInfo in contents)
             {
@@ -976,7 +1089,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     To = msgInfo.DisplayTo ?? "",
                     Date = date,
                     Size = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0,
-                    HasAttachments = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_HASATTACH) && msgInfo.Properties[MapiPropertyTag.PR_HASATTACH].GetBoolean()
+                    HasAttachments = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_HASATTACH) && msgInfo.Properties[MapiPropertyTag.PR_HASATTACH].GetBoolean(),
+                    Body = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_BODY) ? msgInfo.Properties[MapiPropertyTag.PR_BODY].GetString() : ""
                 });
             }
 
@@ -1012,7 +1126,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         return await _pool.AccessAsync(sessionId, filePath, pst =>
         {
             
-            var msg = pst.ExtractMessage(entryId);
+            MapiMessage? msg = null;
+            try { msg = pst.ExtractMessage(entryId); }
+            catch (Exception ex) { _logger.LogWarning("Failed to extract message {EntryId}: {Message}", entryId, ex.Message); }
+
             if (msg == null) return Task.FromResult<PstMessageDetail?>(null);
 
             
@@ -1026,7 +1143,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 Cc = msg.DisplayCc ?? "",
                 Date = msg.DeliveryTime,
                 BodyHtml = msg.BodyHtml ?? "",
-                BodyText = msg.Body ?? "",
+                BodyText = !string.IsNullOrEmpty(msg.Body) ? msg.Body : (msg.BodyHtml != null ? "" : "No content available"),
                 Attachments = [.. msg.Attachments.Select(att => new AttachmentInfo {
                         FileName = att.LongFileName ?? att.DisplayName ?? "attachment",
                         Size = att.BinaryData?.Length ?? 0,
@@ -1052,18 +1169,33 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             if (folder is null) return Task.FromResult(new List<PstContactInfo>());
 
             var list = new List<PstContactInfo>();
-            foreach (var msgInfo in folder.GetContents())
+            MessageInfoCollection? contents = null;
+            try { contents = folder.GetContents(); }
+            catch (Exception ex) { _logger.LogWarning("Failed to get contents for contact folder {Path}: {Message}", folder.DisplayName, ex.Message); }
+
+            if (contents == null) return Task.FromResult(list);
+
+            foreach (var msgInfo in contents)
             {
                 if (msgInfo.MessageClass != "IPM.Contact") continue;
-                var contact = (MapiContact)pst.ExtractMessage(msgInfo.EntryIdString).ToMapiMessageItem();
-                list.Add(new PstContactInfo
+                MapiMessage? msg = null;
+                try { msg = pst.ExtractMessage(msgInfo.EntryIdString); }
+                catch (Exception ex) { _logger.LogWarning("Failed to extract contact {EntryId}: {Message}", msgInfo.EntryIdString, ex.Message); }
+                
+                if (msg == null) continue;
+
+                using (msg)
                 {
-                    EntryId = msgInfo.EntryIdString,
-                    DisplayName = contact.NameInfo?.DisplayName ?? "",
-                    Email = contact.ElectronicAddresses?.Email1?.EmailAddress ?? "",
-                    Company = contact.ProfessionalInfo?.CompanyName ?? "",
-                    Phone = contact.Telephones?.BusinessTelephoneNumber ?? ""
-                });
+                    var contact = (MapiContact)msg.ToMapiMessageItem();
+                    list.Add(new PstContactInfo
+                    {
+                        EntryId = msgInfo.EntryIdString,
+                        DisplayName = contact.NameInfo?.DisplayName ?? "",
+                        Email = contact.ElectronicAddresses?.Email1?.EmailAddress ?? "",
+                        Company = contact.ProfessionalInfo?.CompanyName ?? "",
+                        Phone = contact.Telephones?.BusinessTelephoneNumber ?? ""
+                    });
+                }
             }
             return Task.FromResult(list);
         }, password);
@@ -1085,18 +1217,33 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             if (folder is null) return Task.FromResult(new List<PstCalendarInfo>());
 
             var list = new List<PstCalendarInfo>();
-            foreach (var msgInfo in folder.GetContents())
+            MessageInfoCollection? contents = null;
+            try { contents = folder.GetContents(); }
+            catch (Exception ex) { _logger.LogWarning("Failed to get contents for calendar folder {Path}: {Message}", folder.DisplayName, ex.Message); }
+
+            if (contents == null) return Task.FromResult(list);
+
+            foreach (var msgInfo in contents)
             {
                 if (msgInfo.MessageClass != "IPM.Appointment") continue;
-                var appt = (MapiCalendar)pst.ExtractMessage(msgInfo.EntryIdString).ToMapiMessageItem();
-                list.Add(new PstCalendarInfo
+                MapiMessage? msg = null;
+                try { msg = pst.ExtractMessage(msgInfo.EntryIdString); }
+                catch (Exception ex) { _logger.LogWarning("Failed to extract calendar item {EntryId}: {Message}", msgInfo.EntryIdString, ex.Message); }
+
+                if (msg == null) continue;
+
+                using (msg)
                 {
-                    EntryId = msgInfo.EntryIdString,
-                    Subject = appt.Subject ?? "",
-                    StartDate = appt.StartDate,
-                    EndDate = appt.EndDate,
-                    Location = appt.Location ?? ""
-                });
+                    var appt = (MapiCalendar)msg.ToMapiMessageItem();
+                    list.Add(new PstCalendarInfo
+                    {
+                        EntryId = msgInfo.EntryIdString,
+                        Subject = appt.Subject ?? "",
+                        StartDate = appt.StartDate,
+                        EndDate = appt.EndDate,
+                        Location = appt.Location ?? ""
+                    });
+                }
             }
             return Task.FromResult(list);
         }, password);
@@ -1137,32 +1284,36 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         await _pool.AccessAsync(sessionId, filePath, async pst =>
         {
             var folder = pst.GetFolderById(folderId) ?? throw new FileNotFoundException("Folder not found");
-            using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024))
-            using (var archive = new ZipArchive(fs, ZipArchiveMode.Create, true))
+            using var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024);
+            using var archive = new ZipArchive(fs, ZipArchiveMode.Create, true);
+            // Batch check storage limit before export
+            long totalFolderSize = 0;
+            foreach (var msgInfo in folder.GetContents())
             {
-                // Batch check storage limit before export
-                long totalFolderSize = 0;
-                foreach (var msgInfo in folder.GetContents())
-                {
-                    DateTime date = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME].GetDateTime() : DateTime.MinValue;
-                    if (filter != null && !filter.IsEmpty() && !filter.Matches(date)) continue;
-                    totalFolderSize += msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0;
-                }
+                DateTime date = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME].GetDateTime() : DateTime.MinValue;
+                if (filter != null && !filter.IsEmpty() && !filter.Matches(date)) continue;
+                totalFolderSize += msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0;
+            }
 
-                if (totalFolderSize > 0)
-                {
-                    var success = await _licenseClient.UpdateStorageAsync(userId, totalFolderSize);
-                    if (!success) throw new Exception("License storage limit exceeded");
-                }
+            if (totalFolderSize > 0)
+            {
+                var success = await _licenseClient.UpdateStorageAsync(userId, totalFolderSize);
+                if (!success) throw new Exception("License storage limit exceeded");
+            }
 
-                int index = 0;
-                foreach (var msgInfo in folder.GetContents())
-                {
-                    DateTime date = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME].GetDateTime() : DateTime.MinValue;
-                    if (filter != null && !filter.IsEmpty() && !filter.Matches(date)) continue;
+            int index = 0;
+            foreach (var msgInfo in folder.GetContents())
+            {
+                DateTime date = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME].GetDateTime() : DateTime.MinValue;
+                if (filter != null && !filter.IsEmpty() && !filter.Matches(date)) continue;
 
-                    using var msg = pst.ExtractMessage(msgInfo.EntryIdString);
-                    if (msg != null)
+                MapiMessage? msg = null;
+                try { msg = pst.ExtractMessage(msgInfo.EntryIdString); }
+                catch (Exception ex) { _logger.LogWarning("Failed to extract message {EntryId}: {Message}", msgInfo.EntryIdString, ex.Message); }
+
+                if (msg != null)
+                {
+                    using (msg)
                     {
                         index++;
                         var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}", CompressionLevel.NoCompression);
@@ -1248,7 +1399,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             return (tempZipPath, false);
         }
 
-        if (File.Exists(tempZipPath) && isFinished)
+        if (File.Exists(tempZipPath) && (isFinished || (session != null && session.Status.StartsWith("Ready"))))
         {
             // LogDebug($"ExportAllAsync: Task for {suffix} is already ready.");
             return (tempZipPath, true);
@@ -1259,6 +1410,12 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             // LogDebug($"ExportAllAsync: Starting new export task for {suffix}. Setting status to {exportingStatus}");
             session.Status = exportingStatus;
             await _db.SaveChangesAsync();
+        }
+
+        // IMPROVEMENT: Cancel existing export to save CPU/IO
+        if (_conversionCts.TryRemove(sessionId, out var existingExportCts))
+        {
+            try { existingExportCts.Cancel(); existingExportCts.Dispose(); } catch { }
         }
 
         var cts = new CancellationTokenSource();
@@ -1273,80 +1430,125 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             {
                 await _pool.AccessAsync(sessionId, filePath, async pst =>
                 {
-                    using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 4 * 1024 * 1024))
-                    using (var archive = new System.IO.Compression.ZipArchive(fs, ZipArchiveMode.Create, true))
-                    {
+                    using var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 4 * 1024 * 1024);
+                    using var archive = new System.IO.Compression.ZipArchive(fs, ZipArchiveMode.Create, true);
+                        var licenseId = userEmail ?? userId ?? "anonymous";
+                        var storageTracker = new BatchStorageTracker(licenseId, _licenseClient);
+                        int index = 0;
+
                         if (entryIds != null && entryIds.Count > 0)
                         {
-                            // LogDebug($"ExportAllAsync: Processing {entryIds.Count} selected entryIds");
-                            int index = 0;
-                            long accumulatedSize = 0;
-                            int batchCount = 0;
+                            var semaphore = new SemaphoreSlim(8); 
+                            var archiveLock = new object();
+                            var exportTasks = new List<Task>();
+                            var limitReached = false;
+                            using var limitCts = CancellationTokenSource.CreateLinkedTokenSource(token);
 
-                            // Use userEmail (identity) for license tracking, fallback to userId
-                            string licenseId = userEmail ?? userId;
-
-                            foreach (var entryId in entryIds)
+                            try
                             {
-                                token.ThrowIfCancellationRequested();
-                                try
+                                foreach (var entryId in entryIds)
                                 {
-                                    using var msg = pst.ExtractMessage(entryId);
-                            if (msg == null) continue;
+                                    if (limitReached) break;
+                                    limitCts.Token.ThrowIfCancellationRequested();
+                                    await semaphore.WaitAsync(limitCts.Token);
 
-                                    long msgSize = msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) 
-                                        ? msg.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() 
-                                        : 0;
-                                    
-                                    accumulatedSize += msgSize;
-                                    batchCount++;
-
-                                    // Update storage limit in batches of 50 messages
-                                    // (Item count = OST files, tracked per upload only)
-                                    if (batchCount >= 50)
+                                    exportTasks.Add(Task.Run(async () =>
                                     {
-                                        var sSuccess = await _licenseClient.UpdateStorageAsync(licenseId, accumulatedSize);
-                                        if (!sSuccess) throw new Exception("License storage limit exceeded");
-                                        accumulatedSize = 0;
-                                        batchCount = 0;
-                                    }
+                                        try
+                                        {
+                                            MapiMessage? msg = null;
+                                            lock (pst)
+                                            {
+                                                try { msg = pst.ExtractMessage(entryId); }
+                                                catch (Exception ex) { _logger.LogWarning("Failed to extract message {EntryId}: {Message}", entryId, ex.Message); }
+                                            }
 
-                                    index++;
-                                    var entry = archive.CreateEntry($"{SanitizeFileName(msg.Subject ?? $"msg_{index}")}_{index}{GetFileExtension(format)}", CompressionLevel.NoCompression);
-                                    using var es = entry.Open();
-                                    SaveMessageToStream(msg, es, format);
-                                }
-                                catch (Exception ex)
-                                {
-                                    if (ex.Message == "License limit exceeded") throw;
-                                    continue;
+                                            if (msg == null) return;
+
+                                            using (msg)
+                                            {
+                                                Interlocked.Increment(ref index);
+                                                var currentMsgIndex = index;
+                                                var msgSize = msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE)
+                                                    ? msg.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong()
+                                                    : 0;
+
+                                                // Use tracker for batched updates
+                                                if (storageTracker != null)
+                                                {
+                                                    if (!await storageTracker.UpdateAsync(msgSize))
+                                                    {
+                                                        limitReached = true;
+                                                        limitCts.Cancel();
+                                                        return;
+                                                    }
+                                                }
+                                                else if (!await _licenseClient.UpdateStorageAsync(licenseId, msgSize))
+                                                {
+                                                    limitReached = true;
+                                                    limitCts.Cancel();
+                                                    return;
+                                                }
+
+                                                var ext = GetFileExtension(format);
+                                                var sanitizedSubject = SanitizeFileName(msg.Subject ?? $"msg_{currentMsgIndex}");
+                                                var entryPath = $"{sanitizedSubject}_{currentMsgIndex}{ext}";
+
+                                                lock (archiveLock)
+                                                {
+                                                    var entry = archive.CreateEntry(entryPath, CompressionLevel.NoCompression);
+                                                    using var es = entry.Open();
+                                                    SaveMessageToStream(msg, es, format);
+                                                }
+                                            }
+                                        }
+                                        catch (OperationCanceledException) { }
+                                        catch (Exception ex)
+                                        {
+                                            _logger.LogError(ex, "Failed to process message {EntryId}", entryId);
+                                        }
+                                        finally
+                                        {
+                                            semaphore.Release();
+                                        }
+                                    }, limitCts.Token));
                                 }
                             }
-                            // Final storage update for remaining items
-                            if (batchCount > 0)
+                            finally
                             {
-                                var sSuccess = await _licenseClient.UpdateStorageAsync(licenseId, accumulatedSize);
-                                if (!sSuccess) throw new Exception("License storage limit exceeded");
+                                await Task.WhenAll(exportTasks).ContinueWith(_ => { });
                             }
-                            // LogDebug($"ExportAllAsync: Successfully extracted {index} messages");
+                            
+                            if (limitReached)
+                            {
+                                _logger.LogWarning("Export for session {SessionId} stopped early due to license limit.", sessionId);
+                                var s = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
+                                if (s != null) s.Status = "Partial: Limit Reached"; 
+                                // We'll continue to mark it as Ready later, but this flags the partial state
+                            }
+                            else
+                            {
+                                await Task.WhenAll(exportTasks);
+                            }
                         }
                         else
                         {
                             var root = string.IsNullOrEmpty(folderId) ? pst.RootFolder : pst.GetFolderById(folderId);
                             if (root != null)
                             {
-                                await ExportFolderRecursive(userEmail ?? userId, pst, root, "", format, archive, filter, excludeEmptyFolders, exportLimit, token);
+                                var archiveLock = new object();
+                                await ExportFolderRecursive(licenseId, pst, root, "", format, archive, archiveLock, filter, excludeEmptyFolders, exportLimit, token);
                             }
                         }
-                    }
-                    return true;
-                }, password);
+                        return true;
+                    }, password);
 
                 var s = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
                 if (s != null && !token.IsCancellationRequested)
                 {
                     // LogDebug($"ExportAllAsync: Background task complete for {suffix}. Setting status to {readyStatus}");
                     s.Status = readyStatus;
+                    s.IsPaid = true; // Mark as paid after export
                     await scopedDb.SaveChangesAsync();
                 }
             }
@@ -1378,7 +1580,21 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <summary>
     /// Recursively exports folder contents and subfolders into a ZIP archive.
     /// </summary>
-    private async Task ExportFolderRecursive(string licenseId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token)
+    private async Task ExportFolderRecursive(string licenseId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, object archiveLock, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token)
+    {
+        var tracker = new BatchStorageTracker(licenseId, _licenseClient);
+        var limitReached = false;
+        await ExportFolderRecursiveInternal(licenseId, pst, folder, path, format, archive, archiveLock, filter, excludeEmpty, limit, token, () => limitReached = true, tracker);
+        
+        await tracker.FlushAsync();
+
+        if (limitReached)
+        {
+             _logger.LogWarning("Recursive export hit license limit at folder: {Path}", path);
+        }
+    }
+
+    private async Task ExportFolderRecursiveInternal(string licenseId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, object archiveLock, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token, Action onLimitHit, BatchStorageTracker? tracker = null)
     {
         token.ThrowIfCancellationRequested();
 
@@ -1402,51 +1618,98 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         if (!string.IsNullOrEmpty(path)) archive.CreateEntry(path + "/");
 
-        // Batch check storage limit for this folder content
-        long folderTotalSize = 0;
-        int folderLimitCheckCount = 0;
-        foreach (var msgInfo in contents)
-        {
-            if (limit > -1 && folderLimitCheckCount >= limit) break;
-            folderTotalSize += msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0;
-            folderLimitCheckCount++;
-        }
-
-        if (folderTotalSize > 0)
-        {
-            var sSuccess = await _licenseClient.UpdateStorageAsync(licenseId, folderTotalSize);
-            if (!sSuccess) throw new Exception("License storage limit exceeded");
-        }
+        // REMOVED upfront folder scan that caused double-counting and performance loss
 
         int folderExportedCount = 0;
-        foreach (var msgInfo in contents)
+        var semaphore = new SemaphoreSlim(8);
+        var exportTasks = new List<Task>();
+        using var limitCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        var limitHitLocal = false;
+
+        try
         {
-            token.ThrowIfCancellationRequested();
-            if (limit > -1 && folderExportedCount >= limit) break;
-
-            using var msg = pst.ExtractMessage(msgInfo.EntryIdString);
-            if (msg == null) continue;
-
-            folderExportedCount++;
-            var entryName = string.IsNullOrEmpty(path)
-                ? $"{SanitizeFileName(msg.Subject ?? "msg")}_{folderExportedCount}{GetFileExtension(format)}"
-                : $"{path}/{SanitizeFileName(msg.Subject ?? "msg")}_{folderExportedCount}{GetFileExtension(format)}";
-
-            try
+            foreach (var msgInfo in contents)
             {
-                var entry = archive.CreateEntry(entryName, CompressionLevel.NoCompression);
-                using var es = entry.Open();
-                SaveMessageToStream(msg, es, format);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message == "License storage limit exceeded") throw;
+                if (limitHitLocal) break;
+                limitCts.Token.ThrowIfCancellationRequested();
+                if (limit > -1 && folderExportedCount >= limit) break;
+
+                folderExportedCount++;
+                var currentExportCount = folderExportedCount;
+                await semaphore.WaitAsync(limitCts.Token);
+
+                exportTasks.Add(Task.Run(async () =>
+                {
+                    try
+                    {
+                        MapiMessage? msg = null;
+                        lock (pst)
+                        {
+                            try { msg = pst.ExtractMessage(msgInfo.EntryIdString); }
+                            catch (Exception ex) { _logger.LogWarning("Failed to extract message {EntryId}: {Message}", msgInfo.EntryIdString, ex.Message); }
+                        }
+
+                        if (msg == null) return;
+
+                        using (msg)
+                        {
+                            var msgSize = msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE)
+                                ? msg.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong()
+                                : 0;
+
+                            // Strict validation: Terminate gracefully if limit hit
+                            if (tracker != null)
+                            {
+                                if (!await tracker.UpdateAsync(msgSize))
+                                {
+                                    limitHitLocal = true;
+                                    onLimitHit();
+                                    limitCts.Cancel();
+                                    return;
+                                }
+                            }
+                            else if (!await _licenseClient.UpdateStorageAsync(licenseId, msgSize))
+                            {
+                                limitHitLocal = true;
+                                onLimitHit();
+                                limitCts.Cancel();
+                                return;
+                            }
+
+                            var entryName = string.IsNullOrEmpty(path)
+                                ? $"{SanitizeFileName(msg.Subject ?? "msg")}_{currentExportCount}{GetFileExtension(format)}"
+                                : $"{path}/{SanitizeFileName(msg.Subject ?? "msg")}_{currentExportCount}{GetFileExtension(format)}";
+
+                            lock (archiveLock)
+                            {
+                                var entry = archive.CreateEntry(entryName, CompressionLevel.NoCompression);
+                                using var es = entry.Open();
+                                SaveMessageToStream(msg, es, format);
+                            }
+                        }
+                    }
+                    catch (OperationCanceledException) { }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to process message {EntryId}", msgInfo.EntryIdString);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }, limitCts.Token));
             }
         }
+        finally
+        {
+            await Task.WhenAll(exportTasks).ContinueWith(_ => { });
+        }
+
+        if (limitHitLocal) return;
 
         foreach (var sub in folder.GetSubFolders())
         {
-            await ExportFolderRecursive(licenseId, pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, filter, excludeEmpty, limit, token);
+            await ExportFolderRecursiveInternal(licenseId, pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, archiveLock, filter, excludeEmpty, limit, token, onLimitHit, tracker);
         }
     }
     /// <summary>
@@ -1579,10 +1842,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         mailMsg.Save(ms, Aspose.Email.SaveOptions.DefaultMhtml);
                         ms.Position = 0;
                         
-                        var doc = new Aspose.Words.Document(ms);
-                        
-                        // Ensure Aspose.Words can find fonts for international characters
-                        doc.FontSettings = Aspose.Words.Fonts.FontSettings.DefaultInstance;
+                        var doc = new Aspose.Words.Document(ms)
+                        {
+                            FontSettings = Aspose.Words.Fonts.FontSettings.DefaultInstance
+                        };
                         
                         var wordsSaveFormat = format switch
                         {
@@ -1751,6 +2014,40 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             try { File.Delete(path); return; }
             catch (IOException) { if (i < 2) Thread.Sleep(500); }
             catch { return; }
+        }
+    }
+    /// <summary>
+    /// Helper class to batch storage updates to the license client during heavy processing.
+    /// </summary>
+    private class BatchStorageTracker(string licenseId, LicenseApiClient client)
+    {
+        public long PendingSize { get; private set; }
+        public int PendingCount { get; private set; }
+
+        public async Task<bool> UpdateAsync(long size)
+        {
+            if (size <= 0) return true;
+            PendingSize += size;
+            PendingCount++;
+
+            // Batch every 100 messages or 10MB to balance performance and strictness
+            if (PendingCount >= 100 || PendingSize >= 10 * 1024 * 1024)
+            {
+                return await FlushAsync();
+            }
+            return true;
+        }
+
+        public async Task<bool> FlushAsync()
+        {
+            if (PendingSize <= 0) return true;
+            bool success = await client.UpdateStorageAsync(licenseId, PendingSize);
+            if (success)
+            {
+                PendingSize = 0;
+                PendingCount = 0;
+            }
+            return success;
         }
     }
 }
