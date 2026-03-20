@@ -19,21 +19,24 @@ import {
   Zap,
   Cloud,
   Gift,
-  ShieldCheck,
+  Shield,
   UserCheck,
   Clock,
   Headphones,
-  FileUp, // Correct name for UploadFile
-  CloudUpload, // Standard name
-  ShieldCheck as VerifiedUser, // Alias for better naming
+  FileUp,
+  CloudUpload,
+  ShieldCheck as VerifiedUser,
   Bolt,
-  Headset, // Correct name for SupportAgent
+  Headset,
+  Crown,
+  Hexagon,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import conversionVideo from "../../assets/Website_Color_Scheme_and_Video.mp4";
 import imagePng from "../../assets/image.png";
 import ExportDialog from "../ExportDialog";
 import licenseService from "../../services/licenseService";
+import { Button } from "@/components/ui/button";
 
 const Hero = ({ onUploadComplete }) => {
   const [file, setFile] = useState(null);
@@ -60,243 +63,115 @@ const Hero = ({ onUploadComplete }) => {
   const [licenseStatus, setLicenseStatus] = useState(null);
 
   useEffect(() => {
-    handleConvertRef.current = handleConvert;
-  });
-
-  useEffect(() => {
     const fetchLicense = async () => {
       if (isSignedIn) {
-        try {
-          const token = await getToken();
-          const email = user?.primaryEmailAddress?.emailAddress;
-          const data = await licenseService.getLicenseStatus(token, email);
-          setLicenseStatus(data);
-        } catch (err) {
-          console.error("Failed to fetch license in Hero", err);
-        }
+        const status = await licenseService.getLicenseStatus(getToken);
+        setLicenseStatus(status);
       }
     };
     fetchLicense();
+    window.addEventListener("license-refresh", fetchLicense);
+    return () => window.removeEventListener("license-refresh", fetchLicense);
   }, [isSignedIn, getToken]);
 
-  // Initial file drop handler - just sets the file, doesn't upload yet
   const onDrop = useCallback(
-    (acceptedFiles, fileRejections) => {
+    async (acceptedFiles) => {
+      if (acceptedFiles.length === 0) return;
+      if (uploading) return;
+
       if (!isSignedIn) {
         clerk.openSignIn();
         return;
       }
 
-      if (fileRejections.length > 0) {
-        toast.error("Only .ost files are supported.");
-        return;
-      }
-
       const selectedFile = acceptedFiles[0];
-      if (selectedFile) {
-        const ext = selectedFile.name.split(".").pop().toLowerCase();
-        if (ext !== "ost") {
-          toast.error("Only .ost files are supported.");
-          return;
+      setFile(selectedFile);
+      setUploading(true);
+      setUploadPhase("uploading");
+      setUploadDetail("Initializing secure upload...");
+
+      const controller = new AbortController();
+      setAbortController(controller);
+
+      try {
+        const token = await getToken();
+        
+        // Start Upload
+        const session = await fileService.uploadFile(
+          selectedFile,
+          token,
+          (prog) => setProgress(prog),
+          controller.signal
+        );
+
+        setActiveSessionId(session._id);
+        setUploadPhase("processing");
+        setUploadDetail("Processing OST structure...");
+
+        // Start Conversion
+        const result = await conversionService.startConversion(
+          session._id,
+          token
+        );
+        
+        setCompletedSession(result);
+        if (onUploadComplete) onUploadComplete(result);
+        toast.success("Conversion complete! You can now preview or export.");
+      } catch (err) {
+        if (err.name === "AbortError") {
+          toast.info("Upload cancelled");
+        } else {
+          toast.error(err.message || "Something went wrong");
         }
-        setFile(selectedFile);
-        setUploadPhase("idle");
-        if (handleConvertRef.current) {
-          handleConvertRef.current(selectedFile);
-        }
+        setFile(null);
+        setUploading(false);
+        setActiveSessionId(null);
+      } finally {
+        setAbortController(null);
+        setUploading(false);
       }
     },
-    [isSignedIn, clerk],
+    [isSignedIn, getToken, uploading, clerk, onUploadComplete]
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
-    noClick: true, // We have a specific Browse button
+    noClick: true,
+    noKeyboard: true,
     multiple: false,
     accept: {
       "application/vnd.ms-outlook": [".ost"],
-      "application/octet-stream": [".ost"],
+      "application/octet-stream": [".ost"]
     },
-    disabled: uploading || !!completedSession,
   });
 
-  const calculateFingerprint = async (file) => {
-    // Fallback if crypto.subtle is unavailable (e.g. non-HTTPS local dev)
-    if (!crypto || !crypto.subtle) {
-      return `fallback_${file.name}_${file.size}_${file.lastModified}`;
-    }
-
-    // Fingerprint: SHA-256 of first 1MB + File Size
-    const chunkSize = 1024 * 1024; // 1MB
-    const slice = file.slice(0, chunkSize);
-    const buffer = await slice.arrayBuffer();
-    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-    return `${hashHex}_${file.size}`;
-  };
-
-  const handleConvert = async (passedFile) => {
-    const targetFile = passedFile || file;
-    if (!targetFile) return;
-
-    if (
-      licenseStatus?.tier === "DemoExpired" ||
-      licenseStatus?.status === "Expired" ||
-      licenseStatus?.status === "Cancelled"
-    ) {
-      toast.error(
-        "Your license has expired or been cancelled. Please upgrade to continue.",
-      );
-      navigate("/our-plans");
-      return;
-    }
+  const handleDownloadPst = async () => {
+    if (!completedSession) return;
+    setIsDownloadingPst(true);
+    setFinishedPstDownload(false);
 
     const controller = new AbortController();
     setAbortController(controller);
-    setUploading(true);
-    setUploadPhase("uploading");
-    setFinishedPstDownload(false);
-    uploadActive.current = true;
 
     try {
-      const initialToken = await getToken();
-      if (!initialToken) {
-        console.warn("[Hero] No token found! Authentication might be missing.");
-      }
-
-
-      // Pre-upload optimization: Check for duplicates
-      setUploadDetail("Checking for existing conversions...");
-      try {
-        const fingerprint = await calculateFingerprint(targetFile);
-        console.log("[Hero] Calculated fingerprint:", fingerprint);
-        const dupResult = await checkDuplicate(fingerprint, initialToken);
-        if (dupResult.found) {
-          if (dupResult.isPaid) {
-            toast.success("Lifetime access detected! No upload needed.");
-            setUploadDetail("Redirecting to your paid conversion...");
-          } else {
-            toast.success("Previous conversion found! Resuming...");
-          }
-
-          setCompletedSession(dupResult.session);
-          setUploadPhase("complete");
-          return;
-        }
-      } catch (dupErr) {
-        console.warn("[Hero] Duplicate check failed (skipping):", dupErr);
-      }
-
-      // We reuse the existing fileService.uploadFile logic, passing the getToken function
-      // so it can refresh the token if it expires during a long upload
-      const result = await fileService.uploadFile(
-        targetFile,
-        getToken,
-        (info) => {
-          if (!uploadActive.current) return;
-
-          if (typeof info === "object") {
-            // Map service phases to UI phases
-            // Service: init -> uploading -> finalizing -> complete
-            if (info.phase === "finalizing") {
-              setUploadPhase("processing");
-              setUploadDetail("Finalizing conversion...");
-            } else if (info.phase === "complete") {
-              setUploadPhase("complete");
-            } else {
-              setUploadPhase("uploading");
-              setUploadDetail("Uploading OST file...");
-            }
-            setProgress(info.percent || 0);
-            if (info.activeSessionId && !activeSessionId) {
-              setActiveSessionId(info.activeSessionId);
-            }
-          } else {
-            setProgress(info);
-          }
-        },
-        null,
-        controller.signal,
-        user?.primaryEmailAddress?.emailAddress,
+      const token = await getToken();
+      const blob = await conversionService.downloadPst(
+        completedSession._id,
+        token,
+        controller.signal
       );
 
-      if (uploadActive.current) {
-        console.log("[Hero] Upload/Conversion result received:", result);
-        setCompletedSession(result);
-        setUploadPhase("complete");
-      }
-    } catch (err) {
-      if (err.message === "Upload cancelled") {
-        console.log("[Hero] Upload/Conversion cancelled by user");
-        return; // handleCancel already reset the state
-      }
-      console.error("[Hero] Upload/Conversion failed:", err);
-      toast.error(err.message || "Conversion failed");
-      setUploading(false);
-      setUploadPhase("idle"); // Reset to allow retry
-      setActiveSessionId(null);
-      setFile(null); // Clear file to go back to upload screen
-    } finally {
-      setAbortController(null);
-    }
-  };
-
-  const handleCancel = async () => {
-    if (abortController) {
-      abortController.abort();
-      uploadActive.current = false;
-      setUploading(false);
-      setUploadPhase("idle");
-      setProgress(0);
-      setUploadDetail("");
-      setFile(null);
-      toast.info("Upload cancelled");
-
-      // If we have an active session ID (it reached assembly phase), delete the session entirely.
-      if (activeSessionId) {
-        try {
-          const token = await getToken();
-          await fileService.deleteSession(activeSessionId, token);
-          console.log(`[Hero] Deleted aborted session: ${activeSessionId}`);
-        } catch (err) {
-          console.warn(
-            "[Hero] Failed to delete aborted session on server:",
-            err,
-          );
-        }
-        setActiveSessionId(null);
-      }
-    }
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const item = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${(bytes / Math.pow(k, item)).toFixed(1)} ${["B", "KB", "MB", "GB"][item]}`;
-  };
-
-  const handleDirectPstDownload = async () => {
-    if (!completedSession?.sessionId) return;
-    try {
-      setIsDownloadingPst(true);
-      const controller = new AbortController();
-      setAbortController(controller);
-      const email = user?.primaryEmailAddress?.emailAddress;
-
-      const savedName = await conversionService.convertToPst(
-        completedSession.sessionId,
-        getToken,
-        true,
-        (p) => console.log("[Hero] Download Progress:", p),
-        controller.signal,
-        email,
-      );
-
-      if (savedName) {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const savedName = completedSession.originalName.replace(".ost", "") + ".pst";
+      a.download = savedName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      if (!finishedPstDownload) {
         toast.success(`Started downloading: ${savedName}`);
         window.dispatchEvent(new Event("license-refresh"));
       }
@@ -314,52 +189,67 @@ const Hero = ({ onUploadComplete }) => {
   };
 
   return (
-    <section className="relative bg-[#f8fbff] py-12 px-4 md:px-8 flex flex-col items-center justify-center min-h-screen overflow-hidden">
-      {/* Fully Immersive Blueish Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#e0f2fe] via-[#f0f7ff] to-[#eef7ff] pointer-events-none" />
+    <section className="relative pt-6 pb-8 lg:pb-4 px-3 md:px-5 lg:px-8 w-full">
+      <div className="max-w-[1440px] mx-auto relative z-10 w-full lg:grid lg:grid-cols-[1fr_1.3fr] lg:gap-10 items-center">
+        {/* Left Column: Heading & Benefits */}
+        <div className="text-left py-4 md:py-8 lg:py-4 flex flex-col md:items-center lg:items-start md:text-center lg:text-left">
+          <h1 className="mb-4 text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold text-slate-800 tracking-tight leading-tight">
+            Convert <span className="text-brand-500 font-extrabold uppercase tracking-tight">OST to PST</span> Online
+          </h1>
+          <p className="mb-8 text-base sm:text-lg text-slate-600 font-medium max-w-sm md:max-w-xl lg:max-w-sm leading-relaxed">
+            Drag, Upload, Preview, and Export your outlook
+            data safely from any browser
+          </p>
 
-      {/* Dynamic Glow Elements */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-200/20 blur-[130px] rounded-full -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-brand-100/30 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/4" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-y-6 gap-x-6 sm:gap-x-8 max-w-sm sm:max-w-2xl lg:max-w-sm mt-4 md:mt-8 lg:mt-4">
+            <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
+              <Shield className="w-6 h-6 sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
+              <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+                Secure
+              </span>
+            </div>
+            <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
+              <Hexagon className="w-6 h-6 sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
+              <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+                Instant
+              </span>
+            </div>
+            <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
+              <Clock className="w-6 h-6 sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
+              <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+                24/7 Tech
+              </span>
+            </div>
+            <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
+              <Crown className="w-6 h-6 sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
+              <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+                Upgrade
+              </span>
+            </div>
+          </div>
+        </div>
 
-      <div className="max-w-6xl mx-auto text-center relative z-10 w-full">
-        <h1 className="mb-4 ">
-          Convert <span className="header-text-gradient">OST to PST</span>{" "}
-          Online
-        </h1>
-        <p className="mb-8 max-w-2xl mx-auto font-medium px-2">
-          Drag, upload, preview, and export your Outlook data safely from any
-          browser.
-        </p>
-
-        <div className="flex justify-center w-full">
-          {/* Main Upload Area */}
-          <div className="w-full max-w-3xl">
-            <div className="w-full rounded-[32px] md:rounded-[40px] bg-white border border-blue-100/50 shadow-[0_30px_60px_-15px_rgba(14,165,233,0.12)] overflow-hidden relative group/card hover:shadow-[0_40px_80px_-15px_rgba(14,165,233,0.15)] transition-all duration-700">
+        {/* Right Column: Upload Card */}
+        <div className="flex justify-center w-full py-4 md:py-8 lg:py-4">
+          <div className="w-full max-w-[950px] bg-white rounded-[24px] sm:rounded-[32px] px-6 py-8 sm:px-10 sm:py-12 md:py-16 lg:px-10 lg:py-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center text-center relative overflow-hidden transition-all">
+            {(!uploading || completedSession) && (
               <div
                 {...getRootProps()}
-                className={`py-4 px-4 md:py-8 md:px-12 relative z-10 transition-all ${isDragActive ? "bg-brand-50/50" : ""}`}
+                className={`w-full transition-all duration-300 border-none cursor-pointer group`}
               >
-                <input
-                  {...getInputProps()}
-                  disabled={uploading || !!completedSession}
-                />
+                <input {...getInputProps()} />
+                
+                <div className="flex flex-col items-center gap-6 sm:gap-8 lg:gap-6">
+                  <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-24 lg:h-24 flex items-center justify-center">
+                    <CloudUpload className="w-full h-full text-slate-900 stroke-[1.2]" />
+                  </div>
+                  
+                  <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-bold text-slate-900 tracking-tight mb-1">
+                    Upload Your OST File
+                  </h3>
 
-                {/* Default/Idle State */}
-                {!uploading && !completedSession && (
-                  <div className="flex flex-col items-center py-2 md:py-3">
-                    <div className="mb-2 md:mb-3 flex justify-center max-w-[140px] md:max-w-[240px] pointer-events-none">
-                      <img
-                        src={imagePng}
-                        alt="OST to PST Conversion"
-                        className="w-full h-auto object-contain scale-90"
-                      />
-                    </div>
-                    <h3 className="mb-1 text-base md:text-xl">Upload your OST File</h3>
-                    <p className="text-slate-500 font-medium text-[10px] md:text-sm mb-2 md:mb-4">
-                      Preview Converted OST file in few simple steps
-                    </p>
-                    <button
+                  <div className="w-full max-w-sm sm:max-w-md lg:max-w-sm">
+                    <Button 
                       onClick={(e) => {
                         e.stopPropagation();
                         if (!isSignedIn) {
@@ -368,219 +258,72 @@ const Hero = ({ onUploadComplete }) => {
                           open();
                         }
                       }}
-                      className="bg-[#0ea5e9] hover:bg-[#0284c7] text-white px-8 md:px-12 py-3.5 md:py-4 rounded-xl md:rounded-[20px] font-semibold text-lg md:text-xl shadow-[0_15px_30px_-5px_rgba(14,165,233,0.3)] transition-all hover:-translate-y-1 active:scale-[0.98] flex items-center gap-3 md:gap-4 mx-auto group w-full max-w-[260px] md:max-w-none justify-center"
+                      disabled={uploading}
+                      className="w-full h-14 bg-brand-500 hover:bg-brand-600 text-lg md:text-xl font-bold rounded-xl flex gap-3 shadow-[0_12px_35px_-8px_rgba(14,165,233,0.3)] border-none transition-all active:scale-95"
                     >
-                      <FileUp className="w-5 h-5 md:w-8 md:h-8 group-hover:rotate-6 transition-transform" />
-                      Upload OST File
-                    </button>
-                    <div className="mt-4 md:mt-6 flex flex-col gap-1 md:gap-2">
-                      <p className="uppercase tracking-[0.25em] font-semibold text-[8px] md:text-[9px] text-slate-400">
-                        50MB UPLOAD FILE SIZE LIMIT
-                      </p>
-                      <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-[9px] md:text-xs font-medium text-slate-500">
-                        <p>
-                          By uploading the OST file you agree to our{" "}
-                          <a
-                            className="text-[#0ea5e9] font-semibold hover:underline"
-                            href="#"
-                          >
-                            Privacy Policy
-                          </a>
-                        </p>
-                        <span className="hidden md:inline text-slate-300">
-                          |
-                        </span>
-                        <p>
-                          For unlimited size use{" "}
-                          <a
-                            className="text-[#0ea5e9] font-semibold hover:underline"
-                            href="#"
-                          >
-                            Desktop Software
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Processing / Complete State */}
-                {(uploading || completedSession) && (
-                  <div className="w-full animate-in fade-in duration-500 text-center">
-                    {/* File Info / Progress Area */}
-                    <div className="flex flex-col items-center gap-6 md:gap-8">
-                      <div className="w-20 h-20 md:w-28 md:h-28 bg-brand-50 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-inner border border-brand-100">
-                        {completedSession ? (
-                          <CheckCircle2 className="w-12 h-12 md:w-16 md:h-16 text-brand-500" />
-                        ) : (
-                          <RotateCw className="w-12 h-12 md:w-16 md:h-16 text-brand-600 animate-spin" />
-                        )}
-                      </div>
-
-                      <div className="space-y-4">
-                        <h3 className="mb-2">
-                          {completedSession
-                            ? "File Uploaded Successfully!"
-                            : "Processing Your File..."}
-                        </h3>
-                        <p className="text-slate-500 font-medium text-lg">
-                          {file?.name} ({formatFileSize(file?.size || 0)})
-                        </p>
-                      </div>
-
-                      {!completedSession && (
-                        <div className="w-full max-w-md space-y-4">
-                          <div className="flex justify-between items-center text-sm font-semibold text-brand-600 uppercase tracking-widest">
-                            <span>
-                              {uploadPhase === "processing"
-                                ? "Finalizing"
-                                : "Uploading"}
-                            </span>
-                            <span>{progress}%</span>
-                          </div>
-                          <Progress
-                            value={progress}
-                            className="h-3 bg-slate-100 rounded-full overflow-hidden"
-                            indicatorClassName="bg-brand-500"
-                          />
-                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-                            {uploadDetail || "Preparing conversion..."}
-                          </p>
-                        </div>
-                      )}
-
-                      {completedSession ? (
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDirectPstDownload();
-                            }}
-                            disabled={isDownloadingPst}
-                            className="w-full sm:w-auto bg-white border-2 border-brand-500 text-brand-600 px-8 py-4 rounded-2xl font-semibold text-lg shadow-xl hover:bg-brand-50 transition-all flex items-center justify-center gap-2"
-                          >
-                            {isDownloadingPst && (
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                            )}
-                            Convert & Download PST
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (onUploadComplete)
-                                onUploadComplete(completedSession);
-                            }}
-                            className="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-8 py-4 rounded-2xl font-semibold text-lg shadow-xl shadow-brand-500/30 transition-all flex items-center justify-center gap-2"
-                          >
-                            Preview OST File
-                          </button>
-                        </div>
+                      {uploading ? (
+                         <RotateCw className="w-5 h-5 animate-spin" />
                       ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCancel();
-                          }}
-                          className="text-rose-500 font-semibold text-sm uppercase tracking-widest hover:text-rose-600 transition-colors"
-                        >
-                          Cancel Conversion
-                        </button>
+                         <UploadCloud className="w-6 h-6 md:w-7 md:h-7" />
                       )}
-                    </div>
+                      {uploading ? "Uploading..." : "Upload OST File"}
+                    </Button>
                   </div>
-                )}
-              </div>
 
-              {/* Footer of the Card */}
-              <div className="bg-[#fcfdfe] border-t border-slate-50 grid grid-cols-2 lg:grid-cols-4 divide-x divide-slate-100 py-1.5 md:py-3 px-2 md:px-8">
-                <div className="flex items-center justify-center gap-1.5 md:gap-3 text-[8px] md:text-[9px] font-semibold text-slate-400 p-1.5 md:p-2 group cursor-default">
-                  <ShieldCheck className="w-3 h-3 md:w-4 md:h-4 text-[#0ea5e9]" />
-                  SECURE
+                  {completedSession && (
+                    <div className="w-full max-w-2xl bg-slate-50 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 mt-2">
+                       <div className="flex items-center gap-3 overflow-hidden w-full sm:w-auto justify-center sm:justify-start">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                          <p className="text-sm sm:text-base font-bold text-slate-800 truncate">
+                             Recent: {completedSession.originalName.replace(".ost", "")}.pst
+                          </p>
+                       </div>
+                       <div className="flex items-center gap-3 shrink-0">
+                          <button 
+                             onClick={(e) => { e.stopPropagation(); navigate("/preview"); }}
+                             className="text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-widest"
+                          >
+                             Preview
+                          </button>
+                          <Button
+                             onClick={(e) => { e.stopPropagation(); handleDownloadPst(); }}
+                             disabled={isDownloadingPst}
+                             className="h-8 bg-brand-500 hover:bg-brand-600 text-[10px] font-black uppercase tracking-widest rounded-lg px-4"
+                          >
+                             {isDownloadingPst ? "..." : "Download PST"}
+                          </Button>
+                       </div>
+                    </div>
+                  ) || (
+                  <div className="mt-4 flex flex-col gap-3">
+                    <p className="text-xs sm:text-sm text-slate-400 font-medium tracking-tight">
+                      Some upload file size limit apply
+                    </p>
+                    <p className="text-xs sm:text-sm md:text-base text-slate-900 font-medium sm:whitespace-nowrap px-2">
+                      Agreed to <span className="font-bold">Privacy Policy</span>. Use <span className="font-bold">Desktop Software</span> for unlimited size
+                    </p>
+                  </div>
+                  )}
                 </div>
-                <div className="flex items-center justify-center gap-1.5 md:gap-3 text-[8px] md:text-[9px] font-semibold text-slate-400 p-1.5 md:p-2 group cursor-default">
-                  <Bolt className="w-3 h-3 md:w-4 md:h-4 text-[#0ea5e9]" />
-                  INSTANT
-                </div>
-                <div className="flex items-center justify-center gap-1.5 md:gap-3 text-[8px] md:text-[9px] font-semibold text-slate-400 p-1.5 md:p-2 group cursor-default">
-                  <Clock className="w-3 h-3 md:w-4 md:h-4 text-[#0ea5e9]" />
-                  24/7 TECH
-                </div>
-                <button
-                  onClick={() => navigate("/our-plans")}
-                  className="flex items-center justify-center gap-1.5 md:gap-3 text-[8px] md:text-[9px] font-bold text-slate-400 p-1.5 md:p-2 group hover:text-brand-600 transition-colors"
-                >
-                  <span className="text-[#0ea5e9] bg-[#e0effe] px-1.5 py-0.5 rounded-sm font-bold text-[7px] md:text-[10px]">
-                    PRO
-                  </span>
-                  UPGRADE
-                </button>
               </div>
-            </div>
+            )}
+
+            {uploading && !completedSession && (
+              <div className="w-full flex flex-col items-center py-6">
+                 <div className="w-full max-w-md animate-in fade-in duration-300">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-black text-brand-500 uppercase tracking-widest">
+                        {uploadPhase === "uploading" ? "Transferring..." : "Processing..."}
+                      </span>
+                      <span className="text-xs font-black text-slate-400">
+                        {progress}%
+                      </span>
+                    </div>
+                    <Progress value={progress} className="h-2 bg-slate-100" />
+                  </div>
+              </div>
+            )}
           </div>
-
-          {/* Sidebar Area: Calculator & Variants */}
-          {/* Sidebar Area: Calculator & Variants (Commented out per user request)
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-[32px] p-6 border border-blue-100/50 shadow-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-50 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2 opacity-60"></div>
-              <h4 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-brand-500" />
-                Know Your OST Conversion Time
-              </h4>
-              <div className="overflow-hidden rounded-2xl border border-slate-100">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
-                      <th className="px-4 py-3">File Size</th>
-                      <th className="px-4 py-3">Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                    <tr className="hover:bg-brand-50/30 transition-colors">
-                      <td className="px-4 py-3">1 GB</td>
-                      <td className="px-4 py-3">20 Seconds</td>
-                    </tr>
-                    <tr className="hover:bg-brand-50/30 transition-colors">
-                      <td className="px-4 py-3">5 GB</td>
-                      <td className="px-4 py-3">1 Minute</td>
-                    </tr>
-                    <tr className="hover:bg-brand-50/30 transition-colors">
-                      <td className="px-4 py-3">20 GB</td>
-                      <td className="px-4 py-3">3 Minutes</td>
-                    </tr>
-                    <tr className="bg-brand-50/50 hover:bg-brand-50 transition-colors">
-                      <td className="px-4 py-3 font-bold text-brand-600">50 GB</td>
-                      <td className="px-4 py-3 font-bold text-brand-600">6 Minutes</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="bg-slate-900 rounded-[32px] p-6 text-white shadow-2xl relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl"></div>
-               <h4 className="text-base font-bold mb-4 flex items-center gap-2">
-                 <ShieldCheck className="w-5 h-5 text-brand-400" />
-                 Supports All OST & PST Variants
-               </h4>
-               <div className="grid grid-cols-1 gap-2.5">
-                 {[
-                   "Unicode format (2007+)",
-                   "ANSI format (97-2003)",
-                   "Exchange Server versions",
-                   "Encrypted/Password OSTs",
-                   "32-bit & 64-bit Outlook",
-                   "Outlook for Microsoft 365"
-                 ].map((item, idx) => (
-                   <div key={idx} className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                     <CheckCircle2 className="w-3.5 h-3.5 text-brand-400" />
-                     {item}
-                   </div>
-                 ))}
-               </div>
-            </div>
-          </div>
-          */}
         </div>
       </div>
 
@@ -589,7 +332,6 @@ const Hero = ({ onUploadComplete }) => {
         session={completedSession}
         onClose={() => setIsExportDialogOpen(false)}
       />
-
     </section>
   );
 };

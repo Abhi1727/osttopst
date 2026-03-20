@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, Laptop } from "lucide-react";
+import { Menu, Mail } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SignedIn,
@@ -8,8 +8,6 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/clerk-react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -19,8 +17,6 @@ import {
 } from "@/components/ui/sheet";
 
 import SessionGuardModal from "./SessionGuardModal";
-import LicenseBadge from "./LicenseBadge";
-import logo from "@/assets/logo.png";
 import { useState } from "react";
 
 const UnifiedHeader = ({ session, onReset }) => {
@@ -48,8 +44,8 @@ const UnifiedHeader = ({ session, onReset }) => {
     { label: "Home", path: "/" },
     { label: "Our Plan", path: "/our-plans" },
     { label: "How It Works", path: "/#how-it-works" },
-    { label: "FAQ", path: "/faq" },
     { label: "Blogs", path: "/blogs" },
+    { label: "FAQ", path: "/faq" },
     { label: "Contact Us", path: "/support" },
   ];
 
@@ -65,35 +61,31 @@ const UnifiedHeader = ({ session, onReset }) => {
   };
 
   return (
-    <header className="flex h-14 md:h-16 items-center justify-between px-4 md:px-8 lg:px-12 border-b border-slate-200 bg-white fixed top-0 left-0 right-0 z-50 shadow-sm transition-all duration-300">
+    <header className="flex h-16 md:h-18 items-center justify-between px-4 md:px-6 lg:px-8 xl:px-14 bg-white fixed top-0 left-0 right-0 z-50 gap-2">
       <div
         className="flex items-center gap-2 md:gap-3 cursor-pointer shrink-0"
         onClick={() => handleNavigation("/")}
       >
-        <div className="p-1.5 rounded-lg bg-brand-100/50">
-          <img
-            src={logo}
-            alt="OST to PST"
-            className="w-5 h-5 md:w-6 md:h-6 object-contain"
-          />
+        <div className="flex items-center justify-center p-1 rounded-md bg-[#0078d4]">
+          <Mail className="w-5 h-5 text-white" />
         </div>
-        <span className="text-sm md:text-lg font-bold tracking-tight text-slate-800 whitespace-nowrap">
-          OST TO PST <span className="hidden sm:inline">Converter</span>
+        <span className="text-sm md:text-lg font-medium tracking-tight text-slate-700 whitespace-nowrap">
+          OST to PST Converter
         </span>
       </div>
 
-      {/* Desktop Nav */}
-      <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
+      {/* Desktop Nav - Centered */}
+      <nav className="hidden lg:flex flex-1 justify-center items-center gap-4 xl:gap-8 mx-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = item.label === "Home"; // In the image, Home is active
           return (
             <span
               key={item.label}
               onClick={() => handleNavItemClick(item)}
-              className={`cursor-pointer text-sm font-medium transition-colors ${
+              className={`cursor-pointer text-sm xl:text-base font-medium transition-colors whitespace-nowrap ${
                 isActive
-                  ? "text-brand-600"
-                  : "text-slate-600 hover:text-brand-600"
+                  ? "text-brand-500"
+                  : "text-slate-500 hover:text-slate-800"
               }`}
             >
               {item.label}
@@ -102,40 +94,39 @@ const UnifiedHeader = ({ session, onReset }) => {
         })}
       </nav>
 
-      <div className="flex items-center gap-2 md:gap-4">
-        {/* Only show on desktop-ish */}
-        <div className="hidden lg:flex items-center gap-4">
-          <Button className="hidden xl:flex bg-[#f97316] hover:bg-[#ea580c] text-white font-semibold px-6 h-10 rounded-full shadow-lg shadow-orange-500/10 gap-2 transition-all border-none text-xs">
-            <Laptop className="w-4 h-4" />
+      <div className="flex items-center gap-2 md:gap-4 lg:border-l border-slate-100 lg:pl-4 shrink-0">
+        {/* Desktop Buttons */}
+        <div className="hidden lg:flex items-center gap-2">
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button
+                className="h-8 px-3 xl:px-4 text-xs border border-slate-900 text-slate-900 font-bold rounded-full hover:bg-slate-50 transition-all font-sans whitespace-nowrap"
+              >
+                Sign In
+              </button>
+            </SignInButton>
+          </SignedOut>
+
+          <Button className="bg-brand-50 hover:bg-brand-100 text-brand-600/70 font-bold px-3 xl:px-5 h-8 rounded-full border border-brand-100 shadow-none text-[10px] transition-all whitespace-nowrap hidden xl:flex">
+            Trial Expired
+          </Button>
+
+          <Button className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-3 xl:px-5 h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap">
             Get Desktop Tool
           </Button>
           
-          <div className="flex items-center">
-            <SignedOut>
-              <SignInButton mode="modal">
-                <Button
-                  variant="outline"
-                  className="h-9 px-4 text-xs border-slate-300 text-slate-700 font-medium"
-                >
-                  Sign In
-                </Button>
-              </SignInButton>
-            </SignedOut>
-
-            <SignedIn>
-              <div className="flex items-center gap-4">
-                <LicenseBadge />
-                <UserButton
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      userButtonAvatarBox: "h-8 w-8 ring-2 ring-brand-100",
-                    },
-                  }}
-                />
-              </div>
-            </SignedIn>
-          </div>
+          <SignedIn>
+            <div className="flex items-center gap-3 ml-2">
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox: "h-8 w-8 ring-2 ring-slate-100",
+                  },
+                }}
+              />
+            </div>
+          </SignedIn>
         </div>
 
         {/* Mobile menu trigger */}
@@ -148,20 +139,20 @@ const UnifiedHeader = ({ session, onReset }) => {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[300px] flex flex-col gap-6 pt-10"
+              className="w-[280px] flex flex-col gap-6 pt-10 bg-white"
             >
-              <SheetTitle className="text-left text-brand-600 font-semibold text-lg">
-                Navigation
+              <SheetTitle className="text-left text-brand-500 font-bold text-xl px-4">
+                Menu
               </SheetTitle>
               
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 px-2">
                 {navItems.map((item) => (
                   <SheetClose key={item.label} asChild>
                     <button
                       onClick={() => handleNavItemClick(item)}
-                      className={`text-left py-3 px-4 text-sm font-medium rounded-xl transition-colors ${
-                        location.pathname === item.path
-                          ? "bg-brand-50 text-brand-600"
+                      className={`text-left py-3 px-4 text-base font-medium rounded-xl transition-colors ${
+                        item.label === "Home"
+                          ? "bg-brand-50 text-brand-500"
                           : "text-slate-600 hover:bg-slate-50"
                       }`}
                     >
@@ -171,41 +162,16 @@ const UnifiedHeader = ({ session, onReset }) => {
                 ))}
               </div>
 
-              <Separator />
-
-              <div className="flex flex-col gap-4">
-                <div className="px-4">
-                  <p className="text-[10px] uppercase font-semibold text-slate-400 mb-3 tracking-widest">Account</p>
-                </div>
-                
-                <div className="flex items-center px-4 justify-between">
-                   <span className="text-sm font-medium text-slate-600">User Profile</span>
-                   <SignedIn>
-                    <div className="flex flex-col items-end gap-2">
-                      <LicenseBadge />
-                      <UserButton
-                        afterSignOutUrl="/"
-                        appearance={{
-                          elements: {
-                            userButtonAvatarBox: "h-10 w-10 ring-2 ring-brand-100",
-                          },
-                        }}
-                      />
-                    </div>
-                  </SignedIn>
-                  <SignedOut>
+              <div className="mt-auto pb-8 flex flex-col gap-3 px-6">
+                 <SignedOut>
                     <SignInButton mode="modal">
-                      <Button variant="outline" className="h-9 px-4 text-xs font-medium border-slate-300">
+                      <Button variant="outline" className="w-full h-11 text-sm font-bold border-slate-900 rounded-full">
                         Sign In
                       </Button>
                     </SignInButton>
                   </SignedOut>
-                </div>
-              </div>
-
-              <div className="mt-auto pb-4">
-                <Button className="w-full bg-[#f97316] hover:bg-[#ea580c] text-white font-semibold py-6 rounded-xl flex gap-2 shadow-xl shadow-orange-500/10 border-none">
-                  <Laptop className="w-5 h-5" />
+                  
+                <Button className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-6 rounded-full text-sm border-none">
                   Get Desktop Tool
                 </Button>
               </div>

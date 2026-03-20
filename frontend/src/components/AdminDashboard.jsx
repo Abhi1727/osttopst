@@ -580,7 +580,7 @@ const AdminDashboard = () => {
 
               <div className="space-y-6 pt-8 border-t border-slate-50 mb-8">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center text-brand-600">
                     <Search className="w-4 h-4" />
                   </div>
                   <h3 className="font-bold text-slate-800">SEO & Metadata</h3>

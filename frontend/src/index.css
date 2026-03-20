@@ -318,8 +318,8 @@
     @apply bg-white border border-slate-200 shadow-2xl;
   }
 
-  .btn-orange {
-    @apply bg-[#f97316] hover:bg-[#ea580c] text-white transition-all duration-300 shadow-lg shadow-orange-500/20;
+  .btn-brand {
+    @apply bg-brand-500 hover:bg-brand-600 text-white transition-all duration-300 shadow-lg shadow-brand-500/20;
   }
 
 /* Global utility for hiding scrollbar */
@@ -411,11 +411,11 @@
 
 /* SaaS Component: Pro-Tip Box */
 .pro-tip {
-  @apply bg-blue-50/50 border-l-4 border-blue-500 p-8 rounded-r-2xl my-12 relative overflow-hidden;
+  @apply bg-brand-50/50 border-l-4 border-brand-500 p-8 rounded-r-2xl my-12 relative overflow-hidden;
 }
 .pro-tip::before {
   content: "💡 PRO TIP";
-  @apply block text-[10px] font-black text-blue-600 tracking-[0.2em] mb-3;
+  @apply block text-[10px] font-black text-brand-600 tracking-[0.2em] mb-3;
 }
 
 /* SaaS Component: Warning Box */

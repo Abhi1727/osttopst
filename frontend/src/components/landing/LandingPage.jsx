@@ -15,12 +15,16 @@ import { SignedIn } from "@clerk/clerk-react";
 const LandingPage = ({ onUploadComplete, onRestore }) => {
   return (
     <div className="font-sans">
-      <Hero onUploadComplete={onUploadComplete} />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SignedIn>
-          <ConversionHistory onRestore={onRestore} />
-        </SignedIn>
+      {/* First Screen Wrapper */}
+      <div className="min-h-[calc(100vh-76px)] flex flex-col bg-[#f0f9ff]/50 relative overflow-hidden">
+        <div className="flex-1 flex flex-col justify-center">
+          <Hero onUploadComplete={onUploadComplete} />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-8 z-10">
+          <SignedIn>
+            <ConversionHistory onRestore={onRestore} />
+          </SignedIn>
+        </div>
       </div>
 
       <FormatMarquee />

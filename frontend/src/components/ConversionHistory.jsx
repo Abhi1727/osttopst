@@ -66,7 +66,7 @@ const ConversionHistory = ({ onRestore }) => {
   if (sessions.length === 0) {
     console.log("[ConversionHistory] No sessions found, returning null");
     return (
-      <div className="text-center p-12 rounded-3xl border border-zinc-100 shadow-sm mt-12">
+      <div className="text-center p-12 rounded-3xl border border-zinc-100 shadow-sm mt-4 md:mt-8">
         <History className="w-12 h-12 text-zinc-200 mx-auto mb-4" />
         <h3 className="font-bold text-zinc-900">No Recent Conversions</h3>
         <p className="text-zinc-500 text-sm">
@@ -77,7 +77,7 @@ const ConversionHistory = ({ onRestore }) => {
   }
 
   return (
-    <div className="rounded-3xl border border-zinc-100 shadow-sm overflow-hidden mt-12">
+    <div className="rounded-3xl border border-zinc-100 shadow-sm overflow-hidden mt-4 md:mt-8">
       <div className="p-6 border-b border-zinc-50 bg-zinc-50/50 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <History className="w-5 h-5 text-brand-600" />
@@ -123,7 +123,7 @@ const ConversionHistory = ({ onRestore }) => {
                       session.status === "Uploaded"
                         ? "bg-brand-100 text-brand-700"
                         : session.status === "Assembling"
-                          ? "bg-blue-100 text-blue-700"
+                          ? "bg-brand-100 text-brand-700"
                           : "bg-zinc-100 text-zinc-500"
                     }`}
                   >

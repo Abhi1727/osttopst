@@ -45,7 +45,7 @@ const Header = () => {
       </div>
 
       {/* Desktop Nav */}
-      <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+      <nav className="hidden lg:flex items-center gap-6 lg:gap-8">
         {navItems.map((item) => (
           <span
             key={item.label}
@@ -57,8 +57,8 @@ const Header = () => {
         ))}
       </nav>
 
-      <div className="flex items-center gap-3 md:gap-4">
-        <Button className="hidden lg:flex bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-5 h-9 md:h-10 text-xs md:text-sm">
+      <div className="flex items-center gap-2 lg:gap-4">
+        <Button className="hidden lg:flex bg-brand-500 hover:bg-brand-600 text-white font-bold px-5 h-9 md:h-10 text-xs md:text-sm">
           Try Desktop Version
         </Button>
 
@@ -88,7 +88,7 @@ const Header = () => {
 
         {/* Hamburger Toggle */}
         <button
-          className="md:hidden p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          className="lg:hidden p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -97,7 +97,7 @@ const Header = () => {
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div className="absolute top-14 left-0 w-full bg-white border-b border-slate-100 shadow-xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200 md:hidden">
+        <div className="absolute top-14 md:top-16 left-0 w-full bg-white border-b border-slate-100 shadow-xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200 lg:hidden">
           {navItems.map((item) => (
             <button
               key={item.label}
@@ -108,7 +108,7 @@ const Header = () => {
             </button>
           ))}
           <div className="h-px bg-slate-100 mx-4 my-1" />
-          <Button className="w-full bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-6 rounded-xl text-sm">
+          <Button className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-6 rounded-xl text-sm">
             Try Desktop Version
           </Button>
         </div>

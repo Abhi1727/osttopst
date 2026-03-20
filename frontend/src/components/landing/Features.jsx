@@ -93,7 +93,7 @@
 //   ];
 
 //   return (
-//     <section className="min-h-screen flex items-center py-16 md:py-24 bg-slate-50/50">
+//     <section className="min-h-screen flex items-center py-16 md:py-24 bg-gradient-to-b from-brand-50/50 to-brand-100/50/50">
 //       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 //         <div className="text-center mb-12 md:mb-20">
 //           <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">

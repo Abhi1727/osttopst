@@ -66,7 +66,7 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId, onDepthChange }) => {
       <div
         className={`flex items-center gap-2 py-2 pr-4 cursor-pointer rounded-none transition-all group mb-0.5 ${
           isSelected
-            ? "bg-[#0ea5e9]/10 border-l-2 border-[#0ea5e9] text-[#0ea5e9]"
+            ? "bg-brand-500/10 border-l-2 border-brand-500 text-brand-500"
             : "text-slate-600 hover:bg-slate-50 border-l-2 border-transparent"
         }`}
         style={{ paddingLeft: `${4 + level * 16}px` }}
@@ -78,21 +78,21 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId, onDepthChange }) => {
         {/* Chevron */}
         <span
           className={`w-4 h-4 flex-shrink-0 flex items-center justify-center transition-transform duration-200 ${
-            isSelected ? "text-[#0ea5e9]" : "text-slate-400"
+            isSelected ? "text-brand-500" : "text-slate-400"
           } ${isOpen && hasChildren ? "rotate-90" : ""}`}
         >
           {hasChildren && <ChevronRight size={14} />}
         </span>
 
         {/* Folder icon */}
-        <span className={`flex-shrink-0 ${isSelected ? "text-[#0ea5e9]" : "text-blue-400/70"}`}>
+        <span className={`flex-shrink-0 ${isSelected ? "text-brand-500" : "text-brand-400/70"}`}>
           {isOpen ? <FolderOpen size={15} /> : <Folder size={15} />}
         </span>
 
         {/* Name */}
         <span
           className={`flex-1 min-w-0 text-[13px] font-semibold truncate ${
-            isSelected ? "text-[#0ea5e9]" : "text-slate-700"
+            isSelected ? "text-brand-500" : "text-slate-700"
           }`}
         >
           {node.displayName}
@@ -102,7 +102,7 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId, onDepthChange }) => {
         {totalCount > 0 && (
           <span
             className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-              isSelected ? "bg-[#0ea5e9]/20 text-[#0ea5e9]" : "bg-slate-100 text-slate-400"
+              isSelected ? "bg-brand-500/20 text-brand-500" : "bg-slate-100 text-slate-400"
             }`}
           >
             {totalCount}
@@ -135,7 +135,7 @@ const MessageDetail = ({ message }) => {
   if (!message) return (
     <div className="flex-1 flex flex-col items-center justify-center text-slate-300 p-12 text-center bg-white border-l border-slate-200">
        <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
-          <Mail size={32} className="opacity-20 text-blue-500" />
+          <Mail size={32} className="opacity-20 text-brand-500" />
        </div>
        <h3 className="text-xl font-bold text-slate-900 tracking-tight">Select an item to read</h3>
        <p className="max-w-xs mt-2 text-sm text-slate-500 leading-relaxed font-medium">Choose an email from the list to view its contents, attachments, and metadata.</p>
@@ -154,7 +154,7 @@ const MessageDetail = ({ message }) => {
       <div className="h-16 border-b border-slate-200 flex items-center px-8 justify-between shrink-0 bg-white sticky top-0 z-20">
          <div className="flex items-center gap-3">
             <Button variant="ghost" className="h-9 gap-2 text-slate-600 hover:bg-slate-100 font-bold text-xs rounded-xl px-4 border border-slate-200/50 shadow-sm">
-               <Archive size={14} className="text-blue-500" /> Archive
+               <Archive size={14} className="text-brand-500" /> Archive
             </Button>
             <Button variant="ghost" className="h-9 gap-2 text-slate-600 hover:bg-slate-100 font-bold text-xs rounded-xl px-4 border border-slate-200/50 shadow-sm">
                <Printer size={14} className="text-slate-400" /> Print
@@ -198,7 +198,7 @@ const MessageDetail = ({ message }) => {
                   </div>
                   <div className="text-xs text-slate-500 truncate flex items-center gap-2 font-medium">
                     <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Recipient:</span>
-                    <span className="text-blue-600">{message.to || "Unknown"}</span>
+                    <span className="text-brand-600">{message.to || "Unknown"}</span>
                   </div>
                 </div>
              </div>
@@ -234,8 +234,8 @@ const MessageDetail = ({ message }) => {
                
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  {message.attachments.map((att, i) => (
-                   <div key={i} className="group p-5 rounded-[1.5rem] bg-white border border-slate-200 hover:border-blue-600/30 hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer flex items-center gap-5">
-                      <div className="w-12 h-12 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all">
+                   <div key={i} className="group p-5 rounded-[1.5rem] bg-white border border-slate-200 hover:border-brand-600/30 hover:shadow-xl hover:shadow-brand-500/5 transition-all cursor-pointer flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-brand-600 group-hover:text-white flex items-center justify-center transition-all">
                          <FileText size={20} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -658,7 +658,7 @@ const FilePreview = ({ session, onReset }) => {
       </div>
     );
   }  return (
-    <div className="flex-1 bg-white flex flex-col min-h-0 overflow-hidden relative font-sans selection:bg-blue-100 selection:text-blue-900 px-0">
+    <div className="flex-1 bg-white flex flex-col min-h-0 overflow-hidden relative font-sans selection:bg-brand-100 selection:text-brand-900 px-0">
       <AnimatePresence>
         {isGuardOpen && (
           <SessionGuardModal
@@ -693,8 +693,8 @@ const FilePreview = ({ session, onReset }) => {
           </div>
           
           <div className="flex-1 flex justify-center">
-            <div className="flex items-center bg-slate-50 rounded-xl px-5 py-2 w-full max-w-xl text-[12px] text-slate-400 border border-slate-200/50 group hover:border-blue-200 transition-all focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white">
-              <Search size={14} className="mr-4 text-slate-300 group-hover:text-blue-400 transition-colors" />
+            <div className="flex items-center bg-slate-50 rounded-xl px-5 py-2 w-full max-w-xl text-[12px] text-slate-400 border border-slate-200/50 group hover:border-brand-200 transition-all focus-within:ring-2 focus-within:ring-brand-100 focus-within:bg-white">
+              <Search size={14} className="mr-4 text-slate-300 group-hover:text-brand-400 transition-colors" />
               <input 
                 type="text"
                 value={searchQuery}
@@ -728,7 +728,7 @@ const FilePreview = ({ session, onReset }) => {
 
              <Button 
                onClick={() => setIsExportDialogOpen(true)}
-               className="h-10 md:h-12 bg-[#0ea5e9] hover:bg-[#0284c7] rounded-xl md:rounded-2xl text-white flex items-center gap-2 md:gap-3 text-xs md:text-sm font-bold px-4 md:px-8 transition-all shadow-lg shadow-blue-500/30"
+               className="h-10 md:h-12 bg-brand-500 hover:bg-brand-600 rounded-xl md:rounded-2xl text-white flex items-center gap-2 md:gap-3 text-xs md:text-sm font-bold px-4 md:px-8 transition-all shadow-lg shadow-brand-500/30"
              >
                <Rocket size={16} /> <span className="hidden sm:inline">Export Results</span><span className="sm:hidden">Export</span>
              </Button>
@@ -768,7 +768,7 @@ const FilePreview = ({ session, onReset }) => {
              <ScrollArea className="flex-1">
                 {loading ? (
                   <div className="flex flex-col items-center py-20 gap-4 text-slate-300">
-                    <Loader2 className="animate-spin text-blue-500/50" size={32} />
+                    <Loader2 className="animate-spin text-brand-500/50" size={32} />
                     <span className="text-[10px] font-black uppercase tracking-widest">Indexing data...</span>
                   </div>
                 ) : (
@@ -776,12 +776,12 @@ const FilePreview = ({ session, onReset }) => {
                       <div
                         className={`mx-2 flex items-center py-3 px-3 cursor-pointer rounded-2xl transition-all border group ${
                           selectedFolder === null
-                            ? "bg-white border-slate-200 text-[#0ea5e9] shadow-sm"
+                            ? "bg-white border-slate-200 text-brand-500 shadow-sm"
                             : "border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                         }`}
                         onClick={() => setSelectedFolder(null)}
                       >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${selectedFolder === null ? 'bg-[#0ea5e9] text-white shadow-lg shadow-blue-500/20' : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${selectedFolder === null ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'bg-slate-100 group-hover:bg-slate-200'}`}>
                            <LayoutDashboard size={14} />
                         </div>
                         <span className="ml-4 text-[13px] font-bold">Dashboard</span>
@@ -810,7 +810,7 @@ const FilePreview = ({ session, onReset }) => {
              <div className="mt-8 space-y-4 px-4">
                 <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
+                      <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 border border-brand-100">
                          <FileText size={20} />
                       </div>
                       <div className="min-w-0">
@@ -842,7 +842,7 @@ const FilePreview = ({ session, onReset }) => {
                 <div className="flex items-center justify-between mb-2">
                    <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Inbox</h2>
                    <div className="flex gap-2">
-                      <Button variant="ghost" className="h-8 px-3 rounded-lg text-blue-600 hover:bg-blue-50 font-bold text-[10px] uppercase tracking-widest">
+                      <Button variant="ghost" className="h-8 px-3 rounded-lg text-brand-600 hover:bg-brand-50 font-bold text-[10px] uppercase tracking-widest">
                          All <ChevronDown size={12} className="ml-1" />
                       </Button>
                    </div>
@@ -855,7 +855,7 @@ const FilePreview = ({ session, onReset }) => {
              <ScrollArea className="flex-1">
                 {loadingMessages ? (
                   <div className="flex flex-col items-center justify-center py-32 gap-6 text-slate-200">
-                    <Loader2 className="animate-spin text-blue-400" size={40} />
+                    <Loader2 className="animate-spin text-brand-400" size={40} />
                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Loading inbox...</span>
                   </div>
                 ) : filteredMessages.length === 0 ? (
@@ -876,7 +876,7 @@ const FilePreview = ({ session, onReset }) => {
                         onClick={() => handleMessageSelect(msg)}
                         className={`p-8 cursor-pointer transition-all relative group border-l-[3px] ${
                           selectedMessage?.entryId === msg.entryId 
-                            ? 'bg-blue-50/50 border-[#0ea5e9] shadow-[inset_0_0_20px_rgba(14,165,233,0.03)]' 
+                            ? 'bg-brand-50/50 border-brand-500 shadow-[inset_0_0_20px_rgba(14,165,233,0.03)]' 
                             : 'hover:bg-slate-50/80 border-transparent'
                         }`}
                       >
@@ -889,13 +889,13 @@ const FilePreview = ({ session, onReset }) => {
                                 }}
                                 className={`w-5 h-5 rounded-lg border-2 transition-all shrink-0 flex items-center justify-center ${
                                   selectedMessages.has(msg.entryId) 
-                                    ? 'bg-[#0ea5e9] border-[#0ea5e9] text-white shadow-lg shadow-blue-500/20' 
-                                    : 'border-slate-200 group-hover:border-slate-300 hover:border-blue-500'
+                                    ? 'bg-brand-500 border-brand-500 text-white shadow-lg shadow-brand-500/20' 
+                                    : 'border-slate-200 group-hover:border-slate-300 hover:border-brand-500'
                                 }`}
                               >
                                 {selectedMessages.has(msg.entryId) && <Check size={12} strokeWidth={4} />}
                               </button>
-                              <span className={`text-[15px] font-bold truncate transition-colors ${selectedMessage?.entryId === msg.entryId ? 'text-[#0ea5e9]' : 'text-slate-900'}`}>
+                              <span className={`text-[15px] font-bold truncate transition-colors ${selectedMessage?.entryId === msg.entryId ? 'text-brand-500' : 'text-slate-900'}`}>
                                 {msg.from || "Unknown Sender"}
                               </span>
                            </div>
@@ -925,18 +925,18 @@ const FilePreview = ({ session, onReset }) => {
                  {/* ... (Overview Dashboard remains the same) ... */}
                  <div className="p-20 max-w-5xl mx-auto space-y-20">
                    <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="space-y-6">
-                     <div className="w-16 h-16 rounded-[2rem] bg-[#0ea5e9] flex items-center justify-center text-white shadow-2xl shadow-blue-500/30 mb-8 overflow-hidden group">
+                     <div className="w-16 h-16 rounded-[2rem] bg-brand-500 flex items-center justify-center text-white shadow-2xl shadow-brand-500/30 mb-8 overflow-hidden group">
                         <Rocket size={32} className="group-hover:scale-125 transition-transform duration-500" />
                      </div>
-                     <h2 className="text-6xl font-black text-slate-900 tracking-tight leading-[1.05]">Analytics<br/><span className="text-[#0ea5e9]">Overview</span></h2>
-                     <p className="text-slate-500 text-xl font-medium max-w-2xl leading-relaxed">High-fidelity data extraction complete. Source: <span className="text-slate-900 font-bold underline decoration-blue-200 underline-offset-8">{session?.originalFileName}</span>. Select a directory to explore converted items.</p>
+                     <h2 className="text-6xl font-black text-slate-900 tracking-tight leading-[1.05]">Analytics<br/><span className="text-brand-500">Overview</span></h2>
+                     <p className="text-slate-500 text-xl font-medium max-w-2xl leading-relaxed">High-fidelity data extraction complete. Source: <span className="text-slate-900 font-bold underline decoration-brand-200 underline-offset-8">{session?.originalFileName}</span>. Select a directory to explore converted items.</p>
                    </motion.div>
 
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                      {[
-                       { label: "Items Extracted", value: totalMessageCount, icon: Mail, color: "text-[#0ea5e9]", bg: "bg-blue-100/50" },
-                       { label: "Total Folders", value: folders.length, icon: Folder, color: "text-[#0ea5e9]", bg: "bg-blue-100/50" },
-                       { label: "Storage Capacity", value: session?.size ? (session.size / (1024*1024)).toFixed(1) + " MB" : "---", icon: Check, color: "text-[#0ea5e9]", bg: "bg-blue-100/50" },
+                       { label: "Items Extracted", value: totalMessageCount, icon: Mail, color: "text-brand-500", bg: "bg-brand-100/50" },
+                       { label: "Total Folders", value: folders.length, icon: Folder, color: "text-brand-500", bg: "bg-brand-100/50" },
+                       { label: "Storage Capacity", value: session?.size ? (session.size / (1024*1024)).toFixed(1) + " MB" : "---", icon: Check, color: "text-brand-500", bg: "bg-brand-100/50" },
                      ].map((stat, i) => (
                        <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-xl hover:translate-y-[-4px] transition-all group relative overflow-hidden">
                          <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-8 transform group-hover:rotate-12 transition-transform`}>
@@ -959,11 +959,11 @@ const FilePreview = ({ session, onReset }) => {
                         {folders.slice(0, 10).map((f, i) => (
                           <div key={i} onClick={() => handleFolderSelect(f)} className="flex items-center justify-between px-12 py-8 hover:bg-slate-50 cursor-pointer transition-all group">
                              <div className="flex items-center gap-8">
-                                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-[#0ea5e9] group-hover:text-white transition-all shadow-sm">
+                                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-brand-500 group-hover:text-white transition-all shadow-sm">
                                    <Folder size={22} />
                                 </div>
                                 <div className="space-y-1">
-                                   <div className="font-extrabold text-[15px] text-slate-800 group-hover:text-[#0ea5e9] transition-colors">{f.displayName}</div>
+                                   <div className="font-extrabold text-[15px] text-slate-800 group-hover:text-brand-500 transition-colors">{f.displayName}</div>
                                    <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Mailbox Sub-folder</div>
                                 </div>
                              </div>
@@ -972,7 +972,7 @@ const FilePreview = ({ session, onReset }) => {
                                    <div className="text-lg font-black text-slate-900">{f.messageCount || 0}</div>
                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Items</div>
                                 </div>
-                                <ChevronRight size={18} className="text-slate-200 group-hover:text-[#0ea5e9] group-hover:translate-x-1 transition-all" />
+                                <ChevronRight size={18} className="text-slate-200 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
                              </div>
                           </div>
                         ))}
@@ -984,7 +984,7 @@ const FilePreview = ({ session, onReset }) => {
                <div className="relative flex-1 flex flex-col min-w-0 h-full">
                   {loadingDetail && (
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center gap-4">
-                       <Loader2 className="animate-spin text-blue-600" size={40} />
+                       <Loader2 className="animate-spin text-brand-600" size={40} />
                        <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Loading content...</span>
                     </div>
                   )}

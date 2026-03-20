@@ -1,109 +1,109 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
-const FaqItem = ({ question, answer }) => (
-  <div className="group relative flex flex-col space-y-3">
-    <div className="absolute -left-6 top-1 w-1 h-0 bg-brand-500 transition-all duration-500 group-hover:h-full opacity-50 overflow-hidden rounded-full"></div>
-    <h3 className="font-bold text-slate-900 tracking-tight leading-snug group-hover:text-brand-700 transition-colors">
-      {question}
-    </h3>
-    <p className="text-slate-600 leading-relaxed font-medium opacity-90">
-      {answer}
-    </p>
-    <div className="pt-1">
-      <div className="h-px w-20 bg-brand-100 group-hover:w-full transition-all duration-700"></div>
+const FaqItem = ({ number, question, answer, isOpen, onClick }) => (
+  <div className="bg-white overflow-hidden">
+    <button
+      onClick={onClick}
+      className="w-full flex items-start sm:items-center justify-between p-5 sm:p-6 md:p-8 text-left hover:bg-slate-50 transition-colors gap-3 sm:gap-4"
+    >
+      <span className="text-slate-800 font-bold text-base sm:text-lg md:text-xl flex items-start sm:items-center gap-2 sm:gap-4">
+        <span className="text-slate-400 font-medium mt-0.5 sm:mt-0">{number}.</span>
+        <span>{question}</span>
+      </span>
+      <ChevronDown className={`w-5 h-5 sm:w-6 sm:h-6 text-slate-400 shrink-0 mt-1 sm:mt-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+    </button>
+    <div className={`transition-all duration-300 ease-in-out ${isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"} overflow-hidden`}>
+      <div className="p-5 sm:p-6 md:p-8 pt-0 text-slate-600 font-medium leading-relaxed text-sm sm:text-base md:text-lg max-w-4xl">
+        {answer}
+      </div>
     </div>
   </div>
 );
 
 const LandingFaq = () => {
-  const navigate = useNavigate();
+  const [openIndex, setOpenIndex] = useState(0);
+
+  const faqs = [
+    {
+      question: "What is an OST file?",
+      answer: "An OST file, which stands for offline outlook data files, is a setup mirror or a cache of what's currently on the mail server. It permits you to work offline and sync modifications once you're back online.",
+    },
+    {
+      question: "What is a PST file?",
+      answer: "A PST file, which stands for Personal Storage Table, acts like a personal filing cabinet for emails, calendar events, and contacts. It is gathered on a hard drive and is free of the server.",
+    },
+    {
+      question: "How do I Import an OST File into Outlook PST ?",
+      answer: "Outlook doesn't directly import OST files. First, you must convert the OST to a PST format. Once it gets converted, you can utilize Outlook's 'Import/Export' wizard to bring out the PST data into your profile.",
+    },
+    {
+      question: "How to convert OST to PST online?",
+      answer: "You can utilize our safe and secure online service. Just simply add your OST file, our cloud-based engine will process it quickly, managing your folder structure, and then you can download or install the PST file.",
+    },
+    {
+      question: "What is the migrate emails OST to PST converter tool?",
+      answer: "It is a characterized utility built to unlock 'orphaned' OST files and convert them into standard PST files that can be opened by any Outlook version.",
+    },
+    {
+      question: "How to open an OST File without Outlook?",
+      answer: "OST files are locked to the MAPI profile that generated them. To see the data without the original Outlook account, you must convert it to a PST or utilize an OST viewer tool.",
+    },
+    {
+      question: "Is the OST to PST converter safe?",
+      answer: "Our online viewer and converter use 256-bit SSL encryption. Unlike many 'free' downloadable tools that may harbor malware, our cloud-based process makes sure your data stays in a safe and secure pipeline.",
+    },
+    {
+      question: "Does the new Outlook still use OST files?",
+      answer: "Yes, the contemporary 'New Outlook' for Windows and Office 365 continues to utilize a local cache for offline access and performance, which is stored in a format similar to the outdated OST.",
+    },
+  ];
 
   return (
-    <div className="font-sans min-h-screen flex flex-col justify-center py-20">
-      {/* Header Section */}
-      <div className="pb-6 md:pb-8 px-4 text-center relative overflow-hidden">
-        {/* Background Blobs matching Faq.jsx */}
-        <div className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
-
-        <h1 className="font-bold text-slate-900 mb-4 tracking-tight">
-          Frequently Asked <span className="text-brand-600">Questions</span>
-        </h1>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 w-full flex-1 pb-10 md:pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
-          <FaqItem 
-            question="What is an OST file?"
-            answer="An OST file, which stands for Offline Outlook Data File, is a setup mirror or a 'cache' of what’s currently on the mail server. It permits you to work offline and syncs modifications once you're back online."
-          />
-          <FaqItem 
-            question="What is a PST file?"
-            answer="A PST file, which stands for Personal Storage Table, acts like a personal filing cabinet for emails, calendar events, and contacts. It is gathered on a hard drive and is free of the server."
-          />
-          <FaqItem 
-            question="How do I Import an OST File into Outlook PST?"
-            answer="Outlook doesn't directly import OST files. First, you must convert the OST to a PST format. Once it gets converted, you can utilize Outlook's 'Import/Export' wizard to bring out the PST data into your profile."
-          />
-          <FaqItem 
-            question="How to convert OST to PST online?"
-            answer="You can utilize our safe and secure online service. Just simply add your OST file, our cloud-based engine will process it quickly, managing your folder structure, and then you can download or install the PST file."
-          />
-          <FaqItem 
-            question="What is the migrate emails OST to PST converter tool?"
-            answer="It is a characterized utility built to unlock 'orphaned' OST files and convert them into standard PST files that can be opened by any Outlook version."
-          />
-          <FaqItem 
-            question="How to open an OST File without Outlook?"
-            answer="OST files are locked to the MAPI profile that generated them. To see the data without the original Outlook account, you must convert it to a PST or utilize an OST viewer tool."
-          />
-          <FaqItem 
-            question="Is the OST TO PST converter safe?"
-            answer="Our online viewer and converter use 256-bit SSL encryption. Unlike many 'free' downloadable tools that may harbor malware, our cloud-based process makes sure your data stays in a safe and secure pipeline."
-          />
-          <FaqItem 
-            question="Does the new Outlook still use OST files?"
-            answer="Yes, the contemporary 'New Outlook' for Windows and Office 365 continues to utilize a local cache for offline access and performance, which is stored in a format similar to the outdated OST."
-          />
-      
+    <section className="bg-[#f0f9ff] py-16 md:py-24 px-4 md:px-6 lg:px-12">
+      <div className="max-w-4xl mx-auto space-y-12 md:space-y-16">
+        <div className="space-y-6 md:space-y-8">
+          <h2 className="text-brand-500 text-2xl sm:text-3xl md:text-4xl font-bold text-center sm:text-left">
+            Frequently Asked Question
+          </h2>
+          
+          <div className="space-y-4 mt-8">
+            {faqs.map((faq, index) => (
+              <div key={index} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+                <FaqItem
+                  number={index + 1}
+                  question={faq.question}
+                  answer={faq.answer}
+                  isOpen={openIndex === index}
+                  onClick={() => setOpenIndex(openIndex === index ? -1 : index)}
+                />
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Footer Banner */}
-      <div className="max-w-6xl mx-auto px-4 w-full mb-10">
-        <div className="bg-brand-700 rounded-3xl p-8 md:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-brand-900/10">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
-
-          <div className="relative z-10 text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-black text-white mb-2">
+        {/* Dark Support Banner */}
+        <div className="bg-black rounded-[2rem] md:rounded-[2.5rem] p-8 sm:p-10 md:p-14 text-white space-y-6 md:space-y-8 shadow-2xl overflow-hidden relative">
+          <div className="space-y-2 md:space-y-3 text-center sm:text-left">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white">
               Couldn't find what you needed?
             </h2>
-            <p className="text-brand-100 text-sm md:text-base max-w-lg">
+            <p className="text-slate-300 text-sm sm:text-base md:text-lg font-medium">
               Submit a support ticket and we'll get back to you within 24 hours.
             </p>
           </div>
 
-          <div className="relative z-10 flex gap-4">
-            <Button
-              className="bg-white text-brand-700 hover:bg-brand-50 font-bold h-12 px-6 rounded-lg shadow-lg"
-              onClick={() => navigate("/support")}
-            >
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
+            <button className="w-full sm:w-auto bg-white text-black font-bold h-12 sm:h-14 px-8 rounded-xl sm:rounded-2xl hover:bg-slate-100 transition-all text-base sm:text-lg">
               Contact Support
-            </Button>
-            <Button
-              variant="outline"
-              className="bg-brand-800/50 text-white border-brand-600 hover:bg-brand-800 hover:text-white font-bold h-12 px-6 rounded-lg"
-              onClick={() => console.log("Live Chat")}
-            >
+            </button>
+            <button className="w-full sm:w-auto bg-white text-black font-bold h-12 sm:h-14 px-8 rounded-xl sm:rounded-2xl hover:bg-slate-100 transition-all text-base sm:text-lg">
               Live Chat
-            </Button>
+            </button>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

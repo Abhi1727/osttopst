@@ -26,8 +26,8 @@ const EXPORT_FORMATS = [
     label: "EML",
     description: "Standard email",
     icon: Mail,
-    color: "from-blue-500/20 to-blue-600/10 border-blue-500/30",
-    iconColor: "text-blue-400",
+    color: "from-brand-500/20 to-brand-600/10 border-brand-500/30",
+    iconColor: "text-brand-400",
   },
   {
     id: "MSG",
@@ -50,8 +50,8 @@ const EXPORT_FORMATS = [
     label: "DOCX",
     description: "Word Document",
     icon: FileText,
-    color: "from-blue-700/20 to-blue-800/10 border-blue-700/30",
-    iconColor: "text-blue-600",
+    color: "from-brand-700/20 to-brand-800/10 border-brand-700/30",
+    iconColor: "text-brand-600",
   },
   {
     id: "HTML",
@@ -74,7 +74,7 @@ const EXPORT_FORMATS = [
     label: "CSV",
     description: "Spreadsheet",
     icon: FileText,
-    color: "from-blue-500/20 to-blue-600/10 border-blue-500/30",
+    color: "from-brand-500/20 to-brand-600/10 border-brand-500/30",
     iconColor: "text-brand-400",
   },
   {
@@ -82,8 +82,8 @@ const EXPORT_FORMATS = [
     label: "XML",
     description: "Data format",
     icon: FileCode,
-    color: "from-orange-500/20 to-orange-600/10 border-orange-500/30",
-    iconColor: "text-orange-400",
+    color: "from-brand-500/20 to-brand-600/10 border-brand-500/30",
+    iconColor: "text-brand-400",
   },
   {
     id: "JSON",
@@ -122,8 +122,8 @@ const EXPORT_FORMATS = [
     label: "ICS",
     description: "Calendar",
     icon: Rocket,
-    color: "from-purple-500/20 to-purple-600/10 border-purple-500/30",
-    iconColor: "text-purple-400",
+    color: "from-brand-500/20 to-brand-600/10 border-brand-500/30",
+    iconColor: "text-brand-400",
   },
   {
     id: "EMLX",
@@ -138,16 +138,16 @@ const EXPORT_FORMATS = [
     label: "OLM",
     description: "Mac Outlook",
     icon: Mail,
-    color: "from-blue-400/20 to-blue-500/10 border-blue-400/30",
-    iconColor: "text-blue-300",
+    color: "from-brand-400/20 to-brand-500/10 border-brand-400/30",
+    iconColor: "text-brand-300",
   },
   {
     id: "OFT",
     label: "OFT",
     description: "Outlook template",
     icon: FileText,
-    color: "from-indigo-500/20 to-indigo-600/10 border-indigo-500/30",
-    iconColor: "text-indigo-400",
+    color: "from-brand-500/20 to-brand-600/10 border-brand-500/30",
+    iconColor: "text-brand-400",
   },
 ];
 
