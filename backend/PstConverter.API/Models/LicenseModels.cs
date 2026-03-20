@@ -39,6 +39,13 @@ namespace PstConverter.Models
     {
         ConvertOSTToPST = 1
     }
+    //THIS IS FOR ITEM STATUS
+    public enum ItemStatus
+    {
+        Success = 1,
+        Exist = 2,
+        Failed = 3
+    }
     // public enum LicenseResponseStatus
     // {
     //     Professional,
@@ -96,6 +103,32 @@ namespace PstConverter.Models
                 return ModuleLicenseType.Cancelled;
             }
             return ModuleLicenseType.NotSubscribed;
+        }
+
+        public ItemStatus ConvertStringToItemStatus(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return ItemStatus.Failed;
+
+            string normalized = str.Trim().Trim('"');
+
+            if (normalized.Equals("Success", StringComparison.OrdinalIgnoreCase) ||
+                normalized.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+                normalized.Equals("true", StringComparison.OrdinalIgnoreCase))
+            {
+                return ItemStatus.Success;
+            }
+            else if (normalized.Equals("Exist", StringComparison.OrdinalIgnoreCase) ||
+                     normalized.Equals("2", StringComparison.OrdinalIgnoreCase))
+            {
+                return ItemStatus.Exist;
+            }
+            else if (normalized.Equals("Failed", StringComparison.OrdinalIgnoreCase) ||
+                     normalized.Equals("3", StringComparison.OrdinalIgnoreCase) ||
+                     normalized.Equals("false", StringComparison.OrdinalIgnoreCase))
+            {
+                return ItemStatus.Failed;
+            }
+            return ItemStatus.Failed;
         }
     }
 

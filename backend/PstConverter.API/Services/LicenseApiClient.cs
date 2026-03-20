@@ -21,8 +21,8 @@ namespace PstConverter.Services
     public class LicenseApiClient
     {
         public LicenseApiClient(IConfiguration configuration, LicenseAuthService authService, 
-                               ILogger<LicenseApiClient> logger, IDistributedCache cache,
-                               IServiceScopeFactory scopeFactory)
+                                ILogger<LicenseApiClient> logger, IDistributedCache cache,
+                                IServiceScopeFactory scopeFactory)
         {
             this.logger = logger;
             this.authService = authService;
@@ -135,15 +135,13 @@ namespace PstConverter.Services
                 if (updateAllotment || isNewRecord)
                 {
                     // PURCHASE PATH or NEW RECORD: Write allotment.
-                    // For new records, we always write whatever the server says so the record
-                    // is valid from the start. For purchases, we write the exact purchased values.
                     if (s.TotalItemsAllotted > 0)
                         license.TotalItemsAllotted = s.TotalItemsAllotted;
                     if (s.TotalStorageAllotted > 0)
                         license.TotalStorageAllotted = s.TotalStorageAllotted;
                     if (s.TotalDaysAllotted > 0)
                         license.TotalDaysAllotted = s.TotalDaysAllotted;
-                    // Ensure a valid expiry date is always set
+                    
                     license.ExpiryDate = s.ExpiryDate ?? DateTime.UtcNow.AddDays(s.TotalDaysAllotted > 0 ? s.TotalDaysAllotted : 365);
                     if (updateAllotment)
                     {
@@ -161,8 +159,6 @@ namespace PstConverter.Services
                 else
                 {
                     // EXISTING RECORD + SERVER SYNC: Update usage from server directly.
-                    // Trust the server's reported count — it's authoritative.
-                    // Only fall back to local count if server reports 0 (server might not track yet).
                     if (s.TotalItemsUsed > 0)
                         license.TotalItemsUsed = s.TotalItemsUsed;
                     if (s.TotalStorageUsed > 0)
@@ -278,7 +274,38 @@ namespace PstConverter.Services
             => Task.FromResult(ModuleLicenseType.Active);
 
         // ─────────────────────────────────────────────────────────────────────
-        // 3. GET .../Items/{ItemId}  →  DetailedLicenseStatus
+        // 3. GET .../Items/{ItemId}  →  ItemStatus
+        // ─────────────────────────────────────────────────────────────────────
+        public async Task<ItemStatus> GetItemStatus(string emailOrId, string itemId)
+        {
+            var licenseId = emailOrId.ToLowerInvariant();
+            try
+            {
+                var client = await GetClientAsync(licenseId);
+                var request = new RestRequest($"Licences/{licenseId}/Tools/{_toolId}/Modules/{_moduleId}/Items/{itemId}", Method.Get);
+                var response = await ExecuteWithRetryAsync(client, request, licenseId);
+
+                if (logger.IsEnabled(LogLevel.Information))
+                    logger.LogInformation("[LICENSE ITEM STATUS] GetItemStatus Raw: {Content}", response.Content);
+
+                if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+                {
+                    logger.LogWarning("[LICENSE ITEM STATUS] GetItemStatus failed for {LicenseId}/{ItemId}: {StatusCode}", licenseId, itemId, response.StatusCode);
+                    return ItemStatus.Failed;
+                }
+
+                var converter = new ConvertStringEnum();
+                return converter.ConvertStringToItemStatus(response.Content);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[LICENSE ITEM STATUS] GetItemStatus exception for {LicenseId}/{ItemId}", licenseId, itemId);
+                return ItemStatus.Failed;
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 4. GET .../Items/{ItemId}  →  DetailedLicenseStatus
         // ─────────────────────────────────────────────────────────────────────
         public async Task<DetailedLicenseStatus> GetDetailedLicenseStatusAsync(string emailOrId)
         {
@@ -325,19 +352,17 @@ namespace PstConverter.Services
 
                         if (content.Equals("true", StringComparison.OrdinalIgnoreCase)) apiStatus = null;
                         else if (content.Equals("false", StringComparison.OrdinalIgnoreCase)) apiStatus = null;
-                        else if (content.StartsWith("["))
+                        else if (content.StartsWith('['))
                         {
                             var list = JsonSerializer.Deserialize<List<DetailedLicenseStatus>>(content, _jsonOptions);
                             apiStatus = list?.FirstOrDefault();
                         }
-                        else if (content.StartsWith("{"))
+                        else if (content.StartsWith('{'))
                         {
                             apiStatus = JsonSerializer.Deserialize<DetailedLicenseStatus>(content, _jsonOptions);
                         }
                         else
                         {
-                            // It's likely a plain string like "Professional", "Active", "Demo" etc.
-                            // These don't contain detailed usage data, so we treat it as no detailed status returned.
                             if (logger.IsEnabled(LogLevel.Information))
                                 logger.LogInformation("[LICENSE] GetItemStatus returned plain string instead of object for {LicenseId}: {Content}", licenseId, content);
                             apiStatus = null;
@@ -370,7 +395,6 @@ namespace PstConverter.Services
                                 logger.LogInformation("[LICENSE] GetItemStatus OK for {LicenseId}. Items: {Used}/{Allotted}", 
                                     licenseId, status.TotalItemsUsed, status.TotalItemsAllotted);
                             
-                            // SYNC: Update only usage, NEVER allotment (server may have wrong values)
                             await UpdateLicenseInDbAsync(licenseId, status, updateAllotment: false);
                         }
                         else
@@ -439,7 +463,7 @@ namespace PstConverter.Services
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // 4. PATCH .../AddStorage
+        // PATCH .../AddStorage
         // ─────────────────────────────────────────────────────────────────────
         public async Task<bool> UpdateStorageAsync(string emailOrId, long ostFileSizeBytes)
         {
@@ -452,7 +476,6 @@ namespace PstConverter.Services
                 {
                     if (cached.Status.IsUsageRestricted)
                     {
-                        // Cache says restricted. Evict and re-check from DB in case it's stale.
                         _localCache.TryRemove(licenseId, out _);
                         var freshStatus = await LoadStatusFromDbAsync(licenseId);
                         if (freshStatus != null && freshStatus.IsUsageRestricted)
@@ -461,7 +484,6 @@ namespace PstConverter.Services
                                 licenseId, freshStatus.TotalItemsUsed, freshStatus.TotalItemsAllotted, freshStatus.TotalStorageUsed, freshStatus.TotalStorageAllotted);
                             return false;
                         }
-                        // DB says OK — cache was stale. Allow through.
                         if (freshStatus != null)
                             _localCache[licenseId] = (freshStatus, DateTime.UtcNow.Add(_cacheDuration));
                     }
@@ -507,9 +529,6 @@ namespace PstConverter.Services
             var licenseId = emailOrId.ToLowerInvariant();
             try
             {
-                // Get current status to check restriction — read from DB for accuracy
-                // Do NOT call UpdateStorageAsync(0) here: that hits the server's AddStorage endpoint
-                // with 0 bytes which causes the server to count it as an item use (double-counting).
                 var currentStatus = _localCache.TryGetValue(licenseId, out var cached)
                     ? cached.Status
                     : await LoadStatusFromDbAsync(licenseId);
@@ -524,7 +543,6 @@ namespace PstConverter.Services
                     return false;
                 }
 
-                // Increment item count locally
                 currentStatus.TotalItemsUsed += 1;
                 ApplyLimits(currentStatus);
                 _localCache[licenseId] = (currentStatus, DateTime.UtcNow.Add(_cacheDuration));
@@ -548,16 +566,16 @@ namespace PstConverter.Services
             {
                 var client  = await GetClientAsync(licenseId);
                 var request = new RestRequest($"Licences/{licenseId}/Tools/{toolId}/GenerateSubscriptionRequest", Method.Post);
-                request.AddJsonBody(new[]
-                {
+                request.AddJsonBody<object[]>(
+                [
                     new
                     {
-                        TotalItems = subscriptionRequest.TotalItems.ToString(),
-                        Storage    = subscriptionRequest.Storage.ToString(),
-                        TotalDays  = subscriptionRequest.TotalDays.ToString(),
-                        ModuleId   = subscriptionRequest.ModuleId.ToString()
+                        subscriptionRequest.TotalItems,
+                        subscriptionRequest.Storage,
+                        subscriptionRequest.TotalDays,
+                        subscriptionRequest.ModuleId
                     }
-                });
+                ]);
 
                 var response = await ExecuteWithRetryAsync(client, request, licenseId);
                 if (!response.IsSuccessful)
@@ -568,35 +586,18 @@ namespace PstConverter.Services
                 _localCache.TryRemove(licenseId, out _);
                 await cache.RemoveAsync($"license_status_{licenseId}");
 
-                // Save the exact plan values the user requested directly to DB.
-                // Do NOT re-fetch from the server here because it may return stale/cached data.
-                var activatedStatus = new DetailedLicenseStatus
+                var quota = await FetchQuotaFromSubscriptionRequestAsync(licenseId, toolId);
+                if (quota != null)
                 {
-                    Tier                 = LicenseTier.Professional,
-                    CanConvert           = true,
-                    ExportFileLimit      = -1,
-                    TotalItemsAllotted   = subscriptionRequest.TotalItems,
-                    TotalItemsUsed       = 0,
-                    TotalStorageAllotted = subscriptionRequest.Storage,
-                    TotalStorageUsed     = 0,
-                    TotalDaysAllotted    = subscriptionRequest.TotalDays,
-                    ExpiryDate           = DateTime.UtcNow.AddDays(subscriptionRequest.TotalDays)
-                };
-                // PURCHASE: Save exact purchased values. updateAllotment=true is crucial here.
-                await UpdateLicenseInDbAsync(licenseId, activatedStatus, updateAllotment: true);
-                _localCache[licenseId] = (activatedStatus, DateTime.UtcNow.Add(_cacheDuration));
+                    await UpdateLicenseInDbAsync(licenseId, quota, updateAllotment: true);
+                    _localCache[licenseId] = (quota, DateTime.UtcNow.Add(_cacheDuration));
+                }
 
-                return new SubscriptionResponse
-                {
-                    Success      = true,
-                    Message      = "Subscription activated successfully",
-                    RawResponse  = response.Content,
-                    AllottedData = activatedStatus
-                };
+                return new SubscriptionResponse { Success = true, Message = "Subscription updated successfully" };
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[LICENSE] GenerateSubscriptionRequestAsync exception for {LicenseId}", licenseId);
+                logger.LogError(ex, "[LICENSE SUBSCRIPTION] GenerateSubscriptionRequestAsync exception for {LicenseId}", licenseId);
                 return new SubscriptionResponse { Success = false, Message = ex.Message };
             }
         }
@@ -614,12 +615,12 @@ namespace PstConverter.Services
                     var content = response.Content.Trim();
                     List<LicenseServerQuota>? quotaList = null;
 
-                    if (content.StartsWith("["))
+                    if (content.StartsWith('['))
                         quotaList = JsonSerializer.Deserialize<List<LicenseServerQuota>>(content, _jsonOptions);
                     else
                     {
                         var single = JsonSerializer.Deserialize<LicenseServerQuota>(content, _jsonOptions);
-                        if (single != null) quotaList = new List<LicenseServerQuota> { single };
+                        if (single != null) quotaList = [single];
                     }
 
                     if (quotaList == null || quotaList.Count == 0) return null;

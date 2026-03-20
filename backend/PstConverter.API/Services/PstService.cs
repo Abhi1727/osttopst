@@ -639,8 +639,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 licenseId ??= "anonymous";
                 var storageTracker = new BatchStorageTracker(licenseId, _licenseClient);
                 
-                // Record item usage immediately upon starting conversion
-                await _licenseClient.UpdateItemsAsync(licenseId);
+                // Record item usage immediately upon starting conversion if file is new
+                var itemStatus = await _licenseClient.GetItemStatus(licenseId, sessionId);
+                if (itemStatus != ItemStatus.Exist)
+                {
+                    await _licenseClient.UpdateItemsAsync(licenseId);
+                }
+                else
+                {
+                    _logger.LogInformation("[PstService] File {SessionId} already converted (ItemStatus=Exist). Skipping item count increment.", sessionId);
+                }
                 
                 // HYPER FAST PATH: Direct OST to PST conversion (Native implementation)
                 if (!deduplicate && !excludeEmptyFolders && exportLimit == -1)
@@ -653,7 +661,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         
                         // Storage tracking (approximate at start)
                         var sessionInfo = await scopedDb.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-                        if (sessionInfo != null) await storageTracker.UpdateAsync(sessionInfo.Size);
+                        if (sessionInfo != null && itemStatus != ItemStatus.Exist) 
+                        {
+                            await storageTracker.UpdateAsync(sessionInfo.Size);
+                        }
+                        else if (itemStatus == ItemStatus.Exist)
+                        {
+                            _logger.LogInformation("[PstService] Skipping storage update for already converted file {SessionId}.", sessionId);
+                        }
 
                         using (var storage = PersonalStorage.FromFile(srcPath))
                         {
@@ -699,8 +714,15 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                 sessionInfo!.Status = "Processing: Consolidating data...";
                                 await scopedDb.SaveChangesAsync();
                                 
-                                // Record storage for consolidation path
-                                await storageTracker.UpdateAsync(sessionInfo.Size);
+                                // Record storage for consolidation path if not already exist
+                                if (itemStatus != ItemStatus.Exist)
+                                {
+                                    await storageTracker.UpdateAsync(sessionInfo!.Size);
+                                }
+                                else
+                                {
+                                    _logger.LogInformation("[PstService] Skipping storage update for already converted file {SessionId} (Consolidation).", sessionId);
+                                }
                                 
                                 destStorage.MergeWith([srcPath]);
                             }
@@ -711,10 +733,12 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                 if (excludeEmptyFolders) BuildFolderCountCache(srcStorage.RootFolder, folderCounts!);
 
                                 var limitReached = false;
-                                await CopyFolders(licenseId, srcStorage.RootFolder, destStorage.RootFolder, srcStorage, _licenseClient, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, token, () => limitReached = true, _logger, storageTracker);
+                                // If already exist, pass null tracker to CopyFolders to skip individual message storage updates
+                                var effectiveTracker = itemStatus == ItemStatus.Exist ? null : storageTracker;
+                                await CopyFolders(licenseId, srcStorage.RootFolder, destStorage.RootFolder, srcStorage, _licenseClient, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, () => limitReached = true, _logger, effectiveTracker, token);
                                 
                                 // Final flush for batched storage
-                                await storageTracker.FlushAsync();
+                                if (effectiveTracker != null) await effectiveTracker.FlushAsync();
 
                                 if (limitReached)
                                 {
@@ -812,10 +836,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                     HashSet<string>? seenHashes,
                                     HashSet<string>? visitedFolders = null,
                                     Dictionary<string, int>? folderCounts = null,
-                                    CancellationToken token = default,
                                     Action? onLimitReached = null,
                                     ILogger? logger = null,
-                                    BatchStorageTracker? tracker = null)
+                                    BatchStorageTracker? tracker = null,
+                                    CancellationToken token = default)
     {
         var log = logger;
         visitedFolders ??= [];
@@ -915,7 +939,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         continue;
                     }
                 }
-                await CopyFolders(licenseId, srcFolder, newFolder, srcPst, licenseClient, excludeEmptyFolders, limit, seenHashes, visitedFolders, folderCounts, token, onLimitReached, log, tracker);
+                await CopyFolders(licenseId, srcFolder, newFolder, srcPst, licenseClient, excludeEmptyFolders, limit, seenHashes, visitedFolders, folderCounts, onLimitReached, log, tracker, token);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
