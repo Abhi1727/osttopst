@@ -9,6 +9,8 @@ import {
   Send,
   FileType,
   Trash2,
+  Search,
+  Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 import imgMigration from "../assets/blog/blog_email_migration_1772432378369.png";
@@ -29,7 +31,14 @@ const AdminDashboard = () => {
     title: "",
     category: "Data Migration",
     excerpt: "",
+    altText: "",
+    metaTitle: "",
+    metaDescription: "",
+    canonicalTag: "",
+    slug: "",
+    focusKeywords: "",
   });
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState(null); // File to upload
   const [thumbnailPreview, setThumbnailPreview] = useState(imgMigration); // Preview image
   const [isManualThumbnail, setIsManualThumbnail] = useState(false); // Track if user manually uploaded
@@ -98,42 +107,59 @@ const AdminDashboard = () => {
         // Handle Word Upload with Image Support
         let firstImageFound = false;
         const options = {
-          convertImage: (image) => {
-            const isFirst = !firstImageFound;
-            if (isFirst) firstImageFound = true;
+          convertImage: mammoth.images.imgElement((image) => {
+            return image
+              .read("base64")
+              .then((imageBuffer) => {
+                const isFirst = !firstImageFound;
+                if (isFirst) firstImageFound = true;
 
-            return image.read("base64").then((imageBuffer) => {
-              const base64Data =
-                "data:" + image.contentType + ";base64," + imageBuffer;
+                const base64Data =
+                  "data:" + image.contentType + ";base64," + imageBuffer;
 
-              if (isFirst) {
-                // Store first image for thumbnail but don't include in content
-                if (!isManualThumbnail) {
-                  setThumbnailPreview(base64Data);
-                }
-                return {
-                  // Returning an empty element that won't show anything
-                  asElement: {
-                    type: "element",
-                    name: "span",
+                if (isFirst) {
+                  if (!isManualThumbnail) {
+                    setThumbnailPreview(base64Data);
+                  }
+                  // Return hidden image to avoid mammoth AST issues with custom spans
+                  return {
+                    src: base64Data,
                     attributes: { style: "display:none", class: "hidden" },
-                    children: [],
-                  },
-                };
-              }
-
-              return {
-                src: base64Data,
-              };
-            });
-          },
+                  };
+                }
+                return { src: base64Data };
+              })
+              .catch((err) => {
+                console.warn("[Docx] Image conversion skipped due to error:", err);
+                return { src: "" };
+              });
+          }),
         };
-        const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-        content = DOMPurify.sanitize(result.value);
 
-        // Basic extraction for excerpt (first 160 chars)
-        const plainText = result.value.replace(/<[^>]*>/g, "");
-        excerpt = plainText.substring(0, 160) + "...";
+        try {
+          console.log("[Docx] Attempting primary conversion with options...");
+          const result = await mammoth.convertToHtml({ arrayBuffer }, options);
+          content = DOMPurify.sanitize(result.value);
+          
+          const plainText = result.value.replace(/<[^>]*>/g, "");
+          excerpt = plainText.substring(0, 160) + "...";
+          console.log("[Docx] Primary conversion successful.");
+        } catch (primaryError) {
+          console.error("[Docx] Primary conversion failed (Emptiers error?):", primaryError);
+          console.log("[Docx] Retrying in SAFE MODE (no options)...");
+          
+          try {
+            const safeResult = await mammoth.convertToHtml({ arrayBuffer });
+            content = DOMPurify.sanitize(safeResult.value);
+            const safePlainText = safeResult.value.replace(/<[^>]*>/g, "");
+            excerpt = safePlainText.substring(0, 160) + "...";
+            console.log("[Docx] Safe mode conversion successful.");
+            toast.warning("Processed document in safe mode (images may be missing).");
+          } catch (safeError) {
+            console.error("[Docx] Safe mode also failed:", safeError);
+            throw new Error("Mammoth conversion failed completely: " + safeError.message);
+          }
+        }
       } else if (file.type === "application/pdf") {
         // Handle PDF Upload
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
@@ -167,7 +193,14 @@ const AdminDashboard = () => {
         excerpt:
           excerpt ||
           "A deep dive into the technical details extracted from our latest research document...",
+        altText: title, // Default alt text to title
+        metaTitle: title,
+        metaDescription: excerpt?.substring(0, 160) || "",
+        canonicalTag: "",
+        slug: "", 
+        focusKeywords: "",
       });
+      setIsSlugManuallyEdited(false);
 
       setUploadStatus("success");
       toast.success("Document analyzed and processed!");
@@ -179,6 +212,24 @@ const AdminDashboard = () => {
       setIsUploading(false);
     }
   };
+
+  // Auto-generate slug and meta title from title
+  React.useEffect(() => {
+    if (blogMetadata.title && !isSlugManuallyEdited) {
+      const generatedSlug = blogMetadata.title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/[\s_-]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      
+      setBlogMetadata(prev => ({
+        ...prev,
+        slug: generatedSlug,
+        metaTitle: prev.metaTitle || blogMetadata.title
+      }));
+    }
+  }, [blogMetadata.title, isSlugManuallyEdited]);
 
   const handlePublish = async () => {
     // 1. Strict Form Validation
@@ -213,6 +264,14 @@ const AdminDashboard = () => {
       formData.append("readTime", "5 min read");
       formData.append("id", Date.now().toString());
 
+      // SEO Fields
+      formData.append("altText", blogMetadata.altText);
+      formData.append("metaTitle", blogMetadata.metaTitle);
+      formData.append("metaDescription", blogMetadata.metaDescription);
+      formData.append("canonicalTag", blogMetadata.canonicalTag);
+      formData.append("slug", blogMetadata.slug);
+      formData.append("focusKeywords", blogMetadata.focusKeywords);
+
       if (thumbnailFile) {
         formData.append("thumbnail", thumbnailFile);
       } else {
@@ -241,7 +300,14 @@ const AdminDashboard = () => {
         title: "",
         category: "Data Migration",
         excerpt: "",
+        altText: "",
+        metaTitle: "",
+        metaDescription: "",
+        canonicalTag: "",
+        slug: "",
+        focusKeywords: "",
       });
+      setIsSlugManuallyEdited(false);
       setThumbnailFile(null);
       setThumbnailPreview(imgMigration);
       setIsManualThumbnail(false);
@@ -496,7 +562,7 @@ const AdminDashboard = () => {
 
               <div className="space-y-2 mb-8">
                 <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
-                  SEO Excerpt
+                  Primary Summary
                 </label>
                 <textarea
                   rows="3"
@@ -507,9 +573,141 @@ const AdminDashboard = () => {
                       excerpt: e.target.value,
                     })
                   }
-                  placeholder="Short summary for SEO..."
+                  placeholder="The main summary shown on the blog list page..."
                   className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium resize-none"
                 ></textarea>
+              </div>
+
+              <div className="space-y-6 pt-8 border-t border-slate-50 mb-8">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <Search className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-bold text-slate-800">SEO & Metadata</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-1">
+                      <Link2 className="w-3 h-3" /> Custom Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={blogMetadata.slug}
+                      onChange={(e) => {
+                        setBlogMetadata({
+                          ...blogMetadata,
+                          slug: e.target.value,
+                        });
+                        setIsSlugManuallyEdited(true);
+                      }}
+                      placeholder="example-blog-post"
+                      className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                      Image Alt Text
+                    </label>
+                    <input
+                      type="text"
+                      value={blogMetadata.altText}
+                      onChange={(e) =>
+                        setBlogMetadata({
+                          ...blogMetadata,
+                          altText: e.target.value,
+                        })
+                      }
+                      placeholder="Describe the thumbnail image"
+                      className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1 flex justify-between">
+                      <span>Meta Title</span>
+                      <span
+                        className={`text-[10px] ${blogMetadata.metaTitle.length > 60 ? "text-red-500" : "text-slate-400"}`}
+                      >
+                        {blogMetadata.metaTitle.length}/60
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={blogMetadata.metaTitle}
+                      onChange={(e) =>
+                        setBlogMetadata({
+                          ...blogMetadata,
+                          metaTitle: e.target.value,
+                        })
+                      }
+                      placeholder="SEO Title (defaults to post title)"
+                      className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                      Focus Keywords
+                    </label>
+                    <input
+                      type="text"
+                      value={blogMetadata.focusKeywords}
+                      onChange={(e) =>
+                        setBlogMetadata({
+                          ...blogMetadata,
+                          focusKeywords: e.target.value,
+                        })
+                      }
+                      placeholder="keyword1, keyword2..."
+                      className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1 flex justify-between">
+                    <span>Meta Description</span>
+                    <span
+                      className={`text-[10px] ${blogMetadata.metaDescription.length > 160 ? "text-red-500" : "text-slate-400"}`}
+                    >
+                      {blogMetadata.metaDescription.length}/160
+                    </span>
+                  </label>
+                  <textarea
+                    rows="2"
+                    value={blogMetadata.metaDescription}
+                    onChange={(e) =>
+                      setBlogMetadata({
+                        ...blogMetadata,
+                        metaDescription: e.target.value,
+                      })
+                    }
+                    placeholder="Brief SEO summary for search results..."
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium resize-none text-sm"
+                  ></textarea>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                    Canonical URL
+                  </label>
+                  <input
+                    type="url"
+                    value={blogMetadata.canonicalTag}
+                    onChange={(e) =>
+                      setBlogMetadata({
+                        ...blogMetadata,
+                        canonicalTag: e.target.value,
+                      })
+                    }
+                    placeholder="https://example.com/original-source (Optional)"
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium text-sm"
+                  />
+                </div>
               </div>
 
               <div className="border-t border-slate-50 pt-8">

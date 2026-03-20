@@ -51,7 +51,7 @@ const TechnicalAdvantages = () => {
   ];
 
   return (
-    <section className="min-h-screen flex items-center py-16 md:py-24 px-4 md:px-6 lg:px-12 bg-white">
+    <section className="min-h-screen flex items-center py-16 md:py-24 px-4 md:px-6 lg:px-12 bg-[#f0f7ff]">
       <div className="max-w-7xl mx-auto space-y-24">
         {/* Technical Advantages */}
         <div className="space-y-12">

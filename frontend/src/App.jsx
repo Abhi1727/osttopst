@@ -109,7 +109,7 @@ function App() {
 
         <main
           className={`flex-1 flex flex-col ${
-            location.pathname === "/preview" ? "h-full overflow-hidden" : "pt-14 md:pt-16"
+            location.pathname === "/preview" ? "h-full overflow-hidden" : ""
           }`}
         >
           <Routes>
@@ -128,10 +128,17 @@ function App() {
               element={<FilePreview session={session} onReset={handleReset} />}
             />
             <Route path="/faq" element={<Faq />} />
-            <Route path="/support" element={<Support />} />
+            <Route path="/support" element={<Support/>} />
             <Route path="/blogs" element={<Blogs />} />
-            <Route path="/admin/blogs" element={<AdminDashboard />} />
-            <Route path="/blogs/:id" element={<BlogPostDetail />} />
+            <Route
+              path="/admin/blogs"
+              element={
+                <SignedIn>
+                  <AdminDashboard />
+                </SignedIn>
+              }
+            />
+            <Route path="/blogs/:slug" element={<BlogPostDetail />} />
             <Route path="/our-plans" element={<Pricing />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />

@@ -67,8 +67,34 @@ namespace PstConverter.Controllers
                 var author = formData["author"].ToString();
                 var date = formData["date"].ToString();
                 var readTime = formData["readTime"].ToString();
+                
+                // SEO Fields
+                var altText = formData["altText"].ToString();
+                var metaTitle = formData["metaTitle"].ToString();
+                var metaDescription = formData["metaDescription"].ToString();
+                var canonicalTag = formData["canonicalTag"].ToString();
+                var slug = formData["slug"].ToString();
+                var focusKeywords = formData["focusKeywords"].ToString();
+
                 // Ensure ID is a long for timestamp parsing
                 long id = string.IsNullOrEmpty(formData["id"]) ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : long.Parse(formData["id"]!);
+
+                // Generate slug if empty
+                if (string.IsNullOrWhiteSpace(slug))
+                {
+                    slug = title.ToLowerInvariant()
+                        .Replace(" ", "-")
+                        .Replace("?", "")
+                        .Replace("!", "")
+                        .Replace(".", "")
+                        .Replace(",", "")
+                        .Replace(":", "")
+                        .Replace(";", "")
+                        .Trim('-');
+                    
+                    // Add partial timestamp to ensure uniqueness if needed, but for now just title-based
+                    if (string.IsNullOrWhiteSpace(slug)) slug = id.ToString();
+                }
 
                 // 2. Handle Thumbnail Processing
                 var thumbnailFile = formData.Files.FirstOrDefault(f => f.Name == "thumbnail");
@@ -142,7 +168,13 @@ namespace PstConverter.Controllers
                     author,
                     date,
                     readTime,
-                    image = thumbnailRelativePath
+                    image = thumbnailRelativePath,
+                    altText,
+                    metaTitle,
+                    metaDescription,
+                    canonicalTag,
+                    slug,
+                    focusKeywords
                 };
 
                 // 4. Update JSON File

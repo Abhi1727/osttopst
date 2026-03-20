@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 
 const BlogPostDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [readingProgress, setReadingProgress] = useState(0);
@@ -41,7 +41,8 @@ const BlogPostDetail = () => {
         if (res.ok) {
           const data = await res.json();
           setAllPosts(data);
-          const dynamicPost = data.find((p) => String(p.id) === id);
+          // Try matching by slug, fallback to ID for compatibility
+          const dynamicPost = data.find((p) => p.slug === slug || String(p.id) === slug);
           if (dynamicPost) {
             setPost(dynamicPost);
           }
@@ -53,7 +54,32 @@ const BlogPostDetail = () => {
       }
     };
     fetchPost();
-  }, [id]);
+  }, [slug]);
+
+  // SEO Dynamics
+  useEffect(() => {
+    if (post) {
+      document.title = post.metaTitle || post.title;
+      
+      // Meta Description
+      let metaDesc = document.querySelector('meta[name="description"]');
+      if (!metaDesc) {
+        metaDesc = document.createElement('meta');
+        metaDesc.name = "description";
+        document.head.appendChild(metaDesc);
+      }
+      metaDesc.content = post.metaDescription || post.summary || "";
+
+      // Canonical Link
+      let canonical = document.querySelector('link[rel="canonical"]');
+      if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.rel = "canonical";
+        document.head.appendChild(canonical);
+      }
+      canonical.href = post.canonicalTag || window.location.href;
+    }
+  }, [post]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -178,7 +204,7 @@ const BlogPostDetail = () => {
     );
   }
 
-  const recommendedPosts = allPosts.filter((p) => String(p.id) !== id).slice(0, 3);
+  const recommendedPosts = allPosts.filter((p) => p.slug !== slug && String(p.id) !== slug).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-white pt-8 pb-20 overflow-x-hidden font-inter selection:bg-brand-100 selection:text-brand-900">
@@ -192,7 +218,7 @@ const BlogPostDetail = () => {
         <div className="max-w-6xl mx-auto">
           {/* Back Button */}
           <button
-            onClick={() => navigate("/blog")}
+            onClick={() => navigate("/blogs")}
             className="group flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-all font-black text-[11px] mb-16 uppercase tracking-[0.2em]"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
@@ -246,7 +272,7 @@ const BlogPostDetail = () => {
               <div className="relative aspect-[21/9] md:aspect-[21/8.5] overflow-hidden rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.2)] bg-slate-100 border-8 border-white">
                 <img
                   src={post.image}
-                  alt={post.title}
+                  alt={post.altText || post.title}
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                 />
               </div>

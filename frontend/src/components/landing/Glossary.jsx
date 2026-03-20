@@ -3,7 +3,7 @@ import { FileCode, RefreshCw } from "lucide-react";
 
 const Glossary = () => {
   return (
-    <section className="min-h-screen flex items-center py-16 md:py-20 bg-white">
+    <section className="min-h-screen flex items-center py-16 md:py-20 bg-[#f0f7ff]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-8 md:space-y-12">
           <div className="text-center space-y-2">

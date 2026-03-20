@@ -318,9 +318,9 @@ namespace PstConverter.Services
 
                 if (response.IsSuccessful && !string.IsNullOrWhiteSpace(response.Content))
                 {
+                    string content = response.Content!.Trim();
                     try
                     {
-                        string content = response.Content!.Trim();
                         DetailedLicenseStatus? apiStatus = null;
 
                         if (content.Equals("true", StringComparison.OrdinalIgnoreCase)) apiStatus = null;
@@ -330,9 +330,17 @@ namespace PstConverter.Services
                             var list = JsonSerializer.Deserialize<List<DetailedLicenseStatus>>(content, _jsonOptions);
                             apiStatus = list?.FirstOrDefault();
                         }
-                        else
+                        else if (content.StartsWith("{"))
                         {
                             apiStatus = JsonSerializer.Deserialize<DetailedLicenseStatus>(content, _jsonOptions);
+                        }
+                        else
+                        {
+                            // It's likely a plain string like "Professional", "Active", "Demo" etc.
+                            // These don't contain detailed usage data, so we treat it as no detailed status returned.
+                            if (logger.IsEnabled(LogLevel.Information))
+                                logger.LogInformation("[LICENSE] GetItemStatus returned plain string instead of object for {LicenseId}: {Content}", licenseId, content);
+                            apiStatus = null;
                         }
 
                         if (apiStatus == null || apiStatus.TotalItemsAllotted <= 0)
@@ -391,7 +399,7 @@ namespace PstConverter.Services
                     }
                     catch (Exception ex)
                     {
-                        logger.LogWarning(ex, "[LICENSE] Failed to deserialize GetItemStatus response for {LicenseId}.", licenseId);
+                        logger.LogWarning(ex, "[LICENSE] Failed to deserialize GetItemStatus response for {LicenseId}. Content: {RawContent}", licenseId, content);
                         var dbStatus = await LoadStatusFromDbAsync(licenseId);
                         status = dbStatus ?? BuildFallback(tier);
                         if (_localCache.TryGetValue(licenseId, out var existing))

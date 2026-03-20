@@ -350,27 +350,28 @@ const Hero = ({ onUploadComplete }) => {
     <section className="relative bg-[#f8fbff] py-12 px-4 md:px-8 flex flex-col items-center justify-center min-h-screen overflow-hidden">
       {/* Fully Immersive Blueish Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#e0f2fe] via-[#f0f7ff] to-[#eef7ff] pointer-events-none" />
-      
+
       {/* Dynamic Glow Elements */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-200/20 blur-[130px] rounded-full -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-brand-100/30 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/4" />
-      
+
       <div className="max-w-6xl mx-auto text-center relative z-10 w-full">
         <h1 className="mb-4 ">
           Convert <span className="header-text-gradient">OST to PST</span>{" "}
-          Online 
+          Online
         </h1>
         <p className="mb-8 max-w-2xl mx-auto font-medium px-2">
-          Drag, upload, preview, and export your Outlook data safely from any browser.
+          Drag, upload, preview, and export your Outlook data safely from any
+          browser.
         </p>
 
         <div className="flex justify-center w-full">
           {/* Main Upload Area */}
-          <div className="w-full max-w-4xl">
-            <div className="w-full rounded-[32px] md:rounded-[40px] bg-white border border-blue-100/50 shadow-[0_30px_60px_-15px_rgba(14,165,233,0.12)] overflow-hidden relative">
+          <div className="w-full max-w-3xl">
+            <div className="w-full rounded-[32px] md:rounded-[40px] bg-white border border-blue-100/50 shadow-[0_30px_60px_-15px_rgba(14,165,233,0.12)] overflow-hidden relative group/card hover:shadow-[0_40px_80px_-15px_rgba(14,165,233,0.15)] transition-all duration-700">
               <div
                 {...getRootProps()}
-                className={`py-6 px-4 md:p-8 relative z-10 transition-all ${isDragActive ? "bg-brand-50/50" : ""}`}
+                className={`py-4 px-4 md:py-8 md:px-12 relative z-10 transition-all ${isDragActive ? "bg-brand-50/50" : ""}`}
               >
                 <input
                   {...getInputProps()}
@@ -379,18 +380,16 @@ const Hero = ({ onUploadComplete }) => {
 
                 {/* Default/Idle State */}
                 {!uploading && !completedSession && (
-                  <div className="flex flex-col items-center py-2 md:py-4">
-                    <div className="mb-2 md:mb-4 flex justify-center max-w-[220px] md:max-w-[400px] pointer-events-none">
+                  <div className="flex flex-col items-center py-2 md:py-3">
+                    <div className="mb-2 md:mb-3 flex justify-center max-w-[140px] md:max-w-[240px] pointer-events-none">
                       <img
                         src={imagePng}
                         alt="OST to PST Conversion"
-                        className="w-full h-auto object-contain scale-100"
+                        className="w-full h-auto object-contain scale-90"
                       />
                     </div>
-                    <h3 className="mb-2">
-                      Upload your OST File
-                    </h3>
-                    <p className="text-slate-500 font-medium text-xs md:text-base mb-3 md:mb-6">
+                    <h3 className="mb-1 text-base md:text-xl">Upload your OST File</h3>
+                    <p className="text-slate-500 font-medium text-[10px] md:text-sm mb-2 md:mb-4">
                       Preview Converted OST file in few simple steps
                     </p>
                     <button
@@ -421,7 +420,9 @@ const Hero = ({ onUploadComplete }) => {
                             Privacy Policy
                           </a>
                         </p>
-                        <span className="hidden md:inline text-slate-300">|</span>
+                        <span className="hidden md:inline text-slate-300">
+                          |
+                        </span>
                         <p>
                           For unlimited size use{" "}
                           <a
@@ -537,8 +538,8 @@ const Hero = ({ onUploadComplete }) => {
                   <Clock className="w-3 h-3 md:w-4 md:h-4 text-[#0ea5e9]" />
                   24/7 TECH
                 </div>
-                <button 
-                  onClick={() => navigate('/our-plans')}
+                <button
+                  onClick={() => navigate("/our-plans")}
                   className="flex items-center justify-center gap-1.5 md:gap-3 text-[8px] md:text-[9px] font-bold text-slate-400 p-1.5 md:p-2 group hover:text-brand-600 transition-colors"
                 >
                   <span className="text-[#0ea5e9] bg-[#e0effe] px-1.5 py-0.5 rounded-sm font-bold text-[7px] md:text-[10px]">

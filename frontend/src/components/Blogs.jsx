@@ -196,7 +196,7 @@ const Blogs = () => {
               <BlogCard
                 key={post.id}
                 post={post}
-                onClick={() => navigate(`/blogs/${post.id}`)}
+                onClick={() => navigate(`/blogs/${post.slug || post.id}`)}
               />
             ))}
           </div>
