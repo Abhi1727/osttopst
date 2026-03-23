@@ -297,7 +297,13 @@ namespace PstConverter.Services
                 var response = await ExecuteWithRetryAsync(client, request, licenseId);
 
                 if (logger.IsEnabled(LogLevel.Information))
-                    logger.LogInformation("[LICENSE ITEM STATUS] GetItemStatus Raw: {Content}", response.Content);
+                    logger.LogInformation("[LICENSE ITEM STATUS] GetItemStatus Raw: {Content}, StatusCode: {StatusCode}", response.Content, response.StatusCode);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    // 404 means the item is not yet on the server -> it is "New" -> Success
+                    return ItemStatus.Success;
+                }
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
                 {

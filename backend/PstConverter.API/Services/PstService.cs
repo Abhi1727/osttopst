@@ -643,16 +643,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                  var storageTracker = new BatchStorageTracker(licenseId, _licenseClient, itemName);
                  
-                 // Record item usage immediately upon starting conversion if file is new
-                 var itemStatus = await _licenseClient.GetItemStatus(licenseId, sessionId);
-                if (itemStatus != ItemStatus.Exist)
+                 // Record item usage immediately upon starting conversion ONLY if item is new (Success)
+                 var itemStatus = await _licenseClient.GetItemStatus(licenseId, itemName ?? sessionId);
+                if (itemStatus == ItemStatus.Success)
                 {
                     await _licenseClient.UpdateItemsAsync(licenseId);
                 }
                 else
                 {
                     if (_logger.IsEnabled(LogLevel.Information))
-                        _logger.LogInformation("[PstService] File {SessionId} already converted (ItemStatus=Exist). Skipping item count increment.", sessionId);
+                        _logger.LogInformation("[PstService] File {SessionId} already converted or failed previously (ItemStatus={Status}). Skipping item count increment.", sessionId, itemStatus);
                 }
                 
                 // HYPER FAST PATH: Direct OST to PST conversion (Native implementation)
@@ -665,7 +665,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             _logger.LogInformation("[PstService] Using HYPER FAST PATH for session {SessionId}", sessionId);
                         
                         // Storage tracking (approximate at start)
-                        if (sessionInfo != null && itemStatus != ItemStatus.Exist) 
+                        if (sessionInfo != null && itemStatus == ItemStatus.Success) 
                         {
                             await storageTracker.UpdateAsync(sessionInfo.Size);
                         }
@@ -706,7 +706,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
                         {
                             // Storage tracking (approximate at start)
-                            if (sessionInfo != null && itemStatus != ItemStatus.Exist) 
+                            if (sessionInfo != null && itemStatus == ItemStatus.Success) 
                             {
                                 await storageTracker.UpdateAsync(sessionInfo.Size);
                             }
@@ -718,10 +718,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                 sessionInfo!.Status = "Processing: Consolidating data...";
                                 await scopedDb.SaveChangesAsync();
 
-                                if (itemStatus == ItemStatus.Exist)
+                                if (itemStatus != ItemStatus.Success)
                                 {
                                     if (_logger.IsEnabled(LogLevel.Information))
-                                        _logger.LogInformation("[PstService] Skipping storage update for already converted file {SessionId} (Consolidation).", sessionId);
+                                        _logger.LogInformation("[PstService] Skipping storage update for already converted or failed file {SessionId} (Consolidation).", sessionId);
                                 }
                                 
                                 destStorage.MergeWith([srcPath]);
@@ -734,7 +734,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                                 var limitReached = false;
                                 // If already exist, pass null tracker to CopyFolders to skip individual message storage updates
-                                var effectiveTracker = itemStatus == ItemStatus.Exist ? null : storageTracker;
+                                var effectiveTracker = itemStatus == ItemStatus.Success ? storageTracker : null;
                                 await CopyFolders(licenseId, srcStorage.RootFolder, destStorage.RootFolder, srcStorage, _licenseClient, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, () => limitReached = true, _logger, effectiveTracker, token);
                                 
                                 // Final flush for batched storage
