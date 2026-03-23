@@ -228,7 +228,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
             label: "Upgrade Plan",
             onClick: () => {
               onClose();
-              window.location.href = "/pricing";
+              window.location.href = "/our-plans";
             },
           },
         });
@@ -284,7 +284,7 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
             label: "Upgrade Plan",
             onClick: () => {
               onClose();
-              window.location.href = "/pricing";
+              window.location.href = "/our-plans";
             },
           },
         });

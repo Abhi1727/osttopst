@@ -313,11 +313,13 @@ const Pricing = () => {
 
         const itemsText = totalItemsVal === -1 ? "Unlimited" : (totalItemsVal?.toLocaleString() ?? requestData.TotalItems);
         const daysText = totalDaysVal === -1 ? "Unlimited" : (totalDaysVal ?? requestData.TotalDays);
+        toast.dismiss();
         toast.success("Plan Allotted Successfully!", {
           description: `Backend confirms: ${itemsText} items, ${formatStatusStorage(totalStorageVal ?? requestData.Storage)} Storage allotted for ${daysText} days.`,
         });
-        // Refetch updated status from backend
+        // Refetch status locally and tell the header badge to refresh too
         fetchStatus();
+        window.dispatchEvent(new Event("license-refresh"));
       } else if (response) {
         toast.success("Subscription request generated!", {
           description: response.message || "Your request is being processed.",

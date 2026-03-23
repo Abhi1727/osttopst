@@ -52,11 +52,24 @@ public static class ConversionEndpoints
                 return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);
             }
 
+            // A re-download is when the session is already IsPaid (converted previously).
+            // In that case skip the item-count gate — the slot was already consumed.
+            var sessionForCheck = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+            bool isRedownload = sessionForCheck?.IsPaid == true;
+
             if (moduleStatus == ModuleLicenseType.Active)
             {
-                if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
+                if (isRedownload)
                 {
-                    return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+                    // Re-download: only block on storage/time — item count already consumed.
+                    if (status.HitSizeLimit || status.HitTimePeriodLimit)
+                        return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+                }
+                else
+                {
+                    // New conversion: full gate including item count.
+                    if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
+                        return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
                 }
             }
             // Track usage
@@ -85,7 +98,6 @@ public static class ConversionEndpoints
                                                                            userId,
                                                                            exportFormat,
                                                                            status.Tier == LicenseTier.Demo,
-                                                                          moduleStatus,
                                                                            folderId,
                                                                            selectedIds,
                                                                            filter,
@@ -177,18 +189,30 @@ public static class ConversionEndpoints
                     return Results.Json(new { error = moduleStatus }, statusCode: StatusCodes.Status403Forbidden);
                 }
 
+                // A re-download is when the session is already IsPaid (converted previously).
+                // In that case skip the item-count gate — the slot was already consumed.
+                var sessionForCheck = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+                bool isRedownload = sessionForCheck?.IsPaid == true;
+
                 if (moduleStatus == ModuleLicenseType.Active)
                 {
-                    if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
+                    if (isRedownload)
                     {
-                        return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+                        // Re-download: only block on storage/time.
+                        if (status.HitSizeLimit || status.HitTimePeriodLimit)
+                            return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+                    }
+                    else
+                    {
+                        // New conversion: full gate including item count.
+                        if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
+                            return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
                     }
                 }
 
                 var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId,
                                                                                            userId, 
                                                                                            status.Tier == LicenseTier.Demo,
-                                                                                          moduleStatus,
                                                                                            excludeEmptyFolders ?? true, 
                                                                                           userEmail, 
                                                                                            deduplicate ?? false, 
@@ -251,10 +275,12 @@ public static class ConversionEndpoints
             var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
             if (session == null) return Results.NotFound();
 
-            // License check
+            // Only block download on storage/time limits — item count was gated at conversion start.
+            // Blocking on HitFileCountLimit here prevents the last split file from being served
+            // when items used equals allotted (e.g., 5/5).
             var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
             var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
-            if (!status.CanConvert || status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
+            if (!status.CanConvert || status.HitSizeLimit || status.HitTimePeriodLimit)
             {
                 return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
             }

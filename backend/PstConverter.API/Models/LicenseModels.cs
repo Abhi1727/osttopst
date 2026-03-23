@@ -31,7 +31,8 @@ namespace PstConverter.Models
     }
 
     //THIS IS FOR TOOL
-    public enum Tool{
+    public enum Tool
+    {
         ConvertOSTToPST = 1
     }
     //THIS IS FOR MODULE
@@ -66,7 +67,7 @@ namespace PstConverter.Models
 
             string normalized = str.Trim().Trim('"');
 
-            if (normalized.Equals("Professional", StringComparison.OrdinalIgnoreCase) || 
+            if (normalized.Equals("Professional", StringComparison.OrdinalIgnoreCase) ||
                 normalized.Equals("Active", StringComparison.OrdinalIgnoreCase) ||
                 normalized.Equals("true", StringComparison.OrdinalIgnoreCase))
             {
@@ -134,7 +135,7 @@ namespace PstConverter.Models
 
     public class AllConstants
     {
-        public static int DemoExportLimit {get;}=50;
+        public static int DemoExportLimit { get; } = 50;
     }
     // public class LicenseStatus : IComparable<LicenseStatus>
     // {

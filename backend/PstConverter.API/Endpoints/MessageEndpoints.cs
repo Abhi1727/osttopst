@@ -185,7 +185,6 @@ public static class MessageEndpoints
                     userId, 
                     exportFormat,
                     toolStatus == LicenseTier.Demo,
-                    moduleStatus,
                     entryIds: request.EntryIds);
 
                 if (!isReady)

@@ -506,7 +506,6 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId, 
                                                                                              string userId, 
                                                                                              bool isDemo,
-                                                                                             ModuleLicenseType _moduleLicenseType,
                                                                                              bool excludeEmptyFolders = false, 
                                                                                              string? userEmail = null, 
                                                                                              bool deduplicate = false, 
@@ -637,17 +636,23 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             try
             {
                 licenseId ??= "anonymous";
-                var storageTracker = new BatchStorageTracker(licenseId, _licenseClient);
-                
-                // Record item usage immediately upon starting conversion if file is new
-                var itemStatus = await _licenseClient.GetItemStatus(licenseId, sessionId);
+                 
+                 // Fetch session inside the background scope to ensure we have valid data
+                 var sessionInfo = await scopedDb.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                 var itemName = sessionInfo != null ? $"{sessionInfo.Size}_{sessionInfo.OriginalFileName}" : null;
+
+                 var storageTracker = new BatchStorageTracker(licenseId, _licenseClient, itemName);
+                 
+                 // Record item usage immediately upon starting conversion if file is new
+                 var itemStatus = await _licenseClient.GetItemStatus(licenseId, sessionId);
                 if (itemStatus != ItemStatus.Exist)
                 {
                     await _licenseClient.UpdateItemsAsync(licenseId);
                 }
                 else
                 {
-                    _logger.LogInformation("[PstService] File {SessionId} already converted (ItemStatus=Exist). Skipping item count increment.", sessionId);
+                    if (_logger.IsEnabled(LogLevel.Information))
+                        _logger.LogInformation("[PstService] File {SessionId} already converted (ItemStatus=Exist). Skipping item count increment.", sessionId);
                 }
                 
                 // HYPER FAST PATH: Direct OST to PST conversion (Native implementation)
@@ -660,14 +665,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             _logger.LogInformation("[PstService] Using HYPER FAST PATH for session {SessionId}", sessionId);
                         
                         // Storage tracking (approximate at start)
-                        var sessionInfo = await scopedDb.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
                         if (sessionInfo != null && itemStatus != ItemStatus.Exist) 
                         {
                             await storageTracker.UpdateAsync(sessionInfo.Size);
                         }
                         else if (itemStatus == ItemStatus.Exist)
                         {
-                            _logger.LogInformation("[PstService] Skipping storage update for already converted file {SessionId}.", sessionId);
+                            if (_logger.IsEnabled(LogLevel.Information))
+                                _logger.LogInformation("[PstService] Skipping storage update for already converted file {SessionId}.", sessionId);
                         }
 
                         using (var storage = PersonalStorage.FromFile(srcPath))
@@ -700,11 +705,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                         using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
                         {
-                            // storage already counted at upload
-                            var sessionInfo = await scopedDb.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-                            if (sessionInfo != null)
+                            // Storage tracking (approximate at start)
+                            if (sessionInfo != null && itemStatus != ItemStatus.Exist) 
                             {
-                                // Removed redundant update that caused double-counting
+                                await storageTracker.UpdateAsync(sessionInfo.Size);
                             }
 
                             if (!deduplicate && !excludeEmptyFolders && exportLimit == -1)
@@ -713,15 +717,11 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                 // This is significantly faster than sequential processing.
                                 sessionInfo!.Status = "Processing: Consolidating data...";
                                 await scopedDb.SaveChangesAsync();
-                                
-                                // Record storage for consolidation path if not already exist
-                                if (itemStatus != ItemStatus.Exist)
+
+                                if (itemStatus == ItemStatus.Exist)
                                 {
-                                    await storageTracker.UpdateAsync(sessionInfo!.Size);
-                                }
-                                else
-                                {
-                                    _logger.LogInformation("[PstService] Skipping storage update for already converted file {SessionId} (Consolidation).", sessionId);
+                                    if (_logger.IsEnabled(LogLevel.Information))
+                                        _logger.LogInformation("[PstService] Skipping storage update for already converted file {SessionId} (Consolidation).", sessionId);
                                 }
                                 
                                 destStorage.MergeWith([srcPath]);
@@ -1310,21 +1310,23 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             var folder = pst.GetFolderById(folderId) ?? throw new FileNotFoundException("Folder not found");
             using var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024);
             using var archive = new ZipArchive(fs, ZipArchiveMode.Create, true);
-            // Batch check storage limit before export
-            long totalFolderSize = 0;
-            foreach (var msgInfo in folder.GetContents())
-            {
-                DateTime date = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME].GetDateTime() : DateTime.MinValue;
-                if (filter != null && !filter.IsEmpty() && !filter.Matches(date)) continue;
-                totalFolderSize += msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0;
-            }
+             // Batch check storage limit before export
+             long totalFolderSize = 0;
+             foreach (var msgInfo in folder.GetContents())
+             {
+                 DateTime date = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_DELIVERY_TIME].GetDateTime() : DateTime.MinValue;
+                 if (filter != null && !filter.IsEmpty() && !filter.Matches(date)) continue;
+                 totalFolderSize += msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0;
+             }
+ 
+             var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+             var fileItemName = session != null ? $"{session.Size}_{session.OriginalFileName}" : null;
 
-            if (totalFolderSize > 0)
-            {
-                var success = await _licenseClient.UpdateStorageAsync(userId, totalFolderSize);
-                if (!success) throw new Exception("License storage limit exceeded");
-            }
-
+             if (totalFolderSize > 0)
+             {
+                 var success = await _licenseClient.UpdateStorageAsync(userId, totalFolderSize, fileItemName);
+                 if (!success) throw new Exception("License storage limit exceeded");
+             }
             int index = 0;
             foreach (var msgInfo in folder.GetContents())
             {
@@ -1368,7 +1370,6 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                                                       string userId,
                                                                       ExportFormat format,
                                                                        bool isDemo,
-                                                                       ModuleLicenseType moduleLicenseType,
                                                                        string? folderId = null,
                                                                       List<string>? entryIds = null,
                                                                       MessageDateFilter? filter = null,
@@ -1456,9 +1457,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 {
                     using var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 4 * 1024 * 1024);
                     using var archive = new System.IO.Compression.ZipArchive(fs, ZipArchiveMode.Create, true);
-                        var licenseId = userEmail ?? userId ?? "anonymous";
-                        var storageTracker = new BatchStorageTracker(licenseId, _licenseClient);
-                        int index = 0;
+                         var licenseId = userEmail ?? userId ?? "anonymous";
+                         
+                         var sessionMetadata = await scopedDb.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                         var itemName = sessionMetadata != null ? $"{sessionMetadata.Size}_{sessionMetadata.OriginalFileName}" : null;
+                         
+                         var storageTracker = new BatchStorageTracker(licenseId, _licenseClient, itemName);
+                         int index = 0;
 
                         if (entryIds != null && entryIds.Count > 0)
                         {
@@ -1608,7 +1613,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         var tracker = new BatchStorageTracker(licenseId, _licenseClient);
         var limitReached = false;
-        await ExportFolderRecursiveInternal(licenseId, pst, folder, path, format, archive, archiveLock, filter, excludeEmpty, limit, token, () => limitReached = true, tracker);
+        await ExportFolderRecursiveInternal(licenseId, pst, folder, path, format, archive, archiveLock, filter, excludeEmpty, limit, () => limitReached = true, token, tracker);
         
         await tracker.FlushAsync();
 
@@ -1618,7 +1623,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
     }
 
-    private async Task ExportFolderRecursiveInternal(string licenseId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, object archiveLock, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token, Action onLimitHit, BatchStorageTracker? tracker = null)
+    private async Task ExportFolderRecursiveInternal(string licenseId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, object archiveLock, MessageDateFilter? filter, bool excludeEmpty, int limit, Action onLimitHit, CancellationToken token, BatchStorageTracker? tracker = null)
     {
         token.ThrowIfCancellationRequested();
 
@@ -1733,7 +1738,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         foreach (var sub in folder.GetSubFolders())
         {
-            await ExportFolderRecursiveInternal(licenseId, pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, archiveLock, filter, excludeEmpty, limit, token, onLimitHit, tracker);
+            await ExportFolderRecursiveInternal(licenseId, pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, archiveLock, filter, excludeEmpty, limit, onLimitHit, token, tracker);
         }
     }
     /// <summary>
@@ -2043,7 +2048,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <summary>
     /// Helper class to batch storage updates to the license client during heavy processing.
     /// </summary>
-    private class BatchStorageTracker(string licenseId, LicenseApiClient client)
+    private class BatchStorageTracker(string licenseId, LicenseApiClient client, string? itemName = null)
     {
         public long PendingSize { get; private set; }
         public int PendingCount { get; private set; }
@@ -2065,7 +2070,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         public async Task<bool> FlushAsync()
         {
             if (PendingSize <= 0) return true;
-            bool success = await client.UpdateStorageAsync(licenseId, PendingSize);
+            bool success = await client.UpdateStorageAsync(licenseId, PendingSize, itemName);
             if (success)
             {
                 PendingSize = 0;
