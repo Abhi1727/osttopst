@@ -129,105 +129,7 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId, onDepthChange }) => {
   );
 };
 
-const LicenseUsageBar = ({ status }) => {
-  if (!status) return null;
-
-  const usedItems = Number(status.totalItemsUsed ?? status.TotalItemsUsed ?? 0);
-  const allottedItems = Number(status.totalItemsAllotted ?? status.TotalItemsAllotted ?? -1);
-  const usedStorage = Number(status.totalStorageUsed ?? status.TotalStorageUsed ?? 0);
-  const allottedStorage = Number(status.totalStorageAllotted ?? status.TotalStorageAllotted ?? -1);
-
-  // -1 means the license server hasn't returned real data yet OR it means unlimited.
-  // Hide the bar ONLY if there are literally no values set (e.g. both are nullish before load)
-  // Wait, if allottedItems is -1, it means unlimited, so we DO have data.
-  const hasData = allottedItems !== undefined && allottedStorage !== undefined;
-  if (!hasData) return null;
-
-  const isUnlimitedItems   = allottedItems   === -1;
-  const isUnlimitedStorage = allottedStorage === -1;
-
-  const itemPercent =
-    !isUnlimitedItems && allottedItems > 0
-      ? Math.min(100, (usedItems / allottedItems) * 100)
-      : 0;
-  const storagePercent =
-    !isUnlimitedStorage && allottedStorage > 0
-      ? Math.min(100, (usedStorage / allottedStorage) * 100)
-      : 0;
-
-  const formatStorage = (bytes) => {
-    if (bytes === -1) return "∞";
-    if (!bytes && bytes !== 0) return "0 GB";
-    if (bytes < 1024 * 1024 * 1024)
-      return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
-  };
-
-  return (
-    <div className="mt-12 pt-8 border-t border-slate-200">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-          Plan Usage
-          {(status.isUsageRestricted || status.IsUsageRestricted || status.hitFileCountLimit || status.HitFileCountLimit) && (
-            <span className="bg-red-50 text-red-500 border border-red-100 px-2.5 py-1 rounded-full text-[10px] font-bold animate-pulse shadow-sm shadow-red-500/10">
-              LIMIT REACHED
-            </span>
-          )}
-        </h3>
-      </div>
-
-      <div className="space-y-4">
-        {/* Items Usage */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-[10px] font-medium">
-            <span className="text-slate-400 uppercase tracking-tighter">
-              OST Files
-            </span>
-            <span className={!isUnlimitedItems && usedItems >= allottedItems ? "text-red-500" : "text-slate-500"}>
-              {isUnlimitedItems ? `${usedItems} / ∞` : `${usedItems} / ${allottedItems.toLocaleString()}`}
-            </span>
-          </div>
-          {!isUnlimitedItems && (
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full transition-all duration-700 ease-out",
-                  itemPercent > 90 ? "bg-red-500" : "bg-blue-500",
-                )}
-                style={{ width: `${itemPercent}%` }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Storage Usage */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-[10px] font-medium">
-            <span className="text-slate-400 uppercase tracking-tighter">
-              Storage
-            </span>
-            <span className={!isUnlimitedStorage && usedStorage >= allottedStorage ? "text-red-500" : "text-slate-500"}>
-              {isUnlimitedStorage
-                ? `${formatStorage(usedStorage)} / ∞`
-                : `${formatStorage(usedStorage)} / ${formatStorage(allottedStorage)}`}
-            </span>
-          </div>
-          {!isUnlimitedStorage && (
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full transition-all duration-700 ease-out",
-                  storagePercent > 90 ? "bg-red-500" : "bg-blue-500",
-                )}
-                style={{ width: `${storagePercent}%` }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+/* Removed LicenseUsageBar component */
 
 const MessageDetail = ({ message }) => {
   if (!message) return (
@@ -925,7 +827,7 @@ const FilePreview = ({ session, onReset }) => {
                    </div>
                 </div>
 
-                <LicenseUsageBar status={licenseStatus} />
+                {/* Wrapped LicenseUsageBar removed */}
              </div>
           </aside>
 

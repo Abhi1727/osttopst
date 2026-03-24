@@ -7,7 +7,7 @@ namespace PstConverter.Models
     {
         [Key]
         public string LicenseId { get; set; } = string.Empty; // email address
-        public LicenseTier Tier { get; set; } = LicenseTier.Professional;
+        public LicenseTier Tier { get; set; } = LicenseTier.Demo;
         
         public int TotalItemsAllotted { get; set; }
         public int TotalItemsUsed { get; set; }

@@ -391,11 +391,11 @@ namespace PstConverter.Models
         public LicenseTier Tier { get; set; }
         public bool CanConvert { get; set; }
         public int ExportFileLimit { get; set; }
-        public int TotalItemsAllotted { get; set; }
-        public int TotalItemsUsed { get; set; }
-        public long TotalStorageAllotted { get; set; }
-        public long TotalStorageUsed { get; set; }
-        public int TotalDaysAllotted { get; set; }
+        [JsonIgnore] public int TotalItemsAllotted { get; set; }
+        [JsonIgnore] public int TotalItemsUsed { get; set; }
+        [JsonIgnore] public long TotalStorageAllotted { get; set; }
+        [JsonIgnore] public long TotalStorageUsed { get; set; }
+        [JsonIgnore] public int TotalDaysAllotted { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public bool HitTimePeriodLimit { get; set; }
         public bool HitSizeLimit { get; set; }

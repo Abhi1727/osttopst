@@ -118,17 +118,17 @@ const TechnicalAdvantages = () => {
         </div>
 
         {/* Variants Selection - Repurposed as a trust section */}
-        <div className="bg-slate-900 rounded-[40px] p-8 md:p-16 text-white shadow-2xl overflow-hidden relative">
+        <div className=" rounded-[40px] p-8 md:p-16 text-white shadow-2xl overflow-hidden relative">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h3 className="mb-4">
+              <h3 className="mb-4 text-brand-400">
                 Supports All OST and <span className="text-brand-400">PST File Variants</span>
               </h3>
-              <p className="text-slate-400 text-lg font-medium leading-relaxed">
+              <p className=" text-lg font-medium leading-relaxed">
                 Our advanced engine is engineered to handle every variant of Outlook data file you might encounter, ensuring 100% compatibility.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-slate-900 ">
                 {[
                   "Unicode format (2007+)",
                   "ANSI format (97-2003)",
@@ -138,7 +138,7 @@ const TechnicalAdvantages = () => {
                   "32-bit & 64-bit Outlook",
                   "Outlook for Microsoft 365",
                 ].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3 text-slate-300 font-semibold">
+                  <div key={idx} className="flex items-center gap-3 font-semibold">
                     <div className="w-2 h-2 rounded-full bg-brand-400"></div>
                     {item}
                   </div>

@@ -639,22 +639,42 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                  
                  // Fetch session inside the background scope to ensure we have valid data
                  var sessionInfo = await scopedDb.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-                 var itemName = sessionInfo != null ? $"{sessionInfo.Size}_{sessionInfo.OriginalFileName}" : null;
+                 var itemName = sessionInfo != null ? $"{sessionInfo.OriginalFileName}{sessionInfo.Size}" : sessionId;
 
                  var storageTracker = new BatchStorageTracker(licenseId, _licenseClient, itemName);
                  
-                 // Record item usage immediately upon starting conversion ONLY if item is new (Success)
-                 var itemStatus = await _licenseClient.GetItemStatus(licenseId, itemName ?? sessionId);
+                // Record item usage immediately upon starting conversion ONLY if item is new (Success)
+                var itemStatus = await _licenseClient.GetItemStatus(licenseId, itemName);
                 if (itemStatus == ItemStatus.Success)
                 {
                     await _licenseClient.UpdateItemsAsync(licenseId);
+                    if (sessionInfo != null) await _licenseClient.UpdateStorageAsync(licenseId, sessionInfo.Size, itemName);
+                }
+                else if (itemStatus == ItemStatus.Failed)
+                {
+                    if (_logger.IsEnabled(LogLevel.Error))
+                        _logger.LogError("[PstService] License check FAILED for {SessionId}. ItemStatus=Failed. Stopping conversion.", sessionId);
+                        
+                    // Update session status to trigger frontend redirect
+                    using (var failScope = _scopeFactory.CreateScope())
+                    {
+                        var failDb = failScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var fs = await failDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
+                        if (fs != null) { fs.Status = "LicenseCheckFailed"; await failDb.SaveChangesAsync(); }
+                    }
+                    return;
                 }
                 else
                 {
                     if (_logger.IsEnabled(LogLevel.Information))
-                        _logger.LogInformation("[PstService] File {SessionId} already converted or failed previously (ItemStatus={Status}). Skipping item count increment.", sessionId, itemStatus);
+                        _logger.LogInformation("[PstService] File {SessionId} already exists (ItemStatus=Exist). Proceeding without deduction.", sessionId);
+                    
+                    storageTracker.IsEnabled = false; // Already exists, no deduction
                 }
-                
+
+                // If success, we already deducted full size upfront, so disable incremental tracking
+                if (itemStatus == ItemStatus.Success) storageTracker.IsEnabled = false;
+
                 // HYPER FAST PATH: Direct OST to PST conversion (Native implementation)
                 if (!deduplicate && !excludeEmptyFolders && exportLimit == -1)
                 {
@@ -664,15 +684,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         if (_logger.IsEnabled(LogLevel.Information))
                             _logger.LogInformation("[PstService] Using HYPER FAST PATH for session {SessionId}", sessionId);
                         
-                        // Storage tracking (approximate at start)
-                        if (sessionInfo != null && itemStatus == ItemStatus.Success) 
+                        // Note: Storage was already updated upfront for Success items
+                        if (itemStatus == ItemStatus.Exist && _logger.IsEnabled(LogLevel.Information))
                         {
-                            await storageTracker.UpdateAsync(sessionInfo.Size);
-                        }
-                        else if (itemStatus == ItemStatus.Exist)
-                        {
-                            if (_logger.IsEnabled(LogLevel.Information))
-                                _logger.LogInformation("[PstService] Skipping storage update for already converted file {SessionId}.", sessionId);
+                            _logger.LogInformation("[PstService] Skipping storage update for already converted file {SessionId}.", sessionId);
                         }
 
                         using (var storage = PersonalStorage.FromFile(srcPath))
@@ -923,11 +938,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                     return;
                                 }
                             }
+                            /*
                             else if (!await licenseClient.UpdateStorageAsync(licenseId, msgSize))
                             {
                                 onLimitReached?.Invoke();
                                 return; // Stop recursion for this branch
                             }
+                            */
 
                             newFolder.AddMessage(msg);
                             folderExportedCount++;
@@ -1320,12 +1337,21 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
              }
  
              var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-             var fileItemName = session != null ? $"{session.Size}_{session.OriginalFileName}" : null;
+             var fileItemName = session != null ? $"{session.OriginalFileName}{session.Size}" : null;
 
-             if (totalFolderSize > 0)
+             if (fileItemName != null && userId != "anonymous")
              {
-                 var success = await _licenseClient.UpdateStorageAsync(userId, totalFolderSize, fileItemName);
-                 if (!success) throw new Exception("License storage limit exceeded");
+                 var itemStatus = await _licenseClient.GetItemStatus(userId, fileItemName);
+                 if (itemStatus == ItemStatus.Success)
+                 {
+                     await _licenseClient.UpdateItemsAsync(userId);
+                     if (totalFolderSize > 0) await _licenseClient.UpdateStorageAsync(userId, totalFolderSize, fileItemName);
+                 }
+                 else if (itemStatus == ItemStatus.Failed)
+                 {
+                     throw new Exception("License check failed. Please check your plan limits.");
+                 }
+                 // If Exist, we just proceed without further deductions
              }
             int index = 0;
             foreach (var msgInfo in folder.GetContents())
@@ -1460,9 +1486,26 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                          var licenseId = userEmail ?? userId ?? "anonymous";
                          
                          var sessionMetadata = await scopedDb.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-                         var itemName = sessionMetadata != null ? $"{sessionMetadata.Size}_{sessionMetadata.OriginalFileName}" : null;
+                         var itemName = sessionMetadata != null ? $"{sessionMetadata.OriginalFileName}{sessionMetadata.Size}" : null;
                          
                          var storageTracker = new BatchStorageTracker(licenseId, _licenseClient, itemName);
+
+                         if (itemName != null && licenseId != "anonymous")
+                         {
+                              var itemStatus = await _licenseClient.GetItemStatus(licenseId, itemName);
+                              if (itemStatus == ItemStatus.Success)
+                              {
+                                  await _licenseClient.UpdateItemsAsync(licenseId);
+                              }
+                              else if (itemStatus == ItemStatus.Failed)
+                              {
+                                  throw new Exception("License check failed. Please check your plan limits.");
+                              }
+                              else // ItemStatus.Exist
+                              {
+                                  storageTracker.IsEnabled = false; // No deduction for existing items
+                              }
+                         }
                          int index = 0;
 
                         if (entryIds != null && entryIds.Count > 0)
@@ -1512,12 +1555,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                                         return;
                                                     }
                                                 }
+                                                /*
                                                 else if (!await _licenseClient.UpdateStorageAsync(licenseId, msgSize))
                                                 {
                                                     limitReached = true;
                                                     limitCts.Cancel();
                                                     return;
                                                 }
+                                                */
 
                                                 var ext = GetFileExtension(format);
                                                 var sanitizedSubject = SanitizeFileName(msg.Subject ?? $"msg_{currentMsgIndex}");
@@ -1697,13 +1742,13 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                     return;
                                 }
                             }
-                            else if (!await _licenseClient.UpdateStorageAsync(licenseId, msgSize))
-                            {
-                                limitHitLocal = true;
-                                onLimitHit();
-                                limitCts.Cancel();
-                                return;
-                            }
+                             // else if (!await _licenseClient.UpdateStorageAsync(licenseId, msgSize))
+                             // {
+                             //     limitHitLocal = true;
+                             //     onLimitHit();
+                             //     limitCts.Cancel();
+                             //     return;
+                             // }
 
                             var entryName = string.IsNullOrEmpty(path)
                                 ? $"{SanitizeFileName(msg.Subject ?? "msg")}_{currentExportCount}{GetFileExtension(format)}"
@@ -2050,12 +2095,17 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// </summary>
     private class BatchStorageTracker(string licenseId, LicenseApiClient client, string? itemName = null)
     {
+        private readonly string _licenseId = licenseId;
+        private readonly LicenseApiClient _client = client;
+        private readonly string? _itemName = itemName;
+
         public long PendingSize { get; private set; }
         public int PendingCount { get; private set; }
+        public bool IsEnabled { get; set; } = true;
 
         public async Task<bool> UpdateAsync(long size)
         {
-            if (size <= 0) return true;
+            if (!IsEnabled || size <= 0) return true;
             PendingSize += size;
             PendingCount++;
 
@@ -2069,8 +2119,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         public async Task<bool> FlushAsync()
         {
-            if (PendingSize <= 0) return true;
-            bool success = await client.UpdateStorageAsync(licenseId, PendingSize, itemName);
+            if (!IsEnabled || PendingSize <= 0) return true;
+            bool success = await _client.UpdateStorageAsync(_licenseId, PendingSize, _itemName);
             if (success)
             {
                 PendingSize = 0;

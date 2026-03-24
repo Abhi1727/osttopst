@@ -137,11 +137,7 @@ const PricingCard = ({
     <div className="mb-6 min-h-[100px]">
       <h3 className="mb-2">{title}</h3>
       <p className="text-sm text-gray-500">{description}</p>
-      {isActive && activeDetails && (
-        <div className="mt-2 text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded border border-brand-100 animate-pulse">
-          ACTIVE: {activeDetails}
-        </div>
-      )}
+      {/* Removed activeDetails display */}
     </div>
 
     <div className="mb-8">
@@ -274,8 +270,10 @@ const Pricing = () => {
           },
         });
       }
+      return data;
     } catch (error) {
       console.error("Failed to load license in Pricing", error);
+      return null;
     }
   };
 
@@ -307,22 +305,37 @@ const Pricing = () => {
 
       if (response?.success) {
         const allotted = response.allottedData ?? response.AllottedData;
-        const totalItemsVal = allotted?.totalItemsAllotted ?? allotted?.TotalItemsAllotted;
-        const totalDaysVal = allotted?.totalDaysAllotted ?? allotted?.TotalDaysAllotted;
-        const totalStorageVal = allotted?.totalStorageAllotted ?? allotted?.TotalStorageAllotted;
+        
+        if (allotted) {
+          const totalItemsVal = allotted?.totalItemsAllotted ?? allotted?.TotalItemsAllotted;
+          const totalDaysVal = allotted?.totalDaysAllotted ?? allotted?.TotalDaysAllotted;
+          const totalStorageVal = allotted?.totalStorageAllotted ?? allotted?.TotalStorageAllotted;
 
-        const itemsText = totalItemsVal === -1 ? "Unlimited" : (totalItemsVal?.toLocaleString() ?? requestData.TotalItems);
-        const daysText = totalDaysVal === -1 ? "Unlimited" : (totalDaysVal ?? requestData.TotalDays);
-        toast.dismiss();
-        toast.success("Plan Allotted Successfully!", {
-          description: `Backend confirms: ${itemsText} items, ${formatStatusStorage(totalStorageVal ?? requestData.Storage)} Storage allotted for ${daysText} days.`,
-        });
+          const itemsText = totalItemsVal === -1 ? "Unlimited" : (totalItemsVal?.toLocaleString() ?? requestData.TotalItems);
+          const daysText = totalDaysVal === -1 ? "Unlimited" : (totalDaysVal ?? requestData.TotalDays);
+          
+          toast.success("Plan Allotted Successfully!", {
+            description: `Backend confirms: ${itemsText} items, ${formatStatusStorage(totalStorageVal ?? requestData.Storage)} Storage allotted for ${daysText} days.`,
+          });
+        } else {
+          toast.success("Subscription request generated!", {
+            description: response.message || "Your request is being processed. It will be verified by the admin.",
+          });
+        }
+        
         // Refetch status locally and tell the header badge to refresh too
-        fetchStatus();
+        const newData = await fetchStatus();
+        
+        // Explicitly check for limit if it wasn't caught in fetchStatus's effect
+        if (newData && (newData.isUsageRestricted || newData.IsUsageRestricted)) {
+           // The toast is already in fetchStatus, but we can add a specific one here if we want immediate feedback
+           // after the purchase request was "blindly" sent.
+        }
+        
         window.dispatchEvent(new Event("license-refresh"));
       } else if (response) {
-        toast.success("Subscription request generated!", {
-          description: response.message || "Your request is being processed.",
+        toast.error("Subscription request failed", {
+          description: response.message || "There was an error processing your request.",
         });
       }
     } catch (error) {

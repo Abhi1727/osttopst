@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Sparkles, Menu, X, Laptop } from "lucide-react";
+import { Menu, Laptop } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SignedIn,
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/sheet";
 
 import SessionGuardModal from "./SessionGuardModal";
-import LicenseBadge from "./LicenseBadge";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
 
@@ -110,8 +109,6 @@ const UnifiedHeader = ({ session, onReset }) => {
             Get Desktop Tool
           </Button>
           
-          <LicenseBadge />
-
           <div className="flex items-center">
             <SignedOut>
               <SignInButton mode="modal">
@@ -174,8 +171,7 @@ const UnifiedHeader = ({ session, onReset }) => {
 
               <div className="flex flex-col gap-4">
                 <div className="px-4">
-                  <p className="text-[10px] uppercase font-semibold text-slate-400 mb-3 tracking-widest">Account & License</p>
-                  <LicenseBadge />
+                  <p className="text-[10px] uppercase font-semibold text-slate-400 mb-3 tracking-widest">Account</p>
                 </div>
                 
                 <div className="flex items-center px-4 justify-between">

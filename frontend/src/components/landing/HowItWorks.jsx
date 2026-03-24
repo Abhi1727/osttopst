@@ -52,7 +52,6 @@ const HowItWorks = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-6 md:mb-10 space-y-1">
-         <h1 className="font-sans uppercase">Convert <span className="text-brand-600">OST to PST</span> Online</h1>
           <h2 className="">
              Convert OST Files to PST in <span className="text-brand-600">3 Simple Steps</span>
           </h2>
