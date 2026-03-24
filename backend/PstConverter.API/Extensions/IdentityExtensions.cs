@@ -39,6 +39,11 @@ public static class IdentityExtensions
     
     public static string GetInternalUserId(this ClaimsPrincipal user)
     {
-        return user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unauthenticated";
+        // When NameClaimType = "sub" is set in JWT options, ASP.NET maps the JWT "sub" claim
+        // to ClaimTypes.Name (not ClaimTypes.NameIdentifier). So we check both.
+        return user.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? user.FindFirstValue("sub")
+            ?? user.FindFirstValue(ClaimTypes.Name)
+            ?? "unauthenticated";
     }
 }

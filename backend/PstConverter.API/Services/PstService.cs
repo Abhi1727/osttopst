@@ -81,7 +81,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         // same row; whichever wins is fine, the session remains valid either way.
         try
         {
-            session.LastAccessedAt = DateTime.UtcNow;
+            session.LastAccessedAt = DateTime.Now;
             await _db.SaveChangesAsync();
         }
         catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
@@ -144,7 +144,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 UserId = userId,
                 Size = size,
                 FileType = ext.TrimStart('.'),
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 Status = "Uploaded",
                 Password = password,
                 Email = userEmail ?? userId,
@@ -185,7 +185,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             TotalChunks = totalChunks,
             TotalSize = totalSize,
             ReceivedChunks = [],
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         var metaPath = Path.Combine(chunkDir, "_metadata.json");
@@ -329,7 +329,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             UserId = metadata.UserId,
             Size = metadata.TotalSize,
             FileType = ext.TrimStart('.'),
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.Now,
             Status = "Assembling",
             Password = null,
             Email = metadata.UserEmail ?? userEmail ?? metadata.UserId
@@ -704,55 +704,67 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     }
                 }
 
-                await _pool.AccessAsync(sessionId, srcPath, async srcStorage =>
+                if (File.Exists(outputPath)) TryDelete(outputPath);
+
+                // For the direct merge (consolidation) fast path, MergeWith internally opens
+                // the source file as writable, which conflicts with the pool's open handle.
+                // We must release the pool handle first, then perform the merge directly.
+                if (!deduplicate && !excludeEmptyFolders && exportLimit == -1)
+                {
+                    if (sessionInfo != null)
                     {
-                        if (File.Exists(outputPath)) TryDelete(outputPath);
+                        sessionInfo.Status = "Processing: Consolidating data...";
+                        await scopedDb.SaveChangesAsync();
+                    }
 
+                    // Release the pool's open handle before MergeWith to avoid file lock conflict.
+                    await _pool.RemoveAsync(sessionId);
+
+                    using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
+                    destStorage.MergeWith([srcPath]);
+
+                    if (splitSizeMb > 0)
+                    {
+                        var tempDir = Path.Combine(_uploadDir, $"split_{sessionId}");
+                        if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+                        Directory.CreateDirectory(tempDir);
+                        destStorage.SplitInto(splitSizeMb.Value * 1024 * 1024, tempDir);
+                    }
+                }
+                else
+                {
+                    await _pool.AccessAsync(sessionId, srcPath, async srcStorage =>
+                    {
                         using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
+
+                        var seenMessages = deduplicate ? new HashSet<string>() : null;
+                        var folderCounts = excludeEmptyFolders ? new Dictionary<string, int>() : null;
+                        if (excludeEmptyFolders) BuildFolderCountCache(srcStorage.RootFolder, folderCounts!);
+
+                        var limitReached = false;
+                        await CopyFolders(licenseId, srcStorage.RootFolder, destStorage.RootFolder, srcStorage, _licenseClient, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, () => limitReached = true, _logger, storageTracker, token);
+
+                        if (limitReached)
                         {
-                            // FAST PATH: Direct merge (Consolidation)
-                            if (!deduplicate && !excludeEmptyFolders && exportLimit == -1)
+                            _logger.LogWarning("Conversion for session {SessionId} stopped early due to license limit.", sessionId);
+                            if (sessionInfo != null)
                             {
-                                // Consolidation is significantly faster than sequential processing.
-                                if (sessionInfo != null)
-                                {
-                                    sessionInfo.Status = "Processing: Consolidating data...";
-                                    await scopedDb.SaveChangesAsync();
-                                }
-
-                                destStorage.MergeWith([srcPath]);
-                            }
-                            else
-                            {
-                              destStorage.Store.ChangeDisplayName($"{baseName}{ext}");
-                                var seenMessages = deduplicate ? new HashSet<string>() : null;
-                                var folderCounts = excludeEmptyFolders ? new Dictionary<string, int>() : null;
-                                if (excludeEmptyFolders) BuildFolderCountCache(srcStorage.RootFolder, folderCounts!);
-
-                                var limitReached = false;
-                                await CopyFolders(licenseId, srcStorage.RootFolder, destStorage.RootFolder, srcStorage, _licenseClient, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, () => limitReached = true, _logger, storageTracker, token);
-
-                                if (limitReached)
-                                {
-                                    _logger.LogWarning("Conversion for session {SessionId} stopped early due to license limit.", sessionId);
-                                    if (sessionInfo != null)
-                                    {
-                                        sessionInfo.Status = "Partial: Limit Reached";
-                                        await scopedDb.SaveChangesAsync();
-                                    }
-                                }
-                            }
-
-                            if (splitSizeMb > 0)
-                            {
-                                var tempDir = Path.Combine(_uploadDir, $"split_{sessionId}");
-                                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-                                Directory.CreateDirectory(tempDir);
-                                destStorage.SplitInto(splitSizeMb.Value * 1024 * 1024, tempDir);
+                                sessionInfo.Status = "Partial: Limit Reached";
+                                await scopedDb.SaveChangesAsync();
                             }
                         }
+
+                        if (splitSizeMb > 0)
+                        {
+                            var tempDir = Path.Combine(_uploadDir, $"split_{sessionId}");
+                            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+                            Directory.CreateDirectory(tempDir);
+                            destStorage.SplitInto(splitSizeMb.Value * 1024 * 1024, tempDir);
+                        }
+
                         return true;
                     }, password);
+                }
 
                 List<string> splitFilenames = [];
                 if (splitSizeMb > 0)

@@ -175,6 +175,15 @@ public static class ConversionEndpoints
             var userId = user.GetInternalUserId();
             var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
 
+            // Fallback: if JWT has no email claim, try the email stored on the session
+            if (userEmail.StartsWith("user_", StringComparison.OrdinalIgnoreCase))
+            {
+                var sessionForEmailCheck = await db.ConversionSessions.AsNoTracking().FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                if (sessionForEmailCheck != null && !string.IsNullOrEmpty(sessionForEmailCheck.Email) && !sessionForEmailCheck.Email.StartsWith("user_", StringComparison.OrdinalIgnoreCase))
+                    userEmail = sessionForEmailCheck.Email;
+            }
+
+
             try
             {
                 var sessionForCheck = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);

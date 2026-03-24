@@ -43,7 +43,7 @@ public static class SessionEndpoints
         group.MapGet("/duplicate-check", async (string fingerprint, AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
         {
             var userId = user.GetInternalUserId();
-            var cutoff = DateTime.UtcNow.AddHours(-24);
+            var cutoff = DateTime.Now.AddHours(-24);
             var existing = await db.ConversionSessions
                 .Where(s => s.UserId == userId && s.StoreGuid == fingerprint && s.CreatedAt > cutoff)
                 .OrderByDescending(s => s.CreatedAt)
@@ -88,7 +88,7 @@ public static class SessionEndpoints
             // If this session was marked as a duplicate after background assembly, return the original session instead.
             if (session.Status == "Duplicate" && !string.IsNullOrEmpty(session.StoreGuid))
             {
-                var cutoff = DateTime.UtcNow.AddHours(-24);
+                var cutoff = DateTime.Now.AddHours(-24);
                 var original = await db.ConversionSessions
                     .Where(x => x.UserId == userId && x.StoreGuid == session.StoreGuid && x.CreatedAt > cutoff && x.Status != "Duplicate" && x.SessionId != sessionId)
                     .OrderByDescending(x => x.CreatedAt)
@@ -118,7 +118,7 @@ public static class SessionEndpoints
                 {
                     userEmail = session.Email;
                 }
-                
+
                 var itemName = session?.OriginalFileName != null ? $"{session.OriginalFileName}{session.Size}" : sessionId;
                 var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
                 limitHit = licenseStatus.HitFileCountLimit || licenseStatus.HitSizeLimit || licenseStatus.HitTimePeriodLimit;
@@ -132,9 +132,9 @@ public static class SessionEndpoints
             }
 
             // Rate-limit LastAccessedAt updates to once per 5 minutes to further reduce DB noise
-            if (session != null && (DateTime.UtcNow - session.LastAccessedAt).TotalMinutes > 5)
+            if (session != null && (DateTime.Now - session.LastAccessedAt).TotalMinutes > 5)
             {
-                session.LastAccessedAt = DateTime.UtcNow;
+                session.LastAccessedAt = DateTime.Now;
                 try { await db.SaveChangesAsync(); } catch { }
             }
 

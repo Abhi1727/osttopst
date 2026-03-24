@@ -88,7 +88,7 @@ namespace PstConverter.Services
                         TotalStorageUsed = license.TotalStorageUsed,
                         TotalDaysAllotted = license.TotalDaysAllotted,
                         ExpiryDate = license.ExpiryDate,
-                        CanConvert = license.Tier != LicenseTier.DemoExpired && license.ExpiryDate > DateTime.UtcNow,
+                        CanConvert = license.Tier != LicenseTier.DemoExpired && license.ExpiryDate > DateTime.Now,
                         ExportFileLimit = license.Tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit
                     };
                     return ApplyLimits(status);
@@ -132,7 +132,7 @@ namespace PstConverter.Services
                     if (s.TotalDaysAllotted > 0)
                         license.TotalDaysAllotted = s.TotalDaysAllotted;
 
-                    license.ExpiryDate = s.ExpiryDate ?? DateTime.UtcNow.AddDays(s.TotalDaysAllotted > 0 ? s.TotalDaysAllotted : 365);
+                    license.ExpiryDate = s.ExpiryDate ?? DateTime.Now.AddDays(s.TotalDaysAllotted > 0 ? s.TotalDaysAllotted : 365);
                     if (updateAllotment)
                     {
                         // Purchase: also reset usage
@@ -155,7 +155,7 @@ namespace PstConverter.Services
                         license.TotalStorageUsed = s.TotalStorageUsed;
                 }
 
-                license.LastUpdated = DateTime.UtcNow;
+                license.LastUpdated = DateTime.Now;
                 await db.SaveChangesAsync();
 
                 if (logger.IsEnabled(LogLevel.Information))
@@ -285,7 +285,7 @@ namespace PstConverter.Services
         public async Task<ItemStatus> GetItemStatus(string emailOrId, string? itemId = null)
         {
             var licenseId = emailOrId.ToLowerInvariant();
-            
+
             // If no itemId is provided, we shouldn't be checking item status. 
             // Default to Success to allow general flow to continue, but log it.
             if (string.IsNullOrEmpty(itemId))
@@ -306,7 +306,7 @@ namespace PstConverter.Services
                 var response = await ExecuteWithRetryAsync(client, request, licenseId);
 
                 if (logger.IsEnabled(LogLevel.Information))
-                    logger.LogInformation("[LICENSE API RES] {Url} | Status: {Status} | Content: {Content}", 
+                    logger.LogInformation("[LICENSE API RES] {Url} | Status: {Status} | Content: {Content}",
                         client.BuildUri(request), response.StatusCode, response.Content);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -326,7 +326,7 @@ namespace PstConverter.Services
                     try
                     {
                         var detailed = JsonSerializer.Deserialize<DetailedLicenseStatus>(content, _jsonOptions);
-                        if (detailed != null) 
+                        if (detailed != null)
                         {
                             logger.LogInformation("[LICENSE] JSON received for item {ItemId}. Treating as Exist. Content: {Content}", itemId, content);
                             return ItemStatus.Exist;
@@ -359,7 +359,7 @@ namespace PstConverter.Services
             // Cache key is user-only — itemId is not used to segment here
             // because we never call the Items endpoint from this method.
             var localCacheKey = $"{licenseId}_detail";
-            if (_localCache.TryGetValue(localCacheKey, out var cached) && DateTime.UtcNow < cached.Expires)
+            if (_localCache.TryGetValue(localCacheKey, out var cached) && DateTime.Now < cached.Expires)
                 return cached.Status;
 
             var cacheKey = $"license_status_{localCacheKey}";
@@ -371,16 +371,24 @@ namespace PstConverter.Services
                     var s = JsonSerializer.Deserialize<DetailedLicenseStatus>(cachedJson);
                     if (s != null)
                     {
-                        _localCache[localCacheKey] = (s, DateTime.UtcNow.Add(_cacheDuration));
+                        _localCache[localCacheKey] = (s, DateTime.Now.Add(_cacheDuration));
                         return s;
                     }
                 }
                 catch { }
             }
 
-            var dbStatus = await LoadStatusFromDbAsync(licenseId);
-            _localCache.TryGetValue(localCacheKey, out var localCached);
-            var existing = dbStatus ?? localCached.Status;
+            // Only read usage counters from DB — CanConvert/tier/expiry come from the live API.
+            (int itemsUsed, long storageUsed, LicenseTier dbTier) dbUsage = (0, 0, LicenseTier.Demo);
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var record = await db.MockLicenses.AsNoTracking().FirstOrDefaultAsync(l => l.LicenseId == licenseId);
+                if (record != null)
+                    dbUsage = (record.TotalItemsUsed, record.TotalStorageUsed, record.Tier);
+            }
+            catch (Exception ex) { logger.LogError(ex, "[LICENSE DB] Failed to load usage for {LicenseId}", licenseId); }
 
             try
             {
@@ -397,10 +405,12 @@ namespace PstConverter.Services
                     quotaStatus.CanConvert = tier != LicenseTier.DemoExpired;
                     quotaStatus.ExportFileLimit = tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit;
 
-                    if (existing != null)
+                    // Carry over local usage counts only when the tier hasn't changed.
+                    // This prevents stale usage from an old plan blocking a new plan's limits.
+                    if (dbUsage.dbTier == tier)
                     {
-                        quotaStatus.TotalItemsUsed = Math.Max(quotaStatus.TotalItemsUsed, existing.TotalItemsUsed);
-                        quotaStatus.TotalStorageUsed = Math.Max(quotaStatus.TotalStorageUsed, existing.TotalStorageUsed);
+                        quotaStatus.TotalItemsUsed = Math.Max(quotaStatus.TotalItemsUsed, dbUsage.itemsUsed);
+                        quotaStatus.TotalStorageUsed = Math.Max(quotaStatus.TotalStorageUsed, dbUsage.storageUsed);
                     }
 
                     status = ApplyLimits(quotaStatus);
@@ -408,11 +418,18 @@ namespace PstConverter.Services
                 }
                 else
                 {
-                    status = dbStatus ?? BuildFallback(tier, existing);
-                    ApplyLimits(status);
+                    // Live API unavailable — fall back to BuildFallback with DB usage.
+                    var fallback = BuildFallback(tier, null);
+                    if (dbUsage.dbTier == tier)
+                    {
+                        fallback.TotalItemsUsed = dbUsage.itemsUsed;
+                        fallback.TotalStorageUsed = dbUsage.storageUsed;
+                        ApplyLimits(fallback);
+                    }
+                    status = fallback;
                 }
 
-                _localCache[localCacheKey] = (status, DateTime.UtcNow.Add(_cacheDuration));
+                _localCache[localCacheKey] = (status, DateTime.Now.Add(_cacheDuration));
 
                 logger.LogInformation("[LICENSE DETAILED] User: {User}, Tier: {Tier}, Items: {ItemsUsed}/{ItemsAllotted}, Storage: {StorageUsed}/{StorageAllotted}",
                     licenseId, status.Tier, status.TotalItemsUsed, status.TotalItemsAllotted, status.TotalStorageUsed, status.TotalStorageAllotted);
@@ -427,7 +444,7 @@ namespace PstConverter.Services
             catch (Exception ex)
             {
                 logger.LogError(ex, "[LICENSE] GetDetailedLicenseStatusAsync exception for {LicenseId}", licenseId);
-                return dbStatus ?? BuildFallback(LicenseTier.DemoExpired, localCached.Status);
+                return BuildFallback(LicenseTier.DemoExpired, null);
             }
         }
 
@@ -582,7 +599,7 @@ namespace PstConverter.Services
             if (s.TotalStorageAllotted > 0 && s.TotalStorageUsed >= s.TotalStorageAllotted)
                 s.HitSizeLimit = true;
 
-            if (s.ExpiryDate.HasValue && s.ExpiryDate < DateTime.UtcNow)
+            if (s.ExpiryDate.HasValue && s.ExpiryDate < DateTime.Now)
                 s.HitTimePeriodLimit = true;
 
             if (s.IsUsageRestricted)
@@ -601,7 +618,7 @@ namespace PstConverter.Services
             TotalStorageAllotted = tier == LicenseTier.Professional ? 5368709120L : 524288000L, // 5GB vs 500MB
             TotalStorageUsed = existing?.TotalStorageUsed ?? 0,
             TotalDaysAllotted = tier == LicenseTier.Professional ? 365 : 7,
-            ExpiryDate = tier == LicenseTier.Professional ? DateTime.UtcNow.AddDays(365) : DateTime.UtcNow.AddDays(7)
+            ExpiryDate = tier == LicenseTier.Professional ? DateTime.Now.AddDays(365) : DateTime.Now.AddDays(7)
         });
 
     }

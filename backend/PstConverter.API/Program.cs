@@ -20,7 +20,7 @@ try
     byte[] byteArray = Encoding.UTF8.GetBytes(Lic);
     MemoryStream objStream = new(byteArray);
     license.SetLicense(objStream);
-    
+
     if (File.Exists("Aspose.Email.lic"))
     {
         license.SetLicense("Aspose.Email.lic");
@@ -40,10 +40,10 @@ try
     MemoryStream objStream = new(byteArray);
     license.SetLicense(objStream);
 
-    Aspose.Words.Fonts.FontSettings.DefaultInstance.SetFontsFolders(new[] 
-    { 
-        @"C:\Windows\Fonts", 
-        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts") 
+    Aspose.Words.Fonts.FontSettings.DefaultInstance.SetFontsFolders(new[]
+    {
+        @"C:\Windows\Fonts",
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts")
     }, true);
 }
 catch (Exception ex)
@@ -106,11 +106,11 @@ var _jwksLock = new object();
 
 Microsoft.IdentityModel.Tokens.IssuerSigningKeyResolver clerkKeyResolver = (token, securityToken, kid, parameters) =>
 {
-    if (_cachedJwks == null || DateTime.UtcNow > _jwksCacheExpiry)
+    if (_cachedJwks == null || DateTime.Now > _jwksCacheExpiry)
     {
         lock (_jwksLock)
         {
-            if (_cachedJwks == null || DateTime.UtcNow > _jwksCacheExpiry)
+            if (_cachedJwks == null || DateTime.Now > _jwksCacheExpiry)
             {
                 try
                 {
@@ -118,7 +118,7 @@ Microsoft.IdentityModel.Tokens.IssuerSigningKeyResolver clerkKeyResolver = (toke
                     http.Timeout = TimeSpan.FromSeconds(10);
                     var jwksJson = http.GetStringAsync(clerkJwksUri).GetAwaiter().GetResult();
                     _cachedJwks = new Microsoft.IdentityModel.Tokens.JsonWebKeySet(jwksJson);
-                    _jwksCacheExpiry = DateTime.UtcNow.AddMinutes(10);
+                    _jwksCacheExpiry = DateTime.Now.AddMinutes(10);
                     Console.WriteLine($"[CLERK JWKS] Fetched {_cachedJwks.Keys.Count} keys from {clerkJwksUri}");
                 }
                 catch (Exception ex)
@@ -146,7 +146,11 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKeyResolver = clerkKeyResolver,
-            NameClaimType = "sub"
+            NameClaimType = "sub",
+            // Clerk's clock and the server clock differ by ~3 days.
+            // This allows tokens that appear "in the future" by up to 4 days.
+            // Fix the root cause by syncing the system clock: w32tm /resync
+            ClockSkew = TimeSpan.FromDays(4)
         };
         options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
         {
@@ -284,8 +288,8 @@ app.Use(async (context, next) =>
         var msg = $"[API DEBUG] {context.Request.Method} {context.Request.Path} | Auth Header: {context.Request.Headers.Authorization.ToString().Length > 0}";
         Console.WriteLine(msg); // Hard output to console
         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("[API REQUEST] {Method} {Path} | Auth Header: {HasAuth} | Size: {Size}", 
-            context.Request.Method, context.Request.Path, 
+        logger.LogInformation("[API REQUEST] {Method} {Path} | Auth Header: {HasAuth} | Size: {Size}",
+            context.Request.Method, context.Request.Path,
             context.Request.Headers.ContainsKey("Authorization"),
             context.Request.Headers["Authorization"].ToString().Length);
     }
@@ -307,7 +311,7 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 // DB Init
-try 
+try
 {
     using var scope = app.Services.CreateScope();
     DbInitializer.Initialize(scope.ServiceProvider.GetRequiredService<AppDbContext>());
@@ -372,9 +376,9 @@ app.MapControllers();
 app.MapFallbackToFile("index.html");
 
 // DEV UTILITY: Set usage and allotments for testing
-app.MapPost("/api/dev/set-usage", async (AppDbContext db, LicenseApiClient licenseClient, IDistributedCache cache, 
-    [FromQuery] string email, 
-    [FromQuery] int? items, 
+app.MapPost("/api/dev/set-usage", async (AppDbContext db, LicenseApiClient licenseClient, IDistributedCache cache,
+    [FromQuery] string email,
+    [FromQuery] int? items,
     [FromQuery] long? storage,
     [FromQuery] int? allottedItems,
     [FromQuery] long? allottedStorage,
@@ -384,10 +388,10 @@ app.MapPost("/api/dev/set-usage", async (AppDbContext db, LicenseApiClient licen
     var license = await db.MockLicenses.FirstOrDefaultAsync(l => l.LicenseId == id);
     if (license == null)
     {
-         license = new MockLicense { LicenseId = id };
-         db.MockLicenses.Add(license);
+        license = new MockLicense { LicenseId = id };
+        db.MockLicenses.Add(license);
     }
-    
+
     if (items.HasValue) license.TotalItemsUsed = items.Value;
     if (storage.HasValue) license.TotalStorageUsed = storage.Value;
     if (allottedItems.HasValue) license.TotalItemsAllotted = allottedItems.Value;
@@ -395,15 +399,16 @@ app.MapPost("/api/dev/set-usage", async (AppDbContext db, LicenseApiClient licen
     if (tier.HasValue) license.Tier = (LicenseTier)tier.Value;
     else license.Tier = LicenseTier.Professional;
 
-    license.LastUpdated = DateTime.UtcNow;
+    license.LastUpdated = DateTime.Now;
     await db.SaveChangesAsync();
 
     licenseClient.InvalidateCache(id);
     await cache.RemoveAsync($"license_status_{id}");
 
-    return Results.Ok(new { 
-        message = "Usage and Allotment updated", 
-        used = license.TotalItemsUsed, 
+    return Results.Ok(new
+    {
+        message = "Usage and Allotment updated",
+        used = license.TotalItemsUsed,
         allotted = license.TotalItemsAllotted,
         storageUsed = license.TotalStorageUsed,
         storageAllotted = license.TotalStorageAllotted,

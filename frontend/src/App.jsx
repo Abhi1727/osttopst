@@ -60,8 +60,6 @@ function App() {
   const handleUploadComplete = (data) => {
     console.log("[App] handleUploadComplete called with:", data);
     setSession(data);
-    toast.success("Session ready!");
-    navigate("/preview");
   };
 
   const handleReset = () => {

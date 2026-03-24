@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace PstConverter.Models;
 
-    //this is for the conversion session
+//this is for the conversion session
 public class ConversionSession
 {
     [Key]
@@ -24,7 +24,7 @@ public class ConversionSession
     [Required]
     public string UserId { get; set; } = string.Empty;
 
-    public DateTime LastAccessedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastAccessedAt { get; set; } = DateTime.Now;
 
     public long Size { get; set; }
 

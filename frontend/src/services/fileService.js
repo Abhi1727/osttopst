@@ -5,7 +5,7 @@ import { conversionService } from "./conversionService";
 const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB per chunk (Better for large files)
 const MAX_RETRIES = 5; // Retry each chunk up to 5 times
 const RETRY_DELAY_MS = 3000; // Wait 3 seconds between retries
-const SMALL_FILE_THRESHOLD = 20 * 1024 * 1024; // Files under 20MB use single upload
+const SMALL_FILE_THRESHOLD = 5 * 1024 * 1024; // Files under 5MB use single upload
 
 /**
  * Sleep helper for retry delays

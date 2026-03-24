@@ -11,10 +11,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace PstConverter.Services;
 
-    /// <summary>
-    /// Background service that periodically cleans up old files and expired conversion sessions.
-    /// </summary>
-    public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<CleanupBackgroundService> logger) : BackgroundService
+/// <summary>
+/// Background service that periodically cleans up old files and expired conversion sessions.
+/// </summary>
+public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<CleanupBackgroundService> logger) : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ILogger<CleanupBackgroundService> _logger = logger;
@@ -77,7 +77,7 @@ namespace PstConverter.Services;
 
         if (Directory.Exists(_uploadDir))
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var directoryInfo = new DirectoryInfo(_uploadDir);
 
             // Clean up loose files (fallback for non-session files or if DB sync fails)
@@ -132,7 +132,7 @@ namespace PstConverter.Services;
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var pool = scope.ServiceProvider.GetRequiredService<IPstStoragePool>();
 
-        var cutoff = DateTime.UtcNow - _maxFileAge;
+        var cutoff = DateTime.Now - _maxFileAge;
         var oldSessions = await db.ConversionSessions
             .Where(s => s.LastAccessedAt < cutoff)
             .ToListAsync(stoppingToken);

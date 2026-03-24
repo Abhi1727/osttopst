@@ -108,7 +108,8 @@ const Hero = ({ onUploadComplete, onRestore }) => {
           token,
           (prog) => setProgress(typeof prog === 'object' ? prog : { percent: prog, phase: 'uploading' }),
           null, // password
-          controller.signal
+          controller.signal,
+          user?.primaryEmailAddress?.emailAddress ?? null
         );
 
         // Backend returns sessionId, not _id
@@ -117,17 +118,20 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         setUploadPhase("processing");
         setUploadDetail("Processing OST structure...");
 
-        // Start Conversion - using correct method name from conversionService
-        const result = await conversionService.convertToPst(
+        // Start conversion in background — only polls for "Ready", does NOT download
+        await conversionService.triggerConversion(
           sessionId,
           getToken,
-          false, // excludeEmpty
-          (prog) => setProgress(typeof prog === 'object' ? prog : { percent: prog, phase: 'processing' })
+          (prog) => setProgress(typeof prog === 'object' ? prog : { percent: prog, phase: 'processing' }),
+          controller.signal,
+          user?.primaryEmailAddress?.emailAddress ?? null
         );
-        
-        setCompletedSession(result || session); // Ensure we have an object
-        if (onUploadComplete) onUploadComplete(result || session);
-        toast.success("Conversion complete! You can now preview or export.");
+
+        // Store session object so Preview / Download buttons have the data they need
+        const completedData = { ...session, sessionId };
+        setCompletedSession(completedData);
+        if (onUploadComplete) onUploadComplete(completedData);
+        toast.success("Conversion complete! Choose to preview or download below.");
       } catch (err) {
         if (err.name === "AbortError") {
           toast.info("Upload cancelled");
@@ -168,11 +172,15 @@ const Hero = ({ onUploadComplete, onRestore }) => {
       const sessionId = completedSession.sessionId || completedSession._id;
       await conversionService.convertToPst(
         sessionId,
-        getToken
+        getToken,
+        false,
+        undefined,
+        controller.signal,
+        user?.primaryEmailAddress?.emailAddress ?? null
       );
       // Assuming convertToPst now handles the browser-native download directly
       // and toast/license refresh should happen after successful initiation of download
-      const name = completedSession.originalName || completedSession.fileName || "converted";
+      const name = completedSession.originalName || completedSession.originalFileName || completedSession.fileName || "converted";
       const savedName = name.replace(".ost", "").replace(".pst", "") + ".pst";
       toast.success(`Started downloading: ${savedName}`);
       window.dispatchEvent(new Event("license-refresh"));
@@ -271,31 +279,41 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                     </Button>
                   </div>
 
-                  {completedSession && (
-                    <div className="w-full max-w-2xl bg-slate-50 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 mt-2">
-                       <div className="flex items-center gap-3 overflow-hidden w-full sm:w-auto justify-center sm:justify-start">
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                          <p className="text-sm sm:text-base font-bold text-slate-800 truncate">
-                             Recent: {((completedSession?.originalName || completedSession?.fileName || "file") + "").replace(".ost", "").replace(".pst", "")}.pst
-                          </p>
-                       </div>
-                       <div className="flex items-center gap-3 shrink-0">
-                          <button 
-                             onClick={(e) => { e.stopPropagation(); navigate("/preview"); }}
-                             className="text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-widest"
-                          >
-                             Preview
-                          </button>
-                          <Button
-                             onClick={(e) => { e.stopPropagation(); handleDownloadPst(); }}
-                             disabled={isDownloadingPst}
-                             className="h-8 bg-brand-500 hover:bg-brand-600 text-[10px] font-black uppercase tracking-widest rounded-lg px-4"
-                          >
-                             {isDownloadingPst ? "..." : "Download PST"}
-                          </Button>
-                       </div>
+                  {completedSession ? (
+                    <div className="w-full max-w-2xl animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col gap-4 mt-2">
+                      {/* Success indicator */}
+                      <div className="flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                        <p className="text-sm font-bold text-slate-700 truncate max-w-xs">
+                          {((completedSession?.originalName || completedSession?.originalFileName || completedSession?.fileName || "file") + "").replace(/\.(ost|pst)$/i, "")}.pst — Ready
+                        </p>
+                      </div>
+
+                      {/* Two action buttons */}
+                      <div className="flex flex-col sm:flex-row gap-3 w-full">
+                        <Button
+                          onClick={(e) => { e.stopPropagation(); navigate("/preview"); }}
+                          variant="outline"
+                          className="flex-1 h-12 border-2 border-slate-200 hover:border-brand-400 hover:bg-brand-50 text-slate-700 hover:text-brand-600 font-black text-sm uppercase tracking-widest rounded-xl gap-2 transition-all"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Preview OST
+                        </Button>
+                        <Button
+                          onClick={(e) => { e.stopPropagation(); handleDownloadPst(); }}
+                          disabled={isDownloadingPst}
+                          className="flex-1 h-12 bg-brand-500 hover:bg-brand-600 text-white font-black text-sm uppercase tracking-widest rounded-xl gap-2 shadow-lg shadow-brand-500/25 transition-all active:scale-95"
+                        >
+                          {isDownloadingPst ? (
+                            <RotateCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <ArrowRight className="w-4 h-4" />
+                          )}
+                          {isDownloadingPst ? "Preparing..." : "Download PST"}
+                        </Button>
+                      </div>
                     </div>
-                  ) || (
+                  ) : (
                   <div className="mt-4 flex flex-col gap-3">
                     <p className="text-xs sm:text-sm text-slate-400 font-medium tracking-tight">
                       Some upload file size limit apply
@@ -317,7 +335,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                         {uploadPhase === "uploading" ? "Transferring..." : "Processing..."}
                       </span>
                       <span className="text-xs font-black text-slate-400">
-                        {progress?.percent || 0}%
+                        {Math.round(progress?.percent || 0)}%
                       </span>
                     </div>
                     <Progress value={progress?.percent || 0} className="h-2 bg-slate-100" />

@@ -185,7 +185,71 @@ const downloadFile = async (
   return suggestedName;
 };
 
+/**
+ * Starts a background conversion and polls until status is "Ready".
+ * Does NOT trigger a file download — use convertToPst for that.
+ */
+const triggerConversion = async (sessionId, getToken, onProgress, signal, email = null) => {
+  let url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-pst?excludeEmptyFolders=false`;
+  if (email) url += `&email=${encodeURIComponent(email)}`;
+
+  const initialToken = await getToken();
+  const triggerRes = await fetch(url, {
+    headers: getHeaders(initialToken),
+    signal,
+  });
+
+  if (!triggerRes.ok) {
+    const errorText = await triggerRes.text();
+    let msg = triggerRes.statusText;
+    try { const j = JSON.parse(errorText); msg = j.error || j.detail || j.title || msg; } catch { if (errorText) msg = errorText; }
+    throw new Error(msg);
+  }
+
+  // 200 means file is immediately ready (already converted). No poll needed.
+  if (triggerRes.status !== 202) return;
+
+  // 202: poll status until ready
+  const pollIntervalMs = 3000;
+  const maxAttempts = 3600;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (signal?.aborted) throw new Error("AbortError");
+
+    // Update progress bar every tick (not just after fetch)
+    if (onProgress) {
+      const pseudo = 5 + (1 - Math.exp(-attempt / 120)) * 90;
+      onProgress({ phase: "processing", percent: Math.min(99, pseudo) });
+    }
+
+    await new Promise((resolve, reject) => {
+      const t = setTimeout(resolve, pollIntervalMs);
+      signal?.addEventListener("abort", () => { clearTimeout(t); reject(new Error("AbortError")); });
+    });
+
+    if (signal?.aborted) throw new Error("AbortError");
+
+    const token = await getToken();
+    const checkRes = await fetch(`${API_BASE_URL}/sessions/${sessionId}/check`, {
+      headers: getHeaders(token),
+      signal,
+    });
+
+    if (!checkRes.ok) continue;
+
+    const status = await checkRes.json();
+    const s = (status.status || "").toLowerCase();
+
+    if (s.startsWith("ready") || s.includes("ready")) return;
+    if (s === "limitreached") throw new Error("LICENSE_LIMIT_EXCEEDED");
+    if (s.includes("failed")) throw new Error(`Conversion failed: ${status.status}`);
+  }
+
+  throw new Error("Timed out waiting for conversion. Please try again.");
+};
+
 export const conversionService = {
+  triggerConversion,
   async convertToPst(
     sessionId,
     getToken,

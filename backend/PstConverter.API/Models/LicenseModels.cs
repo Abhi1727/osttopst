@@ -298,7 +298,7 @@ namespace PstConverter.Models
 
     //     // public static LicenseStatus CreateDemo(DateTime creationDate)
     //     // {
-    //     //     var isExpired = DateTime.UtcNow > creationDate.AddDays(7);
+    //     //     var isExpired = DateTimeNow > creationDate.AddDays(7);
     //     //     return new LicenseStatus
     //     //     {
     //     //         Tier = isExpired ? LicenseTier.DemoExpired : LicenseTier.Demo,
@@ -332,9 +332,9 @@ namespace PstConverter.Models
     public class LicenseToken(string token)
     {
         public string Token { get; } = token;
-        public DateTime CreatedAt { get; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; } = DateTime.Now;
 
-        public bool IsExpired => DateTime.UtcNow >= CreatedAt.AddMinutes(50);
+        public bool IsExpired => DateTime.Now >= CreatedAt.AddMinutes(50);
     }
 
     //THIS IS FOR LOGIN REQUEST
