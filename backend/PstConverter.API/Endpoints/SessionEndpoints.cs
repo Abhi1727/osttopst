@@ -4,6 +4,7 @@ using PstConverter.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using PstConverter.Extensions;
 
 namespace PstConverter.Endpoints;
 
@@ -17,9 +18,9 @@ public static class SessionEndpoints
     {
         var group = app.MapGroup("/api/sessions").RequireAuthorization();
         //this is for getting the recent sessions for the user
-        group.MapGet("/recent", async (AppDbContext db, ClaimsPrincipal user) =>
+        group.MapGet("/recent", async (AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             // Get last 10 successful sessions for this user
             var sessions = await db.ConversionSessions
                 .Where(s => s.UserId == userId)
@@ -39,9 +40,9 @@ public static class SessionEndpoints
             }));
         });
         //this is for checking if the session is a duplicate
-        group.MapGet("/duplicate-check", async (string fingerprint, AppDbContext db, ClaimsPrincipal user) =>
+        group.MapGet("/duplicate-check", async (string fingerprint, AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             var cutoff = DateTime.UtcNow.AddHours(-24);
             var existing = await db.ConversionSessions
                 .Where(s => s.UserId == userId && s.StoreGuid == fingerprint && s.CreatedAt > cutoff)
@@ -69,11 +70,11 @@ public static class SessionEndpoints
             return Results.Ok(new { found = false });
         });
         //this is for checking the status of the session
-        group.MapGet("/{sessionId}/check", async (string sessionId, AppDbContext db, LicenseApiClient licenseClient, ClaimsPrincipal user, HttpContext httpContext) =>
+        group.MapGet("/{sessionId}/check", async (string sessionId, AppDbContext db, LicenseApiClient licenseClient, ClaimsPrincipal user, IConfiguration config, HttpContext httpContext) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             var session = await db.ConversionSessions
-                .FirstOrDefaultAsync(s => s.SessionId == sessionId && (s.UserId == userId || s.UserId == "anonymous"));
+                .FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
 
             if (session == null)
             {
@@ -82,13 +83,7 @@ public static class SessionEndpoints
                 return Results.NotFound();
             }
 
-            // Claim anonymous session if user is now authenticated
-            if (session.UserId == "anonymous" && userId != "anonymous")
-            {
-                session.UserId = userId;
-                // session.UserEmail can also be updated here if needed, but we keep it simple
-                await db.SaveChangesAsync();
-            }
+
 
             // If this session was marked as a duplicate after background assembly, return the original session instead.
             if (session.Status == "Duplicate" && !string.IsNullOrEmpty(session.StoreGuid))
@@ -118,11 +113,17 @@ public static class SessionEndpoints
             bool limitHit = false;
             if (!isSessionReady)
             {
-                var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
-                var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+                var userEmail = user.GetUserEmailId(null, config["LicenseApi:UserId"]);
+                if (userEmail.StartsWith("user_", StringComparison.OrdinalIgnoreCase) && session != null && !string.IsNullOrEmpty(session.Email) && !session.Email.StartsWith("user_", StringComparison.OrdinalIgnoreCase))
+                {
+                    userEmail = session.Email;
+                }
+                
+                var itemName = session?.OriginalFileName != null ? $"{session.OriginalFileName}{session.Size}" : sessionId;
+                var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
                 limitHit = licenseStatus.HitFileCountLimit || licenseStatus.HitSizeLimit || licenseStatus.HitTimePeriodLimit;
 
-                if (limitHit && session.Status != "Ready")
+                if (limitHit && session != null && session.Status != "Ready")
                 {
                     session.Status = "LimitReached";
                     // Save immediately on status change
@@ -131,7 +132,7 @@ public static class SessionEndpoints
             }
 
             // Rate-limit LastAccessedAt updates to once per 5 minutes to further reduce DB noise
-            if ((DateTime.UtcNow - session.LastAccessedAt).TotalMinutes > 5)
+            if (session != null && (DateTime.UtcNow - session.LastAccessedAt).TotalMinutes > 5)
             {
                 session.LastAccessedAt = DateTime.UtcNow;
                 try { await db.SaveChangesAsync(); } catch { }
@@ -152,11 +153,11 @@ public static class SessionEndpoints
             });
         });
         //this is for deleting the session
-        group.MapDelete("/{sessionId}", async (string sessionId, PstService pstService, AppDbContext db, ClaimsPrincipal user) =>
+        group.MapDelete("/{sessionId}", async (string sessionId, PstService pstService, AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             var session = await db.ConversionSessions
-                .FirstOrDefaultAsync(s => s.SessionId == sessionId && (s.UserId == userId || s.UserId == "anonymous"));
+                .FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
 
             if (session != null)
             {
@@ -168,9 +169,9 @@ public static class SessionEndpoints
             return Results.NoContent();
         });
         //this is for cancelling the session
-        group.MapPost("/{sessionId}/cancel", async (string sessionId, PstService pstService, ClaimsPrincipal user) =>
+        group.MapPost("/{sessionId}/cancel", async (string sessionId, PstService pstService, ClaimsPrincipal user, IConfiguration config) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             // We verify ownership by having PstService check the session inside its cancel logic if needed,
             // but for simplicity here we just call it.
             await pstService.CancelBackgroundTaskAsync(sessionId);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Shield, ShieldAlert, ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Sparkles } from "lucide-react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import licenseService from "@/services/licenseService";
 
@@ -45,44 +45,11 @@ const LicenseBadge = () => {
   if (tierValue === "3" || tierValue === "professional")
     normalizedTier = "professional";
 
-  const formatStorage = (bytes) => {
-    if (bytes === -1) return "∞";
-    if (!bytes && bytes !== 0) return "0 GB";
-    if (bytes < 1024 * 1024 * 1024)
-      return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
-  };
-
-  const rawTotalItems = status.totalItemsAllotted ?? status.TotalItemsAllotted;
-  const rawUsedItems = status.totalItemsUsed ?? status.TotalItemsUsed;
-  const rawTotalStorage =
-    status.totalStorageAllotted ?? status.TotalStorageAllotted;
-  const rawUsedStorage = status.totalStorageUsed ?? status.TotalStorageUsed;
-
-  const totalItems = rawTotalItems != null ? Number(rawTotalItems) : -1;
-  const usedItems = rawUsedItems != null ? Number(rawUsedItems) : 0;
-  const totalStorage = rawTotalStorage != null ? Number(rawTotalStorage) : -1;
-  const usedStorage = rawUsedStorage != null ? Number(rawUsedStorage) : 0;
-
   if (normalizedTier === "professional") {
     return (
-      <div className="flex flex-col items-start lg:items-end gap-1 px-1">
-        <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 text-white text-[9px] font-black shadow-sm shadow-brand-500/20 border border-brand-400/30 tracking-wider">
-          <Sparkles className="w-2.5 h-2.5" />
-          <span>PROFESSIONAL PLAN</span>
-        </div>
-        <div className="flex gap-2 text-[8px] font-black text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded-md border border-brand-100 tracking-tight">
-          <span className="flex items-center gap-1">
-            <Shield className="w-2 h-2 text-brand-500" />
-            {usedItems.toLocaleString()} /{" "}
-            {totalItems === -1 ? "∞" : totalItems.toLocaleString()}
-          </span>
-          <span className="w-px h-2 bg-brand-200 self-center"></span>
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="w-2 h-2 text-brand-500" />
-            {formatStorage(usedStorage)} / {formatStorage(totalStorage)}
-          </span>
-        </div>
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 text-white text-xs font-bold border border-brand-400 shadow-sm">
+        <Sparkles className="w-3.5 h-3.5" />
+        <span>PROFESSIONAL PLAN</span>
       </div>
     );
   }

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Caching.Distributed;
 using PstConverter.Models;
+using PstConverter.Extensions;
 
 // Initialize Aspose.Email License
 try
@@ -114,7 +115,7 @@ builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            partitionKey: httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "guest",
             factory: partition => new FixedWindowRateLimiterOptions
             {
                 AutoReplenishment = true,
@@ -221,16 +222,11 @@ app.Use(async (context, next) =>
 
 app.MapGet("/api/status", () => Results.Ok(new { status = "API is running", timestamp = DateTime.Now }));
 
-app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsPrincipal user, [FromQuery] string? email, ILogger<Program> logger) =>
+app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsPrincipal user, [FromQuery] string? email, [FromQuery] string? itemId, ILogger<Program> logger) =>
 {
-    var licenseId = (email
-                 ?? user.FindFirstValue(ClaimTypes.Email)
-                 ?? user.FindFirstValue("email")
-                 ?? user.Identity?.Name
-                 ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
-                 ?? "anonymous").ToLowerInvariant();
+    var licenseId = user.GetUserEmailId(email, builder.Configuration["LicenseApi:UserId"]);
 
-    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId);
+    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId, itemId);
     return Results.Ok(status);
 }).RequireAuthorization();
 
@@ -241,12 +237,7 @@ app.MapPost("/api/license/subscription", async (
     [FromQuery] string? email,
     ILogger<Program> logger) =>
 {
-    var licenseId = (email
-                 ?? user.FindFirstValue(ClaimTypes.Email)
-                 ?? user.FindFirstValue("email")
-                 ?? user.Identity?.Name
-                 ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
-                 ?? "anonymous").ToLowerInvariant();
+    var licenseId = user.GetUserEmailId(email, builder.Configuration["LicenseApi:UserId"]);
 
     var toolId = ((int)Tool.ConvertOSTToPST).ToString();
     var result = await licenseClient.GenerateSubscriptionRequestAsync(licenseId, toolId, subscriptionRequest);

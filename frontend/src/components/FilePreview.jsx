@@ -290,7 +290,8 @@ const FilePreview = ({ session, onReset }) => {
       try {
         const token = await getToken();
         const email = user?.primaryEmailAddress?.emailAddress;
-        const data = await licenseService.getLicenseStatus(token, email);
+        const itemId = session?.originalFileName ? `${session.originalFileName}${session.size}` : null;
+        const data = await licenseService.getLicenseStatus(token, email, itemId);
         if (data) {
           let tierStr = "";
           if (data.tier !== undefined) tierStr = String(data.tier);

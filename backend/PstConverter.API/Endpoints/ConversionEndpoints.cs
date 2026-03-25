@@ -5,6 +5,7 @@ using PstConverter.Services;
 using PstConverter.Models;
 using PstConverter.Data;
 using Microsoft.EntityFrameworkCore;
+using PstConverter.Extensions;
 
 namespace PstConverter.Endpoints;
 
@@ -32,13 +33,17 @@ public static class ConversionEndpoints
                                                     LicenseApiClient licenseClient,
                                                     AppDbContext db,
                                                     ClaimsPrincipal user,
+                                                    IConfiguration config,
                                                     ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-            var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+            var userId = user.GetInternalUserId();
+            var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
+
+            var sessionForCheck = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+            var itemName = sessionForCheck != null ? $"{sessionForCheck.OriginalFileName}{sessionForCheck.Size}" : sessionId;
 
             // Get comprehensive license status (handles caches, tiers, and limits)
-            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
             
             if (!status.CanConvert)
             {
@@ -54,7 +59,6 @@ public static class ConversionEndpoints
 
             // A re-download is when the session is already IsPaid (converted previously).
             // In that case skip the item-count gate — the slot was already consumed.
-            var sessionForCheck = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
             bool isRedownload = sessionForCheck?.IsPaid == true;
 
             if (moduleStatus == ModuleLicenseType.Active)
@@ -165,15 +169,19 @@ public static class ConversionEndpoints
                                                            LicenseApiClient licenseClient,
                                                            AppDbContext db,
                                                            ClaimsPrincipal user,
+                                                           IConfiguration config,
                                                            ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-            var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+            var userId = user.GetInternalUserId();
+            var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
 
             try
             {
+                var sessionForCheck = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+                var itemName = sessionForCheck != null ? $"{sessionForCheck.OriginalFileName}{sessionForCheck.Size}" : sessionId;
+
                 // Get comprehensive license status (handles caches, tiers, and limits)
-                var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+                var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
                 
                 if (!status.CanConvert)
                 {
@@ -191,7 +199,6 @@ public static class ConversionEndpoints
 
                 // A re-download is when the session is already IsPaid (converted previously).
                 // In that case skip the item-count gate — the slot was already consumed.
-                var sessionForCheck = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
                 bool isRedownload = sessionForCheck?.IsPaid == true;
 
                 if (moduleStatus == ModuleLicenseType.Active)
@@ -269,17 +276,24 @@ public static class ConversionEndpoints
                                                                 PstService pstService,
                                                                 LicenseApiClient licenseClient,
                                                                 AppDbContext db,
-                                                                ClaimsPrincipal user) =>
+                                                                ClaimsPrincipal user,
+                                                                IConfiguration config) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
             if (session == null) return Results.NotFound();
 
             // Only block download on storage/time limits — item count was gated at conversion start.
             // Blocking on HitFileCountLimit here prevents the last split file from being served
             // when items used equals allotted (e.g., 5/5).
-            var userEmail = email ?? user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("emails") ?? user.FindFirstValue(ClaimTypes.Name) ?? "anonymous";
-            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
+            var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
+            if (userEmail.StartsWith("user_", StringComparison.OrdinalIgnoreCase) && session != null && !string.IsNullOrEmpty(session.Email) && !session.Email.StartsWith("user_", StringComparison.OrdinalIgnoreCase))
+            {
+                userEmail = session.Email;
+            }
+
+            var itemName = $"{session.OriginalFileName}{session.Size}";
+            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
             if (!status.CanConvert || status.HitSizeLimit || status.HitTimePeriodLimit)
             {
                 return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);

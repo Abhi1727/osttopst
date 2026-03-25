@@ -21,59 +21,43 @@ import { toast } from "sonner";
 const comparisonFeatures = [
   {
     name: "Full OST to PST Conversion",
-    free: "Basic Only",
-    personal: true,
-    corporate: true,
-    technical: true,
+    demo: "Basic Only",
+    professional: true,
   },
   {
     name: "Repair Corrupted OST Files",
-    free: "Limited",
-    personal: true,
-    corporate: true,
-    technical: true,
+    demo: "Limited",
+    professional: true,
   },
   {
     name: "Cloud Priority",
-    free: "Standard",
-    personal: "Priority",
-    corporate: "Priority",
-    technical: "Priority",
+    demo: "Standard",
+    professional: "Priority",
   },
   {
     name: "File Formats",
-    free: "Standard",
-    personal: "All 16+",
-    corporate: "All 16+",
-    technical: "All 16+",
+    demo: "Standard",
+    professional: "All 16+",
   },
   {
     name: "Technical Support",
-    free: "Community",
-    personal: "Email",
-    corporate: "Priority",
-    technical: "24/7 Dedicated",
+    demo: "Community",
+    professional: "Email",
   },
   {
     name: "Bulk Conversion",
-    free: false,
-    personal: "Yes",
-    corporate: "Yes",
-    technical: "Yes",
+    demo: false,
+    professional: "Yes",
   },
   {
     name: "Commercial Use",
-    free: false,
-    personal: "Yes",
-    corporate: "Yes",
-    technical: "Yes",
+    demo: false,
+    professional: "Yes",
   },
   {
     name: "Number of PCs / Licenses",
-    free: "1",
-    personal: "1",
-    corporate: "5",
-    technical: "Unlimited",
+    demo: "1",
+    professional: "1",
   },
 ];
 
@@ -194,14 +178,12 @@ const PricingCard = ({
     </ul>
 
     <Button
-      disabled={isActive || isLoading}
+      disabled={isLoading}
       onClick={onClick}
-      className={`w-full py-6 font-bold text-md rounded-md transition-colors ${isActive ? "bg-brand-100 text-brand-600 border-brand-200 cursor-default" : "bg-brand-600 hover:bg-brand-700 text-white"}`}
+      className={`w-full py-6 font-bold text-md rounded-md transition-colors bg-brand-600 hover:bg-brand-700 text-white`}
     >
       {isLoading ? (
         <Loader2 className="w-5 h-5 animate-spin" />
-      ) : isActive ? (
-        "Active Plan"
       ) : (
         ctaText
       )}
@@ -233,19 +215,6 @@ const Pricing = () => {
   const { user } = useUser();
   const [status, setStatus] = useState(null);
   const [purchasingPlan, setPurchasingPlan] = useState(null);
-
-  // Dynamic pricing details state
-  const [totalItems, setTotalItems] = useState(1000);
-  const [storageGB, setStorageGB] = useState(50);
-  const [totalDays, setTotalDays] = useState(365);
-
-  const calculateFinalPrice = (basePrice) => {
-    if (basePrice === 0) return 0;
-    const itemCost = (totalItems / 100) * 2; // $2 per 1000 items
-    const storageCost = storageGB * 0.2; // $0.2 per GB
-    const dayRatio = totalDays / 365;
-    return Math.round((basePrice + itemCost + storageCost) * dayRatio);
-  };
 
   const fetchStatus = async () => {
     if (!isLoaded || !isSignedIn) return;
@@ -290,12 +259,20 @@ const Pricing = () => {
       const token = await getToken();
       const email = user?.primaryEmailAddress?.emailAddress;
 
-      const requestData = {
-        TotalItems: totalItems,
-        Storage: storageGB * 1024 * 1024 * 1024, // Convert GB to Bytes
-        TotalDays: totalDays,
-        ModuleId: moduleId,
-      };
+      const requestData =
+        planNumber === 0
+          ? {
+              TotalItems: 1,
+              Storage: 500 * 1024 * 1024, // 500 MB
+              TotalDays: 7,
+              ModuleId: 1, // Free/Demo
+            }
+          : {
+              TotalItems: 1,
+              Storage: 5 * 1024 * 1024 * 1024, // 5 GB
+              TotalDays: 365,
+              ModuleId: moduleId, // Professional
+            };
 
       const response = await licenseService.generateSubscriptionRequest(
         token,
@@ -393,148 +370,42 @@ const Pricing = () => {
         </div>
       </div>
 
-      {/* Customization Section */}
-      <div className="max-w-4xl mx-auto px-4 w-full mb-1">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2 md:px-4 md:py-2">
-          <h2 className="mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-brand-100 text-brand-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5" />
-            </span>
-            Customize Your Requirements
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex justify-between">
-                OST File Limit
-                <span className="text-brand-600 font-bold">
-                  {totalItems} Files
-                </span>
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="50"
-                step="1"
-                value={totalItems}
-                onChange={(e) => setTotalItems(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-brand-500"
-              />
-              <div className="flex justify-between text-[10px] text-gray-400 font-medium">
-                <span>1 File</span>
-                <span>50 Files</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex justify-between">
-                Storage (GB)
-                <span className="text-brand-600 font-bold">{storageGB} GB</span>
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="1000"
-                step="1"
-                value={storageGB}
-                onChange={(e) => setStorageGB(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-brand-500"
-              />
-              <div className="flex justify-between text-[10px] text-gray-400 font-medium">
-                <span>0 GB</span>
-                <span>1000 GB</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex justify-between">
-                Validity (Days)
-                <span className="text-brand-600 font-bold">
-                  {totalDays} Days
-                </span>
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="1095"
-                step="30"
-                value={totalDays}
-                onChange={(e) => setTotalDays(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-brand-500"
-              />
-              <div className="flex justify-between text-[10px] text-gray-400 font-medium">
-                <span>30D</span>
-                <span>3 Years</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Pricing Cards Section */}
-      <div className="max-w-7xl mx-auto px-4 w-full pb-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
-          {/* Free Plan */}
+      <div className="max-w-4xl mx-auto px-4 w-full pb-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Demo Plan */}
           <PricingCard
-            title="Free"
+            title="Demo"
             price={0}
             description="Perfect for a quick trial and small file conversions."
-            ctaText="Start Free"
+            isLoading={purchasingPlan === 0}
+            onClick={() => handlePurchase(1, 0, 0)}
+            ctaText="Start Free Trial"
             features={[
-              { text: "Basic OST to PST conversion", included: true },
-              { text: "1 License", included: true },
-              { text: "Limited file size support", included: true },
-              { text: "Standard Cloud Queue", included: true },
+              { text: "Full OST to PST conversion", included: true },
+              { text: "1 OST File", included: true },
+              { text: "500 MB Storage limit", included: true },
+              { text: "7 Days Validity", included: true },
               { text: "Priority Support", included: false },
             ]}
           />
 
-          {/* Personal Plan */}
+          {/* Professional Plan */}
           <PricingCard
-            title="Personal"
-            price={calculateFinalPrice(49)}
-            description="Perfect for individual users needing consistent recovery."
+            title="Professional"
+            price={49}
+            description="Everything you need for a complete recovery."
+            recommended={true}
+            isActive={isProfessional}
             isLoading={purchasingPlan === 1}
             onClick={() => handlePurchase(1, 49, 1)}
             features={[
-              { text: "Priority Cloud Queue", included: true },
-              { text: "Support for All 16+ Formats", included: true },
-              { text: "1 PC / License", included: true },
-              { text: "Advanced Repair logic", included: true },
+              { text: "Full OST to PST conversion", included: true },
+              { text: "1 OST File", included: true },
+              { text: "5 GB Storage limit", included: true },
+              { text: "365 Days Validity", included: true },
               { text: "Email Support", included: true },
-            ]}
-          />
-
-          {/* Corporate Plan */}
-          <PricingCard
-            title="Corporate"
-            price={calculateFinalPrice(99)}
-            description="Ideal for small businesses and corporate offices."
-            recommended={true}
-            isActive={isProfessional}
-            isLoading={purchasingPlan === 2}
-            onClick={() => handlePurchase(1, 99, 2)}
-            features={[
-              { text: "All Personal Features", included: true },
-              { text: "5 PCs / Licenses", included: true },
-              { text: "Priority Support Queue", included: true },
-              { text: "Bulk Conversion enabled", included: true },
-              { text: "Commercial Use License", included: true },
-            ]}
-          />
-
-          {/* Technical Plan */}
-          <PricingCard
-            title="Technical"
-            price={calculateFinalPrice(199)}
-            description="Best for IT administrators and large scale migrations."
-            isLoading={purchasingPlan === 3}
-            onClick={() => handlePurchase(1, 199, 3)}
-            features={[
-              { text: "All Corporate Features", included: true },
-              { text: "Unlimited Licenses", included: true },
-              { text: "24/7 Dedicated Support", included: true },
-              { text: "Direct Cloud Migration", included: true },
-              { text: "Server/Admin License", included: true },
             ]}
           />
         </div>
@@ -605,24 +476,16 @@ const Pricing = () => {
             <table className="w-full text-left border-collapse min-w-[600px] text-sm md:text-base">
               <thead>
                 <tr>
-                  <th className="p-4 bg-slate-800 text-white font-medium w-[25%]">
+                  <th className="p-4 bg-slate-800 text-white font-medium w-[40%]">
                     Feature
                   </th>
-                  <th className="p-4 bg-slate-700 text-white text-center font-medium border-l border-white/20 w-[18.75%]">
-                    <div>Free</div>
+                  <th className="p-4 bg-slate-700 text-white text-center font-medium border-l border-white/20 w-[30%]">
+                    <div>Demo</div>
                     <div className="text-xs font-normal opacity-90">$0</div>
                   </th>
-                  <th className="p-4 bg-slate-800 text-white text-center font-medium border-l border-white/20 w-[18.75%]">
-                    <div>Personal</div>
+                  <th className="p-4 bg-brand-600 text-white text-center font-bold border-l border-brand-500 w-[30%] shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
+                    <div>Professional</div>
                     <div className="text-xs font-normal opacity-90">$49</div>
-                  </th>
-                  <th className="p-4 bg-brand-600 text-white text-center font-bold border-l border-brand-500 w-[18.75%] shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
-                    <div>Corporate</div>
-                    <div className="text-xs font-normal opacity-90">$99</div>
-                  </th>
-                  <th className="p-4 bg-slate-800 text-white text-center font-medium border-l border-white/20 w-[18.75%]">
-                    <div>Technical</div>
-                    <div className="text-xs font-normal opacity-90">$199</div>
                   </th>
                 </tr>
               </thead>
@@ -632,66 +495,36 @@ const Pricing = () => {
                     key={index}
                     className="hover:bg-gray-50/50 transition-colors"
                   >
-                    <td className="p-4 text-gray-600 font-medium">{feature.name}</td>
-                    <td className="p-4 text-center bg-gray-50/30">
-                      {typeof feature.free === "boolean" ? (
-                        feature.free ? (
-                          <span className="text-brand-500 font-bold text-lg leading-none">✓</span>
-                        ) : (
-                          <span className="text-gray-300 font-bold text-lg leading-none">✕</span>
-                        )
-                      ) : (
-                        <div className="text-xs text-gray-500 font-medium">{feature.free}</div>
-                      )}
+                    <td className="p-4 text-gray-600 font-medium">
+                      {feature.name}
                     </td>
-                    <td className="p-4 text-center">
-                      {typeof feature.personal === "boolean" ? (
-                        feature.personal ? (
-                          <span className="text-brand-500 font-bold text-lg leading-none">
-                            ✓
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 font-bold text-lg leading-none">
-                            ✕
-                          </span>
-                        )
+                    <td className="p-4 text-center bg-gray-50/30">
+                      {feature.demo === true ? (
+                        <span className="text-brand-500 font-bold text-lg leading-none">
+                          ✓
+                        </span>
+                      ) : feature.demo === false ? (
+                        <span className="text-gray-300 font-bold text-lg leading-none">
+                          ✕
+                        </span>
                       ) : (
-                        <div className="text-xs text-gray-600 font-medium">
-                          {feature.personal}
+                        <div className="text-xs text-gray-500 font-medium">
+                          {feature.demo}
                         </div>
                       )}
                     </td>
                     <td className="p-4 text-center bg-brand-50/20">
-                      {typeof feature.corporate === "boolean" ? (
-                        feature.corporate ? (
-                          <span className="text-brand-600 font-bold text-lg leading-none">
-                            ✓
-                          </span>
-                        ) : (
-                          <span className="text-brand-200 font-bold text-lg leading-none">
-                            ✕
-                          </span>
-                        )
+                      {feature.professional === true ? (
+                        <span className="text-brand-600 font-bold text-lg leading-none">
+                          ✓
+                        </span>
+                      ) : feature.professional === false ? (
+                        <span className="text-brand-200 font-bold text-lg leading-none">
+                          ✕
+                        </span>
                       ) : (
                         <div className="text-xs text-brand-700 font-bold">
-                          {feature.corporate}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-4 text-center">
-                      {typeof feature.technical === "boolean" ? (
-                        feature.technical ? (
-                          <span className="text-brand-500 font-bold text-lg leading-none">
-                            ✓
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 font-bold text-lg leading-none">
-                            ✕
-                          </span>
-                        )
-                      ) : (
-                        <div className="text-xs text-gray-600 font-medium">
-                          {feature.technical}
+                          {feature.professional}
                         </div>
                       )}
                     </td>

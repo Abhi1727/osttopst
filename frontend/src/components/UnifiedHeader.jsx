@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/sheet";
 
 import SessionGuardModal from "./SessionGuardModal";
+import LicenseBadge from "./LicenseBadge";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
 
@@ -122,14 +123,17 @@ const UnifiedHeader = ({ session, onReset }) => {
             </SignedOut>
 
             <SignedIn>
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    userButtonAvatarBox: "h-8 w-8 ring-2 ring-brand-100",
-                  },
-                }}
-              />
+              <div className="flex items-center gap-4">
+                <LicenseBadge />
+                <UserButton
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      userButtonAvatarBox: "h-8 w-8 ring-2 ring-brand-100",
+                    },
+                  }}
+                />
+              </div>
             </SignedIn>
           </div>
         </div>
@@ -177,14 +181,17 @@ const UnifiedHeader = ({ session, onReset }) => {
                 <div className="flex items-center px-4 justify-between">
                    <span className="text-sm font-medium text-slate-600">User Profile</span>
                    <SignedIn>
-                    <UserButton
-                      afterSignOutUrl="/"
-                      appearance={{
-                        elements: {
-                          userButtonAvatarBox: "h-10 w-10 ring-2 ring-brand-100",
-                        },
-                      }}
-                    />
+                    <div className="flex flex-col items-end gap-2">
+                      <LicenseBadge />
+                      <UserButton
+                        afterSignOutUrl="/"
+                        appearance={{
+                          elements: {
+                            userButtonAvatarBox: "h-10 w-10 ring-2 ring-brand-100",
+                          },
+                        }}
+                      />
+                    </div>
                   </SignedIn>
                   <SignedOut>
                     <SignInButton mode="modal">

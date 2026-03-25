@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PstConverter.Services;
 using PstConverter.Data;
 using Microsoft.EntityFrameworkCore;
+using PstConverter.Extensions;
 
 namespace PstConverter.Endpoints;
 
@@ -26,7 +27,7 @@ public static class FileEndpoints
         }).AllowAnonymous();
 
         // ======== LEGACY SINGLE-FILE UPLOAD (kept for backward compatibility with small files) ========
-        group.MapPost("/upload", async ([FromForm] IFormFile file, [FromForm] string? password, [FromForm] string? email, PstService pstService, LicenseApiClient licenseClient, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapPost("/upload", async ([FromForm] IFormFile file, [FromForm] string? password, [FromForm] string? email, PstService pstService, LicenseApiClient licenseClient, ClaimsPrincipal user, IConfiguration config, ILogger<Program> logger) =>
         {
             try
             {
@@ -49,12 +50,8 @@ public static class FileEndpoints
                     return Results.BadRequest(new { error = $"The file '{file.FileName}' is not a valid Outlook data file. Only .pst and .ost are allowed." });
                 }
 
-                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-                var userEmail = email 
-                    ?? user.FindFirstValue(ClaimTypes.Email) 
-                    ?? user.FindFirstValue("email") 
-                    ?? user.FindFirstValue("primary_email_address")
-                    ?? userId;
+                var userId = user.GetInternalUserId();
+                var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
                 
                 if (logger.IsEnabled(LogLevel.Information))
                 {
@@ -109,6 +106,7 @@ public static class FileEndpoints
             PstService pstService,
             LicenseApiClient licenseClient,
             ClaimsPrincipal user,
+            IConfiguration config,
             ILogger<Program> logger) =>
         {
             try
@@ -129,12 +127,8 @@ public static class FileEndpoints
                     logger.LogInformation("[AUTH DIAG] InitChunkedUpload - Claims: {Claims}", claimsList);
                 }
 
-                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-                var userEmail = request.Email 
-                    ?? user.FindFirstValue(ClaimTypes.Email) 
-                    ?? user.FindFirstValue("email") 
-                    ?? user.FindFirstValue("primary_email_address")
-                    ?? userId;
+                var userId = user.GetInternalUserId();
+                var userEmail = user.GetUserEmailId(request.Email, config["LicenseApi:UserId"]);
 
                 if (logger.IsEnabled(LogLevel.Information))
                 {
@@ -155,7 +149,7 @@ public static class FileEndpoints
                         request.FileName, request.TotalChunks, request.TotalSize, userId);
                 }
 
-                var uploadId = await pstService.InitChunkedUploadAsync(request.FileName, userId, request.TotalChunks, request.TotalSize);
+                var uploadId = await pstService.InitChunkedUploadAsync(request.FileName, userId, request.TotalChunks, request.TotalSize, userEmail);
 
                 return Results.Ok(new { uploadId, totalChunks = request.TotalChunks });
             }
@@ -177,6 +171,7 @@ public static class FileEndpoints
             IFormFile chunk,
             PstService pstService,
             ClaimsPrincipal user,
+            IConfiguration config,
             ILogger<Program> logger) =>
         {
             try
@@ -191,8 +186,7 @@ public static class FileEndpoints
                 }
 
                 using var stream = chunk.OpenReadStream();
-
-                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+                var userId = user.GetInternalUserId();
                 var (success, receivedCount) = await pstService.SaveChunkAsync(uploadId, userId, chunkIndex, stream);
 
                 return Results.Ok(new { success, chunkIndex, receivedCount });
@@ -224,11 +218,12 @@ public static class FileEndpoints
             string uploadId,
             PstService pstService,
             ClaimsPrincipal user,
+            IConfiguration config,
             ILogger<Program> logger) =>
         {
             try
             {
-                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+                var userId = user.GetInternalUserId();
                 await pstService.AbortChunkedUploadAsync(uploadId, userId);
                 return Results.NoContent();
             }
@@ -253,6 +248,7 @@ public static class FileEndpoints
             PstService pstService,
             LicenseApiClient licenseClient,
             ClaimsPrincipal user,
+            IConfiguration config,
             ILogger<Program> logger) =>
         {
             try
@@ -262,8 +258,8 @@ public static class FileEndpoints
                     logger.LogInformation("Finalize chunked upload: uploadId={UploadId}", uploadId);
                 }
 
-                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-                var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+                var userId = user.GetInternalUserId();
+                var userEmail = user.GetUserEmailId(null, config["LicenseApi:UserId"]);
                 var result = await pstService.FinalizeChunkedUploadAsync(uploadId, userId, userEmail);
 
                 if (logger.IsEnabled(LogLevel.Information))
@@ -304,9 +300,9 @@ public static class FileEndpoints
         .RequireAuthorization();
 
         // ======== DELETE SESSION ========
-        group.MapDelete("/{sessionId}", async (string sessionId, PstService pstService, ClaimsPrincipal user, AppDbContext db) =>
+        group.MapDelete("/{sessionId}", async (string sessionId, PstService pstService, ClaimsPrincipal user, IConfiguration config, AppDbContext db) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
 
             if (session == null) return Results.NotFound();

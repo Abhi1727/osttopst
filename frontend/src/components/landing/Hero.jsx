@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { fileService } from "../../services/fileService";
 import { conversionService } from "../../services/conversionService";
@@ -35,15 +34,6 @@ import conversionVideo from "../../assets/Website_Color_Scheme_and_Video.mp4";
 import imagePng from "../../assets/image.png";
 import ExportDialog from "../ExportDialog";
 import licenseService from "../../services/licenseService";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "../ui/dialog";
-import { AlertTriangle } from "lucide-react";
 
 const Hero = ({ onUploadComplete }) => {
   const [file, setFile] = useState(null);
@@ -57,9 +47,6 @@ const Hero = ({ onUploadComplete }) => {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isDownloadingPst, setIsDownloadingPst] = useState(false);
   const [finishedPstDownload, setFinishedPstDownload] = useState(false);
-  const [isStorageLimitDialogOpen, setIsStorageLimitDialogOpen] =
-    useState(false);
-  const [pendingFile, setPendingFile] = useState(null);
 
   const { getToken } = useAuth();
   const uploadActive = useRef(false);
@@ -180,26 +167,6 @@ const Hero = ({ onUploadComplete }) => {
         console.warn("[Hero] No token found! Authentication might be missing.");
       }
 
-      // Storage limit check for Professional users
-      if (
-        licenseStatus?.tier === "Professional" &&
-        !passedFile?._storageLimitAccepted
-      ) {
-        const total =
-          licenseStatus.totalStorageAllotted ??
-          licenseStatus.TotalStorageAllotted ??
-          0;
-        const used =
-          licenseStatus.totalStorageUsed ?? licenseStatus.TotalStorageUsed ?? 0;
-        const remaining = total - used;
-        if (targetFile.size > remaining) {
-          setPendingFile(targetFile);
-          setIsStorageLimitDialogOpen(true);
-          setUploading(false);
-          setUploadPhase("idle");
-          return;
-        }
-      }
 
       // Pre-upload optimization: Check for duplicates
       setUploadDetail("Checking for existing conversions...");
@@ -623,56 +590,6 @@ const Hero = ({ onUploadComplete }) => {
         onClose={() => setIsExportDialogOpen(false)}
       />
 
-      <Dialog
-        open={isStorageLimitDialogOpen}
-        onOpenChange={setIsStorageLimitDialogOpen}
-      >
-        <DialogContent className="sm:max-w-[425px] rounded-[24px]">
-          <DialogHeader className="flex flex-col items-center gap-4 py-4">
-            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
-              <AlertTriangle className="w-8 h-8 text-amber-500" />
-            </div>
-            <DialogTitle className="text-2xl font-black text-slate-800 text-center">
-              Insufficient Storage
-            </DialogTitle>
-            <DialogDescription className="text-slate-500 text-center font-medium">
-              The file you are uploading (
-              {formatFileSize(pendingFile?.size || 0)}) exceeds your remaining
-              storage space.
-              <br />
-              <br />
-              Only the remaining part of your storage will be used for this
-              upload. Do you want to continue?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-3 sm:justify-center mt-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsStorageLimitDialogOpen(false);
-                setPendingFile(null);
-                setFile(null);
-              }}
-              className="px-6 rounded-xl border-slate-200"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setIsStorageLimitDialogOpen(false);
-                if (pendingFile) {
-                  pendingFile._storageLimitAccepted = true;
-                  handleConvert(pendingFile);
-                }
-              }}
-              className="px-6 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold"
-            >
-              Continue Upload
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 };

@@ -40,6 +40,16 @@ const CategoryPill = ({ label, active, onClick }) => (
   </button>
 );
 
+const formatTitle = (rawTitle) => {
+  if (!rawTitle) return "";
+  let title = rawTitle;
+  title = title.replace(/^Blog\s+\d+\s+/i, "");
+  title = title.replace(/\s*\d{2}[-_]\d{2}[-_]\d{4}\s*/g, " ");
+  title = title.replace(/\s*\(\d+\)\s*/g, " ");
+  title = title.replace(/\.docx?$/i, "");
+  return title.trim();
+};
+
 const BlogCard = ({ post, onClick }) => (
   <div
     onClick={onClick}
@@ -59,7 +69,7 @@ const BlogCard = ({ post, onClick }) => (
     </div>
     <div className="px-6 pb-6 pt-2 flex flex-col flex-1">
       <h3 className="text-lg md:text-xl font-black text-slate-900 mb-3 line-clamp-2 group-hover:text-brand-600 transition-colors leading-tight tracking-tight">
-        {post.title}
+        {formatTitle(post.title)}
       </h3>
       <p className="text-sm text-slate-500 line-clamp-2 mb-6 leading-relaxed font-medium">
         {post.summary}

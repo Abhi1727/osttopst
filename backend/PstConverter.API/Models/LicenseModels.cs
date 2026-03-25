@@ -118,6 +118,7 @@ namespace PstConverter.Models
             {
                 return ItemStatus.Success;
             }
+
             else if (normalized.Equals("Exist", StringComparison.OrdinalIgnoreCase) ||
                      normalized.Equals("2", StringComparison.OrdinalIgnoreCase))
             {

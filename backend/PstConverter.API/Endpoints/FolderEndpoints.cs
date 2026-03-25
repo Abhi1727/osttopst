@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PstConverter.Services;
 using PstConverter.Models;
+using PstConverter.Extensions;
 
 namespace PstConverter.Endpoints;
 
@@ -15,9 +16,10 @@ public static class FolderEndpoints
     {
         var group = app.MapGroup("/api/file-details");
 
-        group.MapGet("/{sessionId}/folders", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/folders", async (string sessionId, [FromQuery] bool? excludeEmptyFolders, PstService pstService, ClaimsPrincipal user, IConfiguration config, ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
+            var userEmail = user.GetUserEmailId(null, config["LicenseApi:UserId"]);
             try
             {
                 return Results.Ok(await pstService.GetFolderTreeAsync(sessionId, userId, excludeEmptyFolders ?? true));
@@ -48,15 +50,20 @@ public static class FolderEndpoints
             [FromQuery] int? year,
             [FromQuery] int? month,
             [FromQuery] DateTime? startDate,
+
             [FromQuery] DateTime? endDate,
+            [FromQuery] string? email,
             PstService pstService,
             ClaimsPrincipal user,
+            IConfiguration config,
             ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
+            var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
+
             if (logger.IsEnabled(LogLevel.Information))
             {
-                logger.LogInformation("ExportFolder request: session={SessionId}, folder={FolderId}, format={Format}", sessionId, folderId, format);
+                logger.LogInformation("ExportFolder request: session={SessionId}, folder={FolderId}, format={Format}, userEmail={Email}", sessionId, folderId, format, userEmail);
             }
             var filter = new MessageDateFilter
             {
@@ -69,7 +76,7 @@ public static class FolderEndpoints
             try
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
-                var filePath = await pstService.ExportFolderAsync(sessionId, userId, folderId, exportFormat, filter);
+                var filePath = await pstService.ExportFolderAsync(sessionId, userId, folderId, exportFormat, filter, userEmail);
                 return Results.File(filePath, "application/zip", "folder_export.zip");
             }
             catch (UnauthorizedAccessException)

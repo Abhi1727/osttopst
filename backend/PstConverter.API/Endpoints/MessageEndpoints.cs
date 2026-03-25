@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PstConverter.Services;
 using PstConverter.Models;
+using PstConverter.Extensions;
 
 namespace PstConverter.Endpoints;
 
@@ -26,9 +27,10 @@ public static class MessageEndpoints
             [FromQuery] string? sortOrder,
             PstService pstService,
             ClaimsPrincipal user,
+            IConfiguration config,
             ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             var filter = new MessageDateFilter
             {
                 Year = year,
@@ -55,9 +57,9 @@ public static class MessageEndpoints
         .WithTags("Message Operations")
         .RequireAuthorization();
         //this is for getting the contacts for the user
-        group.MapGet("/{sessionId}/contacts", async (string sessionId, [FromQuery] string folderId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/contacts", async (string sessionId, [FromQuery] string folderId, PstService pstService, ClaimsPrincipal user, IConfiguration config, ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             try
             {
                 return Results.Ok(await pstService.GetContactsAsync(sessionId, userId, folderId));
@@ -72,9 +74,9 @@ public static class MessageEndpoints
         .WithTags("Folder Operations")
         .RequireAuthorization();
         //this is for getting the calendar items for the user
-        group.MapGet("/{sessionId}/calendar", async (string sessionId, [FromQuery] string folderId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/calendar", async (string sessionId, [FromQuery] string folderId, PstService pstService, ClaimsPrincipal user, IConfiguration config, ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             try
             {
                 return Results.Ok(await pstService.GetCalendarItemsAsync(sessionId, userId, folderId));
@@ -89,9 +91,9 @@ public static class MessageEndpoints
         .WithTags("Folder Operations")
         .RequireAuthorization();
         //this is for getting the message detail for the user
-        group.MapGet("/{sessionId}/messages/detail", async (string sessionId, [FromQuery] string entryId, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+        group.MapGet("/{sessionId}/messages/detail", async (string sessionId, [FromQuery] string entryId, PstService pstService, ClaimsPrincipal user, IConfiguration config, ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
             try
             {
                 var detail = await pstService.GetMessageDetailAsync(sessionId, userId, entryId);
@@ -111,12 +113,15 @@ public static class MessageEndpoints
         .WithTags("Message Operations")
         .RequireAuthorization();
         //this is for exporting the message for the user
-        group.MapGet("/{sessionId}/messages/export", (string sessionId, [FromQuery] string entryId, [FromQuery] string? format, PstService pstService, ClaimsPrincipal user, ILogger<Program> logger) =>
+
+        group.MapGet("/{sessionId}/messages/export", (string sessionId, [FromQuery] string entryId, [FromQuery] string? format, [FromQuery] string? email, PstService pstService, ClaimsPrincipal user, IConfiguration config, ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userId = user.GetInternalUserId();
+            var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
+
             if (logger.IsEnabled(LogLevel.Information))
             {
-                logger.LogInformation("ExportMessage request: session={SessionId}, entry={EntryId}, format={Format}, user={UserId}", sessionId, entryId, format, userId);
+                logger.LogInformation("ExportMessage request: session={SessionId}, entry={EntryId}, format={Format}, user={UserId}, userEmail={Email}", sessionId, entryId, format, userId, userEmail);
             }
             try
             {
@@ -125,7 +130,7 @@ public static class MessageEndpoints
                 var ext = exportFormat.GetExtension();
                 return Results.Stream(async outputStream =>
                 {
-                    await pstService.ExportMessageAsync(outputStream, sessionId, userId, entryId, exportFormat);
+                    await pstService.ExportMessageAsync(outputStream, sessionId, userId, entryId, exportFormat, userEmail);
                 }, contentType, $"message{ext}");
             }
             catch (UnauthorizedAccessException)
@@ -151,10 +156,11 @@ public static class MessageEndpoints
             PstService pstService,
             LicenseApiClient licenseClient,
             ClaimsPrincipal user,
+            IConfiguration config,
             ILogger<Program> logger) =>
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-            var userEmail = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? userId;
+            var userId = user.GetInternalUserId();
+            var userEmail = user.GetUserEmailId(null, config["LicenseApi:UserId"]);
 
             if (logger.IsEnabled(LogLevel.Information))
             {
@@ -180,12 +186,14 @@ public static class MessageEndpoints
                 }
 
                 var exportFormat = ExportFormatHelpers.Parse(format);
+
                 var (filePath, isReady) = await pstService.ExportAllAsync(
-                    sessionId, 
-                    userId, 
-                    exportFormat,
-                    toolStatus == LicenseTier.Demo,
-                    entryIds: request.EntryIds);
+                    sessionId: sessionId, 
+                    userId: userId, 
+                    format: exportFormat,
+                    isDemo: toolStatus == LicenseTier.Demo,
+                    entryIds: request.EntryIds,
+                    userEmail: userEmail);
 
                 if (!isReady)
                 {
