@@ -1,4 +1,5 @@
 import React from "react";
+import LicenseBadge from "@/components/LicenseBadge";
 import { Button } from "@/components/ui/button";
 import { Menu, Mail } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -107,16 +108,13 @@ const UnifiedHeader = ({ session, onReset }) => {
             </SignInButton>
           </SignedOut>
 
-          <Button className="bg-brand-50 hover:bg-brand-100 text-brand-600/70 font-bold px-3 xl:px-5 h-8 rounded-full border border-brand-100 shadow-none text-[10px] transition-all whitespace-nowrap hidden xl:flex">
-            Trial Expired
-          </Button>
-
           <Button className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-3 xl:px-5 h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap">
             Get Desktop Tool
           </Button>
           
           <SignedIn>
             <div className="flex items-center gap-3 ml-2">
+              <LicenseBadge />
               <UserButton
                 afterSignOutUrl="/"
                 appearance={{

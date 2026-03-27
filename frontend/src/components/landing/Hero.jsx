@@ -38,10 +38,10 @@ import ExportDialog from "../ExportDialog";
 import licenseService from "../../services/licenseService";
 import { Button } from "@/components/ui/button";
 
-const Hero = ({ onUploadComplete }) => {
+const Hero = ({ onUploadComplete, onRestore }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState({ percent: 0, phase: null, detail: "" });
   const [uploadPhase, setUploadPhase] = useState(null); // 'uploading' | 'processing' | 'complete'
   const [uploadDetail, setUploadDetail] = useState("");
   const [completedSession, setCompletedSession] = useState(null);
@@ -65,8 +65,14 @@ const Hero = ({ onUploadComplete }) => {
   useEffect(() => {
     const fetchLicense = async () => {
       if (isSignedIn) {
-        const status = await licenseService.getLicenseStatus(getToken);
-        setLicenseStatus(status);
+        try {
+          const token = await getToken();
+          const email = user?.primaryEmailAddress?.emailAddress;
+          const status = await licenseService.getLicenseStatus(token, email);
+          setLicenseStatus(status);
+        } catch (err) {
+          console.error("Error in fetchLicense:", err);
+        }
       }
     };
     fetchLicense();
@@ -100,22 +106,27 @@ const Hero = ({ onUploadComplete }) => {
         const session = await fileService.uploadFile(
           selectedFile,
           token,
-          (prog) => setProgress(prog),
+          (prog) => setProgress(typeof prog === 'object' ? prog : { percent: prog, phase: 'uploading' }),
+          null, // password
           controller.signal
         );
 
-        setActiveSessionId(session._id);
+        // Backend returns sessionId, not _id
+        const sessionId = session.sessionId || session._id;
+        setActiveSessionId(sessionId);
         setUploadPhase("processing");
         setUploadDetail("Processing OST structure...");
 
-        // Start Conversion
-        const result = await conversionService.startConversion(
-          session._id,
-          token
+        // Start Conversion - using correct method name from conversionService
+        const result = await conversionService.convertToPst(
+          sessionId,
+          getToken,
+          false, // excludeEmpty
+          (prog) => setProgress(typeof prog === 'object' ? prog : { percent: prog, phase: 'processing' })
         );
         
-        setCompletedSession(result);
-        if (onUploadComplete) onUploadComplete(result);
+        setCompletedSession(result || session); // Ensure we have an object
+        if (onUploadComplete) onUploadComplete(result || session);
         toast.success("Conversion complete! You can now preview or export.");
       } catch (err) {
         if (err.name === "AbortError") {
@@ -154,27 +165,17 @@ const Hero = ({ onUploadComplete }) => {
     setAbortController(controller);
 
     try {
-      const token = await getToken();
-      const blob = await conversionService.downloadPst(
-        completedSession._id,
-        token,
-        controller.signal
+      const sessionId = completedSession.sessionId || completedSession._id;
+      await conversionService.convertToPst(
+        sessionId,
+        getToken
       );
-
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const savedName = completedSession.originalName.replace(".ost", "") + ".pst";
-      a.download = savedName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      if (!finishedPstDownload) {
-        toast.success(`Started downloading: ${savedName}`);
-        window.dispatchEvent(new Event("license-refresh"));
-      }
+      // Assuming convertToPst now handles the browser-native download directly
+      // and toast/license refresh should happen after successful initiation of download
+      const name = completedSession.originalName || completedSession.fileName || "converted";
+      const savedName = name.replace(".ost", "").replace(".pst", "") + ".pst";
+      toast.success(`Started downloading: ${savedName}`);
+      window.dispatchEvent(new Event("license-refresh"));
       setFinishedPstDownload(true);
     } catch (err) {
       if (err.name === "AbortError" || err.message === "AbortError") {
@@ -275,7 +276,7 @@ const Hero = ({ onUploadComplete }) => {
                        <div className="flex items-center gap-3 overflow-hidden w-full sm:w-auto justify-center sm:justify-start">
                           <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                           <p className="text-sm sm:text-base font-bold text-slate-800 truncate">
-                             Recent: {completedSession.originalName.replace(".ost", "")}.pst
+                             Recent: {((completedSession?.originalName || completedSession?.fileName || "file") + "").replace(".ost", "").replace(".pst", "")}.pst
                           </p>
                        </div>
                        <div className="flex items-center gap-3 shrink-0">
@@ -316,10 +317,10 @@ const Hero = ({ onUploadComplete }) => {
                         {uploadPhase === "uploading" ? "Transferring..." : "Processing..."}
                       </span>
                       <span className="text-xs font-black text-slate-400">
-                        {progress}%
+                        {progress?.percent || 0}%
                       </span>
                     </div>
-                    <Progress value={progress} className="h-2 bg-slate-100" />
+                    <Progress value={progress?.percent || 0} className="h-2 bg-slate-100" />
                   </div>
               </div>
             )}

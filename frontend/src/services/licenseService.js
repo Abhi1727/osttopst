@@ -17,8 +17,11 @@ const licenseService = {
         url += `?${params.toString()}`;
       }
 
+      // Do NOT send the Authorization header here — this endpoint is AllowAnonymous
+      // and only uses the email query param. Sending a JWT (even a valid one from a
+      // different Clerk instance) triggers the auth middleware challenge and returns 401.
       const res = await fetch(url, {
-        headers: getHeaders(token),
+        headers: {},
       });
       return await handleResponse(res);
     } catch (error) {

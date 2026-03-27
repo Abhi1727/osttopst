@@ -25,12 +25,20 @@ const formatDistanceToNow = (date) => {
 const ConversionHistory = ({ onRestore }) => {
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
 
   const fetchHistory = async () => {
+    if (!isLoaded || !isSignedIn) {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       const token = await getToken();
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
       const data = await getRecentSessions(token);
       console.log("[ConversionHistory] Fetched sessions:", data);
       setSessions(data);
@@ -43,7 +51,7 @@ const ConversionHistory = ({ onRestore }) => {
 
   useEffect(() => {
     fetchHistory();
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   const handleDelete = async (sessionId) => {
     try {
@@ -55,6 +63,8 @@ const ConversionHistory = ({ onRestore }) => {
       toast.error("Failed to delete session");
     }
   };
+
+  if (!isLoaded || !isSignedIn) return null;
 
   if (isLoading)
     return (

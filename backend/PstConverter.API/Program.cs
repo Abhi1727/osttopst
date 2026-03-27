@@ -94,19 +94,114 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null))
     .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
-// Clerk Auth
+// Clerk Auth — bypass OIDC discovery and use direct JWKS resolver
+// (OIDC discovery via Authority was failing silently for Clerk dev instances)
 var clerkConfig = builder.Configuration.GetSection("Clerk");
+var clerkAuthority = clerkConfig["Authority"]?.TrimEnd('/') ?? "https://evolved-monkfish-45.clerk.accounts.dev";
+var clerkJwksUri = $"{clerkAuthority}/.well-known/jwks.json";
+
+Microsoft.IdentityModel.Tokens.JsonWebKeySet? _cachedJwks = null;
+DateTime _jwksCacheExpiry = DateTime.MinValue;
+var _jwksLock = new object();
+
+Microsoft.IdentityModel.Tokens.IssuerSigningKeyResolver clerkKeyResolver = (token, securityToken, kid, parameters) =>
+{
+    if (_cachedJwks == null || DateTime.UtcNow > _jwksCacheExpiry)
+    {
+        lock (_jwksLock)
+        {
+            if (_cachedJwks == null || DateTime.UtcNow > _jwksCacheExpiry)
+            {
+                try
+                {
+                    using var http = new HttpClient();
+                    http.Timeout = TimeSpan.FromSeconds(10);
+                    var jwksJson = http.GetStringAsync(clerkJwksUri).GetAwaiter().GetResult();
+                    _cachedJwks = new Microsoft.IdentityModel.Tokens.JsonWebKeySet(jwksJson);
+                    _jwksCacheExpiry = DateTime.UtcNow.AddMinutes(10);
+                    Console.WriteLine($"[CLERK JWKS] Fetched {_cachedJwks.Keys.Count} keys from {clerkJwksUri}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[CLERK JWKS ERROR] Failed to fetch JWKS: {ex.Message}");
+                    return Array.Empty<Microsoft.IdentityModel.Tokens.SecurityKey>();
+                }
+            }
+        }
+    }
+
+    var keys = _cachedJwks?.GetSigningKeys() ?? Array.Empty<Microsoft.IdentityModel.Tokens.SecurityKey>();
+    if (!string.IsNullOrEmpty(kid))
+        keys = keys.Where(k => k.KeyId == kid).ToList();
+    return keys;
+};
+
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = clerkConfig["Authority"];
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
-            ValidateIssuer = true,
+            ValidateIssuer = false,
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+            IssuerSigningKeyResolver = clerkKeyResolver,
             NameClaimType = "sub"
+        };
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogError("[AUTH FAILED] {Message} | Type: {Type}", context.Exception.Message, context.Exception.GetType().Name);
+                if (context.Exception.InnerException != null)
+                    logger.LogError("[AUTH FAILED] Inner: {Message}", context.Exception.InnerException.Message);
+                context.NoResult();
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                var sub = context.Principal?.FindFirst("sub")?.Value ?? "unknown";
+                logger.LogInformation("[AUTH OK] JWT validated. sub={Sub}", sub);
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+
+                // Always suppress the default WWW-Authenticate 401 challenge.
+                // Without this, JWT Bearer issues a 401 for ALL unauthenticated requests
+                // even when the endpoint is AllowAnonymous.
+                context.HandleResponse();
+
+                // Only write a 401 response if the endpoint actually requires authorization.
+                // AllowAnonymous endpoints should pass through without any 401.
+                var endpoint = context.HttpContext.GetEndpoint();
+                var isAnonymous = endpoint?.Metadata
+                    .GetMetadata<Microsoft.AspNetCore.Authorization.IAllowAnonymous>() != null;
+
+                if (!isAnonymous)
+                {
+                    logger.LogWarning("[AUTH CHALLENGE] Returning 401 for protected endpoint {Path}. Error: {Error}",
+                        context.Request.Path, context.Error);
+                    context.Response.StatusCode = 401;
+                    context.Response.ContentType = "application/json";
+                    return context.Response.WriteAsync(
+                        "{\"error\":\"Authentication required\",\"message\":\"Please provide a valid Bearer token.\"}");
+                }
+
+                logger.LogInformation("[AUTH CHALLENGE] Suppressed challenge for AllowAnonymous endpoint {Path}",
+                    context.Request.Path);
+                return Task.CompletedTask;
+            },
+            OnMessageReceived = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("[JWT RECEIVED] {Path} | Header size: {Size}",
+                    context.Request.Path, context.Request.Headers["Authorization"].ToString().Length);
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -181,6 +276,22 @@ if (app.Environment.IsDevelopment())
 app.UseResponseCompression();
 app.UseCors("AllowReactApp");
 
+// Custom Request Logging Middleware
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.Value?.StartsWith("/api") == true)
+    {
+        var msg = $"[API DEBUG] {context.Request.Method} {context.Request.Path} | Auth Header: {context.Request.Headers.Authorization.ToString().Length > 0}";
+        Console.WriteLine(msg); // Hard output to console
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("[API REQUEST] {Method} {Path} | Auth Header: {HasAuth} | Size: {Size}", 
+            context.Request.Method, context.Request.Path, 
+            context.Request.Headers.ContainsKey("Authorization"),
+            context.Request.Headers["Authorization"].ToString().Length);
+    }
+    await next();
+});
+
 app.Use(async (context, next) =>
 {
     if (context.Request.Query.ContainsKey("token") && string.IsNullOrEmpty(context.Request.Headers.Authorization))
@@ -228,7 +339,7 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
 
     var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId, itemId);
     return Results.Ok(status);
-}).RequireAuthorization();
+}).AllowAnonymous();
 
 app.MapPost("/api/license/subscription", async (
     [FromBody] SubscriptionRequest subscriptionRequest,

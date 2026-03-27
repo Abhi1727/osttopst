@@ -611,7 +611,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 }
 
                 var itemName = $"{sessionInfo.OriginalFileName}{sessionInfo.Size}";
-                
+
                 // 1. Check Module Status
                 var moduleStatus = await _licenseClient.GetModuleVersion(backgroundUserId);
                 if (moduleStatus != ModuleLicenseType.Active)
@@ -646,7 +646,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 {
                     // Item increment is now handled by the license server's status check.
                     // We only need to handle storage updates here.
-                    
+
                     // Check if storage can be updated (within limits)
                     var storageUpdated = await _licenseClient.UpdateStorageAsync(backgroundUserId, sessionInfo.Size, itemName);
                     if (!storageUpdated)
@@ -655,7 +655,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         var sessionUpdateResult = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
                         if (sessionUpdateResult != null)
                         {
-                            sessionUpdateResult.Status = "LimitReached"; 
+                            sessionUpdateResult.Status = "LimitReached";
                             await scopedDb.SaveChangesAsync();
                         }
                         return;
@@ -691,7 +691,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         if (sessionInfo != null)
                         {
                             sessionInfo.Status = "Ready (Native)";
-                            sessionInfo.IsPaid = true; 
+                            sessionInfo.IsPaid = true;
                             await scopedDb.SaveChangesAsync();
                         }
                         return;
@@ -724,6 +724,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             }
                             else
                             {
+                              destStorage.Store.ChangeDisplayName($"{baseName}{ext}");
                                 var seenMessages = deduplicate ? new HashSet<string>() : null;
                                 var folderCounts = excludeEmptyFolders ? new Dictionary<string, int>() : null;
                                 if (excludeEmptyFolders) BuildFolderCountCache(srcStorage.RootFolder, folderCounts!);
@@ -1302,7 +1303,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         await _pool.AccessAsync(sessionId, filePath, async pst =>
         {
             var msg = pst.ExtractMessage(entryId) ?? throw new FileNotFoundException("Message not found");
-            
+
             var msgSize = msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msg.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0;
             if (msgSize > 0) await storageTracker.UpdateAsync(msgSize);
 
@@ -1326,10 +1327,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var (filePath, password) = await GetSessionDataAsync(sessionId, userId);
         var licenseId = userEmail ?? userId;
         var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{Guid.NewGuid():N}.zip");
-        
+
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
         if (session == null || string.IsNullOrEmpty(session.OriginalFileName)) throw new Exception("Session metadata missing");
-        
+
         var itemName = $"{session.OriginalFileName}{session.Size}";
         var sessionSize = session.Size;
 
@@ -1594,7 +1595,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 if (s2 != null && !token.IsCancellationRequested)
                 {
                     s2.Status = readyStatus;
-                    s2.IsPaid = true; 
+                    s2.IsPaid = true;
                     await scopedDb.SaveChangesAsync();
                 }
             }
