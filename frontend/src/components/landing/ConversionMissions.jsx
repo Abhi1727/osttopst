@@ -5,19 +5,19 @@ const ConversionMissions = () => {
   const audiences = [
     {
       title: "Outlook Users",
-      description: "This product is useful for regular Outlook users whose mail box cannot be accessed when the exchange server is down or offline, and need to have access, recovery, or backup of their OST files",
+      description: "This product is useful for regular Outlook users whose mailbox cannot be accessed when the Exchange server is down or offline, and need to have access, recovery, or backup of their OST files.",
     },
     {
       title: "IT Administrators",
-      description: "Great for IT Administrators managing multiple user accounts, it can quickly convert/move/restore all OSTs quickly and accurately across an organization",
+      description: "Great for IT Administrators managing multiple user accounts, it can quickly convert/move/restore all OSTs quickly and accurately across an organization.",
     },
     {
       title: "Data Migration Specialists",
-      description: "Great for data migration specialists who need to be able to easily migrate data from one mail platforms' server to another with no data loss.",
+      description: "Great for data migration specialists who need to be able to easily migrate data from one mail platform/server to another with no data loss.",
     },
     {
       title: "Small to Large Businesses",
-      description: "Whether you are a growing startup business or a very large, established corporation, our converter is designed and built for you and keeps pace with the ever increasing demand for bulk mailbox migrations and data recoveries quickly, reliably and cost efficient.",
+      description: "Whether you are a growing startup business or a very large, established corporation, our converter is designed and built for you and keeps pace with the ever-increasing demand for bulk mailbox migrations and data recoveries quickly, reliably, and cost-efficiently.",
     },
   ];
 
@@ -25,8 +25,8 @@ const ConversionMissions = () => {
     <section className="min-h-screen flex items-center py-24 px-4 md:px-6 lg:px-12 bg-[#f0f9ff]">
       <div className="max-w-6xl mx-auto space-y-16">
         <div className="text-center space-y-4">
-          <h2 className="text-brand-500 text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-            Ideal Users of Our Converter  
+          <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+            Ideal Users of <span className="text-brand-500">Our Converter</span>  
           </h2>
           <p className="text-slate-600 font-medium max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed">
             Trusted by individuals and enterprises worldwide for seamless data migration.

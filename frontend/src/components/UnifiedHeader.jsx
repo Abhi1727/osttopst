@@ -78,7 +78,13 @@ const UnifiedHeader = ({ session, onReset }) => {
       {/* Desktop Nav - Centered */}
       <nav className="hidden lg:flex flex-1 justify-center items-center gap-4 xl:gap-8 mx-2">
         {navItems.map((item) => {
-          const isActive = item.label === "Home"; // In the image, Home is active
+          const isActive =
+            item.path === "/"
+              ? location.pathname === "/" && !location.hash
+              : item.path.startsWith("/#")
+                ? location.hash === item.path.substring(1)
+                : location.pathname === item.path ||
+                  (item.path !== "/" && location.pathname.startsWith(item.path));
           return (
             <span
               key={item.label}
@@ -100,9 +106,7 @@ const UnifiedHeader = ({ session, onReset }) => {
         <div className="hidden lg:flex items-center gap-2">
           <SignedOut>
             <SignInButton mode="modal">
-              <button
-                className="h-8 px-3 xl:px-4 text-xs border border-slate-900 text-slate-900 font-bold rounded-full hover:bg-slate-50 transition-all font-sans whitespace-nowrap"
-              >
+              <button className="h-8 px-3 xl:px-4 text-xs border border-slate-900 text-slate-900 font-bold rounded-full hover:bg-slate-50 transition-all font-sans whitespace-nowrap">
                 Sign In
               </button>
             </SignInButton>
@@ -111,7 +115,7 @@ const UnifiedHeader = ({ session, onReset }) => {
           <Button className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-3 xl:px-5 h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap">
             Get Desktop Tool
           </Button>
-          
+
           <SignedIn>
             <div className="flex items-center gap-3 ml-2">
               <LicenseBadge />
@@ -131,7 +135,11 @@ const UnifiedHeader = ({ session, onReset }) => {
         <div className="lg:hidden flex items-center gap-2">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-600">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-slate-600"
+              >
                 <Menu className="w-6 h-6" />
               </Button>
             </SheetTrigger>
@@ -142,14 +150,20 @@ const UnifiedHeader = ({ session, onReset }) => {
               <SheetTitle className="text-left text-brand-500 font-bold text-xl px-4">
                 Menu
               </SheetTitle>
-              
+
               <div className="flex flex-col gap-1 px-2">
                 {navItems.map((item) => (
                   <SheetClose key={item.label} asChild>
                     <button
                       onClick={() => handleNavItemClick(item)}
                       className={`text-left py-3 px-4 text-base font-medium rounded-xl transition-colors ${
-                        item.label === "Home"
+                        location.pathname === "/" && item.path === "/"
+                          ? !location.hash
+                          : item.path.startsWith("/#")
+                            ? location.hash === item.path.substring(1)
+                            : location.pathname === item.path ||
+                              (item.path !== "/" &&
+                                location.pathname.startsWith(item.path))
                           ? "bg-brand-50 text-brand-500"
                           : "text-slate-600 hover:bg-slate-50"
                       }`}
@@ -161,14 +175,17 @@ const UnifiedHeader = ({ session, onReset }) => {
               </div>
 
               <div className="mt-auto pb-8 flex flex-col gap-3 px-6">
-                 <SignedOut>
-                    <SignInButton mode="modal">
-                      <Button variant="outline" className="w-full h-11 text-sm font-bold border-slate-900 rounded-full">
-                        Sign In
-                      </Button>
-                    </SignInButton>
-                  </SignedOut>
-                  
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 text-sm font-bold border-slate-900 rounded-full"
+                    >
+                      Sign In
+                    </Button>
+                  </SignInButton>
+                </SignedOut>
+
                 <Button className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-6 rounded-full text-sm border-none">
                   Get Desktop Tool
                 </Button>
@@ -177,7 +194,7 @@ const UnifiedHeader = ({ session, onReset }) => {
           </Sheet>
         </div>
       </div>
-      
+
       <SessionGuardModal
         isOpen={isGuardOpen}
         onClose={() => setIsGuardOpen(false)}

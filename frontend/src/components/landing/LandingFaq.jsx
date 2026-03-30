@@ -26,36 +26,40 @@ const LandingFaq = () => {
 
   const faqs = [
     {
-      question: "What is an OST file?",
-      answer: "An OST file, which stands for offline outlook data files, is a setup mirror or a cache of what's currently on the mail server. It permits you to work offline and sync modifications once you're back online.",
+      question: " How to convert OST to PST without using Outlook?",
+      answer: "The process is simple with our tool. Upload your .ost file using the box above. The cloud engine processes the file online, with no need for Outlook installed. When it gets finished, install the PST file and import it into any desktop.",
     },
     {
-      question: "What is a PST file?",
-      answer: "A PST file, which stands for Personal Storage Table, acts like a personal filing cabinet for emails, calendar events, and contacts. It is gathered on a hard drive and is free of the server.",
+      question: " Is OST to PST a free tool?",
+      answer: " Yes, osttopst.us is free for standard file sizes. There are no extra costs, registration, or watermarks. Upgraded plans are available for priority processing and larger files, but the free service remains simple and accessible.",
     },
     {
-      question: "How do I Import an OST File into Outlook PST ?",
-      answer: "Outlook doesn't directly import OST files. First, you must convert the OST to a PST format. Once it gets converted, you can utilize Outlook's 'Import/Export' wizard to bring out the PST data into your profile.",
+      question: "Who uses the OST to PST Converter",
+      answer: "The tool named OST to PST converter is applied by IT administrators, businesses, and individual users of Microsoft Outlook for those who are required to access or recover emails from the OST files. This tool is useful when the Outlook profile gets deleted, and the file becomes inaccessible.",
     },
     {
-      question: "How to convert OST to PST online?",
-      answer: "You can utilize our safe and secure online service. Just simply add your OST file, our cloud-based engine will process it quickly, managing your folder structure, and then you can download or install the PST file.",
+      question: " How to import .ost files in Outlook?",
+      answer: " To import an .ost file into Microsoft Outlook, you must convert it to a .PST file. As Outlook does not permit directly importing of the OST files. After the conversion is completed, open Outlook, visit the file, open and export it, then open the data file. After this, choose the PST file to access the emails.",
     },
     {
-      question: "What is the migrate emails OST to PST converter tool?",
-      answer: "It is a characterized utility built to unlock 'orphaned' OST files and convert them into standard PST files that can be opened by any Outlook version.",
+      question: " Is my OST file data secure while converting?",
+      answer: "Yes, all file data transfers are secured with TLS 1.3 SSL encryption. The uploaded OST files and convertible PST files are automatically and permanently deleted from the servers within the duration of 2 hours of conversion. Also, we do not access, analyze, or share your email data, so that your data remains secure.",
     },
     {
-      question: "How to open an OST File without Outlook?",
-      answer: "OST files are locked to the MAPI profile that generated them. To see the data without the original Outlook account, you must convert it to a PST or utilize an OST viewer tool.",
+      question: "Can I convert a damaged or orphaned OST file to PST?",
+      answer: "Yes. Our osttopst.us conversion engine has expert-grade repair algorithms for damaged OST files. It spontaneously repairs some common types of OST file damage, such as header corruption due to sudden shutdowns, folder table damage, and sync issues. Even partially damaged OST files can be successfully recovered and converted into PST files.",
     },
     {
-      question: "Is the OST to PST converter safe?",
-      answer: "Our online viewer and converter use 256-bit SSL encryption. Unlike many 'free' downloadable tools that may harbor malware, our cloud-based process makes sure your data stays in a safe and secure pipeline.",
+      question: "What is the maximum OST file size that can be converted?",
+      answer: "The free OST PST converter manages files up to 50 GB. For enterprise mailboxes, if your file is larger than 50 GB, then our Premium plans help with larger files with priority cloud processing queues.",
     },
     {
-      question: "Does the new Outlook still use OST files?",
-      answer: "Yes, the contemporary 'New Outlook' for Windows and Office 365 continues to utilize a local cache for offline access and performance, which is stored in a format similar to the outdated OST.",
+      question: "Will the converted PST file work with my version of Outlook?",
+      answer: "Yes, absolutely, our free OST to PST file converter generates a Unicode-format PST compatible with Outlook 2007, 2010, 2013, 2016, 2019, 2021, and Microsoft 365. Also, the ANSI-format output for legacy Outlook 97-2003 is also accessible on request of the users.",
+    },
+    {
+      question: "What is the difference between our free OST to PST converter and premium plans?",
+      answer: "Our free tool, which is an OST to PST, covers features such as converting OST files up to 50 GB with data. Our Premium plan includes features such as batch conversion, extensive file size limits, and complete support.",
     },
   ];
 
@@ -63,8 +67,8 @@ const LandingFaq = () => {
     <section className="bg-[#f0f9ff] py-16 md:py-24 px-4 md:px-6 lg:px-12">
       <div className="max-w-4xl mx-auto space-y-12 md:space-y-16">
         <div className="space-y-6 md:space-y-8">
-          <h2 className="text-brand-500 text-2xl sm:text-3xl md:text-4xl font-bold text-center sm:text-left">
-            Frequently Asked Question
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center sm:text-left">
+            Frequently Asked <span className="text-brand-500">Question</span>
           </h2>
           
           <div className="space-y-4 mt-8">

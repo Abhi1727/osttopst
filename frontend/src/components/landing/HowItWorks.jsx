@@ -60,8 +60,8 @@ const HowItWorks = () => {
         {/* UPPER SECTION: 3 Steps + Video */}
         <div className="mb-16 md:mb-24">
           <div className="text-center mb-10 md:mb-12">
-            <h2 className="text-[#0EA5E9] text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-              Convert OST Files to PST in 3 Steps
+            <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+              How Do I Convert<span className="text-brand-600"> OST to PST</span>?
             </h2>
           </div>
 
@@ -80,19 +80,16 @@ const HowItWorks = () => {
             <IconStepCard
               number={1}
               title="Upload the OST File"
-              description="Drag and drop your file or click browse to select your OST locally."
               icon={UploadCloud}
             />
             <IconStepCard
               number={2}
-              title="Convert to PST"
-              description="Our advanced engine automatically repairs and converts your file to PST."
+             title="Convert to PST"
               icon={RefreshCw}
             />
             <IconStepCard
               number={3}
               title="Download PST File"
-              description="Preview your converted folders and download the final PST instantly."
               icon={Download}
             />
           </div>
@@ -101,9 +98,6 @@ const HowItWorks = () => {
         {/* LOWER SECTION: 4 Detailed Steps */}
         <div className="border-t border-slate-200/50 pt-16 md:pt-24">
           <div className="text-center mb-12 md:mb-16 space-y-4 px-2">
-            <h2 className="text-[#0EA5E9] text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">
-              How Do I Convert OST to PST?
-            </h2>
             <p className="text-slate-600 text-base md:text-lg font-medium max-w-3xl mx-auto leading-relaxed">
               The process of converting from OST to PST is simple even if you do
               not have a technical background. This service is designed for the

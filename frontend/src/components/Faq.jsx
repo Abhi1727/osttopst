@@ -103,37 +103,37 @@ const Faq = () => {
     {
       id: "tech-4",
       category: "Technical",
-      question: "How to convert emails to PST files?",
+      question: "How can I convert my emails to PST files",
       answer:
-        "Emails can be saved to PST files by using the Export function in Outlook or by using a conversion service like ours to transform an existing OST cache into a standalone PST file.",
+        "The Emails can be saved to PST files via the Export feature in Outlook or a conversion service.",
     },
     {
       id: "tech-5",
       category: "Technical",
-      question: "How to create a PST file without using Outlook?",
+      question: "How can we make a PST file without using Outlook?",
       answer:
         "Professional conversion services like ours can generate valid PST files directly from your OST data using server-side processing, eliminating the need for a local Outlook installation during the process.",
     },
     {
       id: "tech-6",
       category: "Technical",
-      question: "How to merge OST and PST files?",
+      question: "How can I combine OST and PST files?",
       answer:
-        "The best way is to convert the OST to a PST first. Once you have two PST files, you can use Outlook's import feature or our service to consolidate the data into one, searchable file.",
+        " Having two PST files, you can utilize Outlook's import feature to integrate the data into one file. ",
     },
     {
       id: "tech-7",
       category: "Technical",
-      question: "Will a large PST file slow down Outlook?",
+      question: "Will a big-sized PST file slow down Outlook?",
       answer:
-        "Yes, very large PST files (specifically more than 20-30GB) can cause performance lag. Our service offers deduplication during conversion to help keep your final PST file as lean and efficient as possible.",
+        "Yes, our service provides deduplication during conversion to keep your ultimate PST file as efficient as possible.",
     },
     {
       id: "tech-8",
       category: "Technical",
-      question: "What is the limitation of the OST file in Outlook?",
+      question: "What is the disadvantage of the OST file in Outlook?",
       answer:
-        "The biggest limitation is portability; an OST cannot be opened on another computer or by a different user profile without being converted to PST first.",
+        "The disadvantage is adaptability; an OST file is not able to open on another PC without being converted to a PST file.",
     },
     {
       id: "bill-1",
@@ -145,23 +145,23 @@ const Faq = () => {
     {
       id: "bill-2",
       category: "Billing",
-      question: "Is it a one-time fee or a recurring subscription?",
+      question: "Is it a one-time fee subscription?",
       answer:
-        "Our licenses are strictly one-time payments. There are no monthly or yearly recurring fees. Once you purchase a license, you own it for a lifetime for that particular version.",
+        "Our licenses are one-time payments. There are no monthly or yearly fees. If you buy a license, you have it for a lifetime.",
     },
     {
       id: "bill-3",
       category: "Billing",
       question: "What is our refund policy?",
       answer:
-        "We offer a 30-day money-back guarantee. If our software fails to perform the conversion and our technical team cannot resolve the issue, we will process a full refund without any questions.",
+        "We provide a 30-day money-back policy. If our software fails to perform the conversion, and our technical team is not able to resolve the problem.",
     },
     {
       id: "bill-4",
       category: "Billing",
-      question: "Can I use one license on multiple computers?",
+      question: "Can we use one license on multiple desktops?",
       answer:
-        "The Personal license is valid for a single PC. The Corporate and Technical licenses permit several downloads within the same organization.",
+        " The Personal license is suitable for a single PC. The Corporate and Technical licenses allow numerous downloads within the same company.",
     },
   ];
 

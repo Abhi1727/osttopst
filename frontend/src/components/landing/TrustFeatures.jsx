@@ -71,7 +71,7 @@ const TrustFeatures = () => {
     {
       icon: Cloud,
       title: "Supports Outlook 2021",
-      description: "Compatible with Outlook 2021 and earlier versions compatible with all versions of Outlook 2021 and below.",
+      description: "Compatible With Outlook 2021 And Earlier Versions. Compatible with all versions of Outlook 2021 and below.",
     },
     {
       icon: Box,
@@ -94,8 +94,8 @@ const TrustFeatures = () => {
     <section className="bg-[#f0f9ff] py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 space-y-4">
-          <h2 className="text-[#0EA5E9] text-3xl md:text-4xl font-extrabold tracking-tight">
-            Our Professional Capabilities
+          <h2 className=" text-3xl md:text-4xl font-extrabold tracking-tight">
+            Our Professional <span className="text-[#0EA5E9]">Capabilities</span>
           </h2>
           <p className="text-slate-600 text-lg font-medium max-w-3xl mx-auto leading-relaxed">
             Advanced features designed to handle even the most complex Outlook data migration scenarios.

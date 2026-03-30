@@ -1,2 +1,7 @@
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /admin/
+Disallow: /preview
+Disallow: /cgi-bin/
+
+Sitemap: https://osttopst.us/sitemap.xml

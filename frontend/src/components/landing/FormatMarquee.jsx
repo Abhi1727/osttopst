@@ -8,103 +8,103 @@ const FORMATS = [
     ext: "PST",
     bg: "bg-brand-700",
     description:
-      "PST is Outlook's native storage format. It's the standard for archiving and moving Outlook data between accounts.",
+      "Convert to PST and access your Outlook data for simple access, import, and backup.",
   },
   {
     ext: "MSG",
     bg: "bg-brand-900",
     description:
-      "MSG is the individual Outlook message format. Perfect for saving single emails with all their attachments and metadata.",
+      "Import the Emails in their complete Outlook format while preserving formatting, attachments, and metadata.",
   },
   {
     ext: "EML",
     bg: "bg-green-700",
     description:
-      "EML is a widely accepted email format used by many email clients like Thunderbird, Apple Mail, and Windows Mail.",
+      "Save the Emails in a widely supported format that works on email clients without any compatibility problems",
   },
   {
     ext: "PDF",
     bg: "bg-red-800",
     description:
-      "PDF is the most popular format for document sharing. Ideal for archiving emails in a non-editable, readable format.",
+      "Protect your emails in a professional format that's perfect for sharing, printing, and compliance.",
   },
   {
     ext: "DOCX",
     bg: "bg-brand-800",
     description:
-      "DOCX is the Microsoft Word format. Best for when you need to edit the content of your emails in a word processor.",
+      "Convert emails into fully editable Word files, suitable for documentation, editing, and reporting.",
   },
   {
     ext: "HTML",
     bg: "bg-emerald-600",
     description:
-      "HTML allows you to view your emails in any web browser while preserving all formatting and structure.",
+      "Observe and share emails as web pages that open simply in any browser with structured formatting.",
   },
   {
     ext: "MBox",
     bg: "bg-brand-700",
     description:
-      "MBox is a generic mailbox format used by Unix and many open-source email clients to store multiple messages.",
+      "Easily move your emails to a platform like Apple Mail or Thunderbird with full data cohesion.",
   },
   {
     ext: "CSV",
     bg: "bg-green-600",
     description:
-      "CSV is ideal for exporting contact lists or email headers for analysis in spreadsheet software like Excel.",
+      "Export email data and contacts into a spreadsheet structure for filtering, sorting, and analysis",
   },
   {
     ext: "XML",
     bg: "bg-brand-600",
     description:
-      "XML is used for structured data that needs to be imported into other technical systems or custom databases.",
+      "Collect email data in a format ideal for system integration and technical work processes.",
   },
   {
     ext: "JSON",
     bg: "bg-brand-500",
     description:
-      "JSON is a modern, lightweight data format used by developers for web applications and API integrations.",
+      "Get transparent, properly structured data output, which is made for developers and modern application use.",
   },
   {
     ext: "VCF",
     bg: "bg-brand-600",
     description:
-      "VCF (vCard) is the standard format for electronic business cards, allowing easy contact transfer to any device.",
+      "Transfer your contacts quickly to any device or email application without any issues.",
   },
   {
     ext: "ICS",
     bg: "bg-brand-600",
     description:
-      "ICS (iCalendar) protects calendar events with full details, making it simple to import into any calendar app.",
+      "Protect calendar events with full information, making it simple to import into any calendar application.",
   },
   {
     ext: "TXT",
     bg: "bg-slate-500",
     description:
-      "Plain Text format that preserves text content without any formatting for maximum universal compatibility.",
+      "Protect emails as normal plain text files for fast access, lightweight storage, and easy readability.",
   },
   {
     ext: "RTF",
     bg: "bg-pink-600",
     description:
-      "Rich Text Format that retains basic text styling and layout while being compatible across various software.",
+      "Save simple formatting while making sure the compatibility across several platforms and applications.",
   },
   {
     ext: "EMLX",
     bg: "bg-zinc-700",
     description:
-      "Apple Mail's native email format, perfect for users who are migrating their data to a Mac environment.",
+      "Convert emails for unforgettable use in Apple Mail without overlooking structure and attachments. ",
   },
   {
     ext: "OLM",
     bg: "bg-brand-400",
     description:
-      "Mac Outlook's database format, the standard for moving Outlook data between Windows and Mac versions.",
+      "Move mailbox data to the Mac Outlook structure with easy compatibility and simple import.",
   },
   {
     ext: "OFT",
     bg: "bg-brand-500",
     description:
-      "Outlook File Template used to save emails as reusable templates for consistent and professional communication.",
+      "Generate Outlook email templates to reuse content and enable fast communication.",
   },
 ];
 
