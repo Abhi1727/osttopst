@@ -24,7 +24,7 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Logo" className="w-8 h-8 object-contain" />
+              <img src={logo} alt="Logo" width={32} height={32} className="w-8 h-8 object-contain" loading="lazy" decoding="async" />
               <span className="text-xl font-bold text-slate-900 tracking-tight">OSTtoPST.us</span>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed">

@@ -32,8 +32,7 @@ import {
   Hexagon,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import conversionVideo from "../../assets/Website_Color_Scheme_and_Video.mp4";
-import imagePng from "../../assets/image.png";
+
 import ExportDialog from "../ExportDialog";
 import licenseService from "../../services/licenseService";
 import { Button } from "@/components/ui/button";
@@ -218,7 +217,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
   };
 
   return (
-    <section className="relative pt-6 pb-8 lg:pb-4 px-3 md:px-5 lg:px-8 w-full">
+    <section className="relative pt-6 pb-8 lg:pb-4 px-3 md:px-5 lg:px-8 w-full min-h-[650px] lg:min-h-[600px] flex items-center">
       <div className="max-w-[1440px] mx-auto relative z-10 w-full lg:grid lg:grid-cols-[1fr_1.3fr] lg:gap-10 items-center">
         {/* Left Column: Heading & Benefits */}
         <div className="text-left py-4 md:py-8 lg:py-4 flex flex-col md:items-center lg:items-start md:text-center lg:text-left">
@@ -236,25 +235,25 @@ const Hero = ({ onUploadComplete, onRestore }) => {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-y-6 gap-x-6 sm:gap-x-8 max-w-sm sm:max-w-2xl lg:max-w-sm mt-4 md:mt-8 lg:mt-4">
             <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
-              <Shield className="w-6 h-6 sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
+              <Shield size={32} className="sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
               <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
                 Secure
               </span>
             </div>
             <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
-              <Hexagon className="w-6 h-6 sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
+              <Hexagon size={32} className="sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
               <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
                 Instant
               </span>
             </div>
             <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
-              <Clock className="w-6 h-6 sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
+              <Clock size={32} className="sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
               <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
                 24/7 Tech
               </span>
             </div>
             <div className="flex flex-col sm:items-center lg:items-start lg:flex-row gap-2 lg:gap-3">
-              <Crown className="w-6 h-6 sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
+              <Crown size={32} className="sm:w-8 sm:h-8 lg:w-5 lg:h-5 text-slate-900" />
               <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
                 Upgrade
               </span>
@@ -274,7 +273,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
 
                 <div className="flex flex-col items-center gap-6 sm:gap-8 lg:gap-6">
                   <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-24 lg:h-24 flex items-center justify-center">
-                    <CloudUpload className="w-full h-full text-slate-900 stroke-[1.2]" />
+                    <CloudUpload size={96} className="w-full h-full text-slate-900 stroke-[1.2]" />
                   </div>
 
                   <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-bold text-slate-900 tracking-tight mb-1">

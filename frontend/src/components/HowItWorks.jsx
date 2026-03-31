@@ -60,6 +60,10 @@ const StepItem = ({ img, index }) => {
             <img
               src={img}
               alt={`Step ${index + 1}`}
+              width={1200}
+              height={800}
+              loading="lazy"
+              decoding="async"
               className="w-full h-auto block transform group-hover:scale-105 transition-transform duration-1000"
             />
           </div>

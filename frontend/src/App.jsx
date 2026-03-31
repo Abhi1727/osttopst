@@ -1,11 +1,5 @@
-import { useState, useEffect } from "react";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-  useAuth,
-} from "@clerk/clerk-react";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { SignedIn } from "@clerk/clerk-react";
 import {
   Routes,
   Route,
@@ -14,16 +8,6 @@ import {
   useNavigationType,
 } from "react-router-dom";
 import LandingPage from "./components/landing/LandingPage";
-import FilePreview from "./components/FilePreview";
-import HowItWorks from "./components/HowItWorks";
-import Faq from "./components/Faq";
-import Support from "./components/Support";
-import Blogs from "./components/Blogs";
-import AdminDashboard from "./components/AdminDashboard";
-import BlogPostDetail from "./components/BlogPostDetail";
-import Pricing from "./components/Pricing";
-import PrivacyPolicy from "./components/PrivacyPolicy";
-import TermsConditions from "./components/TermsConditions";
 import UnifiedHeader from "./components/UnifiedHeader";
 import Footer from "./components/landing/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -31,6 +15,18 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import React from "react";
 import { deleteSession } from "./services/api";
+
+// Lazy-load all non-critical routes — they are only loaded when navigated to
+const FilePreview = lazy(() => import("./components/FilePreview"));
+const HowItWorks = lazy(() => import("./components/HowItWorks"));
+const Faq = lazy(() => import("./components/Faq"));
+const Support = lazy(() => import("./components/Support"));
+const Blogs = lazy(() => import("./components/Blogs"));
+const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
+const BlogPostDetail = lazy(() => import("./components/BlogPostDetail"));
+const Pricing = lazy(() => import("./components/Pricing"));
+const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
+const TermsConditions = lazy(() => import("./components/TermsConditions"));
 
 function App() {
   const [session, setSession] = useState(() => {
@@ -58,21 +54,16 @@ function App() {
   }, [session]);
 
   const handleUploadComplete = (data) => {
-    console.log("[App] handleUploadComplete called with:", data);
     setSession(data);
   };
 
   const handleReset = () => {
-    console.log(
-      "[App] Clearing local session state (preserving backend history)...",
-    );
     setSession(null);
     localStorage.removeItem("pst_session");
     navigate("/");
   };
 
   const handleRestore = (recoveredSession) => {
-    console.log("[App] Restoring session:", recoveredSession);
     setSession(recoveredSession);
     navigate("/preview");
   };
@@ -87,10 +78,6 @@ function App() {
     }
   }, [location.pathname, location.hash, navigationType]);
 
-  // No automatic redirection - allow user to see landing page/history
-  // even if a session is in localStorage. Navigation to /preview happens
-  // explicitly via handleUploadComplete or handleRestore.
-
   return (
     <ErrorBoundary>
       <Toaster position="top-right" />
@@ -104,43 +91,44 @@ function App() {
             : "min-h-screen pt-14 md:pt-16"
         }`}
       >
-
         <main
           className={`flex-1 flex flex-col ${
             location.pathname === "/preview" ? "h-full overflow-hidden" : ""
           }`}
         >
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <LandingPage
-                  onUploadComplete={handleUploadComplete}
-                  onRestore={handleRestore}
-                />
-              }
-            />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route
-              path="/preview"
-              element={<FilePreview session={session} onReset={handleReset} />}
-            />
-            <Route path="/faq" element={<Faq />} />
-            <Route path="/support" element={<Support/>} />
-            <Route path="/blogs" element={<Blogs />} />
-            <Route
-              path="/admin/blogs"
-              element={
-                <SignedIn>
-                  <AdminDashboard />
-                </SignedIn>
-              }
-            />
-            <Route path="/blogs/:slug" element={<BlogPostDetail />} />
-            <Route path="/our-plans" element={<Pricing />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-conditions" element={<TermsConditions />} />
-          </Routes>
+          <Suspense fallback={null}>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route
+                path="/preview"
+                element={<FilePreview session={session} onReset={handleReset} />}
+              />
+              <Route path="/faq" element={<Faq />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/blogs" element={<Blogs />} />
+              <Route
+                path="/admin/blogs"
+                element={
+                  <SignedIn>
+                    <AdminDashboard />
+                  </SignedIn>
+                }
+              />
+              <Route path="/blogs/:slug" element={<BlogPostDetail />} />
+              <Route path="/our-plans" element={<Pricing />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-conditions" element={<TermsConditions />} />
+            </Routes>
+          </Suspense>
         </main>
         {location.pathname !== "/preview" && <Footer />}
       </div>

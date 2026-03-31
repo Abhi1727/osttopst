@@ -1,5 +1,8 @@
 import React from "react";
 import Hero from "./Hero";
+import FormatMarquee from "./FormatMarquee";
+import { SignedIn } from "@clerk/clerk-react";
+
 import Glossary from "./Glossary";
 import ConversionMissions from "./ConversionMissions";
 import TechnicalAdvantages from "./TechnicalAdvantages";
@@ -8,9 +11,6 @@ import ConversionHistory from "../ConversionHistory";
 import HowItWorks from "./HowItWorks";
 import TrustFeatures from "./TrustFeatures";
 import LandingFaq from "./LandingFaq";
-import FormatMarquee from "./FormatMarquee";
-
-import { SignedIn } from "@clerk/clerk-react";
 
 const LandingPage = ({ onUploadComplete, onRestore }) => {
   return (
@@ -20,15 +20,16 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
         <div className="flex-1 flex flex-col justify-center">
           <Hero onUploadComplete={onUploadComplete} />
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-8 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-8 z-10 min-h-[100px]">
           <SignedIn>
             <ConversionHistory onRestore={onRestore} />
           </SignedIn>
         </div>
       </div>
 
-      <FormatMarquee />
-
+      <div className="relative z-10 -mt-12 sm:-mt-16 mb-8">
+        <FormatMarquee />
+      </div>
       <HowItWorks />
       <TrustFeatures />
       <TechnicalAdvantages />
