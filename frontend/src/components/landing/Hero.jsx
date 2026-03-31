@@ -41,7 +41,11 @@ import { Button } from "@/components/ui/button";
 const Hero = ({ onUploadComplete, onRestore }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState({ percent: 0, phase: null, detail: "" });
+  const [progress, setProgress] = useState({
+    percent: 0,
+    phase: null,
+    detail: "",
+  });
   const [uploadPhase, setUploadPhase] = useState(null); // 'uploading' | 'processing' | 'complete'
   const [uploadDetail, setUploadDetail] = useState("");
   const [completedSession, setCompletedSession] = useState(null);
@@ -101,15 +105,20 @@ const Hero = ({ onUploadComplete, onRestore }) => {
 
       try {
         const token = await getToken();
-        
+
         // Start Upload
         const session = await fileService.uploadFile(
           selectedFile,
           token,
-          (prog) => setProgress(typeof prog === 'object' ? prog : { percent: prog, phase: 'uploading' }),
+          (prog) =>
+            setProgress(
+              typeof prog === "object"
+                ? prog
+                : { percent: prog, phase: "uploading" },
+            ),
           null, // password
           controller.signal,
-          user?.primaryEmailAddress?.emailAddress ?? null
+          user?.primaryEmailAddress?.emailAddress ?? null,
         );
 
         // Backend returns sessionId, not _id
@@ -122,16 +131,23 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         await conversionService.triggerConversion(
           sessionId,
           getToken,
-          (prog) => setProgress(typeof prog === 'object' ? prog : { percent: prog, phase: 'processing' }),
+          (prog) =>
+            setProgress(
+              typeof prog === "object"
+                ? prog
+                : { percent: prog, phase: "processing" },
+            ),
           controller.signal,
-          user?.primaryEmailAddress?.emailAddress ?? null
+          user?.primaryEmailAddress?.emailAddress ?? null,
         );
 
         // Store session object so Preview / Download buttons have the data they need
         const completedData = { ...session, sessionId };
         setCompletedSession(completedData);
         if (onUploadComplete) onUploadComplete(completedData);
-        toast.success("Conversion complete! Choose to preview or download below.");
+        toast.success(
+          "Conversion complete! Choose to preview or download below.",
+        );
       } catch (err) {
         if (err.name === "AbortError") {
           toast.info("Upload cancelled");
@@ -146,7 +162,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         setUploading(false);
       }
     },
-    [isSignedIn, getToken, uploading, clerk, onUploadComplete]
+    [isSignedIn, getToken, uploading, clerk, onUploadComplete],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -156,7 +172,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
     multiple: false,
     accept: {
       "application/vnd.ms-outlook": [".ost"],
-      "application/octet-stream": [".ost"]
+      "application/octet-stream": [".ost"],
     },
   });
 
@@ -176,11 +192,15 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         false,
         undefined,
         controller.signal,
-        user?.primaryEmailAddress?.emailAddress ?? null
+        user?.primaryEmailAddress?.emailAddress ?? null,
       );
       // Assuming convertToPst now handles the browser-native download directly
       // and toast/license refresh should happen after successful initiation of download
-      const name = completedSession.originalName || completedSession.originalFileName || completedSession.fileName || "converted";
+      const name =
+        completedSession.originalName ||
+        completedSession.originalFileName ||
+        completedSession.fileName ||
+        "converted";
       const savedName = name.replace(".ost", "").replace(".pst", "") + ".pst";
       toast.success(`Started downloading: ${savedName}`);
       window.dispatchEvent(new Event("license-refresh"));
@@ -203,11 +223,15 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         {/* Left Column: Heading & Benefits */}
         <div className="text-left py-4 md:py-8 lg:py-4 flex flex-col md:items-center lg:items-start md:text-center lg:text-left">
           <h1 className="mb-4 text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold text-slate-800 tracking-tight leading-tight">
-            Convert <span className="text-brand-500 font-extrabold uppercase tracking-tight">OST to PST</span> Online
+            Convert{" "}
+            <span className="text-brand-500 font-extrabold uppercase tracking-tight">
+              OST to PST
+            </span>{" "}
+            Online
           </h1>
           <p className="mb-8 text-base sm:text-lg text-slate-600 font-medium max-w-sm md:max-w-xl lg:max-w-sm leading-relaxed">
-            Drag, Upload, Preview, and Export your outlook
-            data safely from any browser
+            Drag, Upload, Preview, and Export your outlook data safely from any
+            browser
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-y-6 gap-x-6 sm:gap-x-8 max-w-sm sm:max-w-2xl lg:max-w-sm mt-4 md:mt-8 lg:mt-4">
@@ -247,18 +271,18 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                 className={`w-full transition-all duration-300 border-none cursor-pointer group`}
               >
                 <input {...getInputProps()} />
-                
+
                 <div className="flex flex-col items-center gap-6 sm:gap-8 lg:gap-6">
                   <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-24 lg:h-24 flex items-center justify-center">
                     <CloudUpload className="w-full h-full text-slate-900 stroke-[1.2]" />
                   </div>
-                  
+
                   <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-bold text-slate-900 tracking-tight mb-1">
                     Upload Your OST File
                   </h3>
 
                   <div className="w-full max-w-sm sm:max-w-md lg:max-w-sm">
-                    <Button 
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         if (!isSignedIn) {
@@ -271,9 +295,9 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                       className="w-full h-14 bg-brand-500 hover:bg-brand-600 text-lg md:text-xl font-bold rounded-xl flex gap-3 shadow-[0_12px_35px_-8px_rgba(14,165,233,0.3)] border-none transition-all active:scale-95"
                     >
                       {uploading ? (
-                         <RotateCw className="w-5 h-5 animate-spin" />
+                        <RotateCw className="w-5 h-5 animate-spin" />
                       ) : (
-                         <UploadCloud className="w-6 h-6 md:w-7 md:h-7" />
+                        <UploadCloud className="w-6 h-6 md:w-7 md:h-7" />
                       )}
                       {uploading ? "Uploading..." : "Upload OST File"}
                     </Button>
@@ -285,14 +309,23 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                       <div className="flex items-center justify-center gap-2">
                         <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                         <p className="text-sm font-bold text-slate-700 truncate max-w-xs">
-                          {((completedSession?.originalName || completedSession?.originalFileName || completedSession?.fileName || "file") + "").replace(/\.(ost|pst)$/i, "")}.pst — Ready
+                          {(
+                            (completedSession?.originalName ||
+                              completedSession?.originalFileName ||
+                              completedSession?.fileName ||
+                              "file") + ""
+                          ).replace(/\.(ost|pst)$/i, "")}
+                          .pst — Ready
                         </p>
                       </div>
 
                       {/* Two action buttons */}
                       <div className="flex flex-col sm:flex-row gap-3 w-full">
                         <Button
-                          onClick={(e) => { e.stopPropagation(); navigate("/preview"); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/preview");
+                          }}
                           variant="outline"
                           className="flex-1 h-12 border-2 border-slate-200 hover:border-brand-400 hover:bg-brand-50 text-slate-700 hover:text-brand-600 font-black text-sm uppercase tracking-widest rounded-xl gap-2 transition-all"
                         >
@@ -300,7 +333,10 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                           Preview OST
                         </Button>
                         <Button
-                          onClick={(e) => { e.stopPropagation(); handleDownloadPst(); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadPst();
+                          }}
                           disabled={isDownloadingPst}
                           className="flex-1 h-12 bg-brand-500 hover:bg-brand-600 text-white font-black text-sm uppercase tracking-widest rounded-xl gap-2 shadow-lg shadow-brand-500/25 transition-all active:scale-95"
                         >
@@ -314,14 +350,17 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                       </div>
                     </div>
                   ) : (
-                  <div className="mt-4 flex flex-col gap-3">
-                    <p className="text-xs sm:text-sm text-slate-400 font-medium tracking-tight">
-                      Some upload file size limit apply
-                    </p>
-                    <p className="text-xs sm:text-sm md:text-base text-slate-900 font-medium sm:whitespace-nowrap px-2">
-                      Agreed to <span className="font-bold">Privacy Policy</span>. Use <span className="font-bold">Desktop Software</span> for unlimited size
-                    </p>
-                  </div>
+                    <div className="mt-4 flex flex-col gap-3">
+                      <p className="text-xs sm:text-sm text-slate-400 font-medium tracking-tight">
+                        Some upload file size limit apply
+                      </p>
+                      <p className="text-xs sm:text-sm md:text-base text-slate-900 font-medium sm:whitespace-nowrap px-2">
+                        Agreed to{" "}
+                        <span className="font-bold">Privacy Policy</span>. Use{" "}
+                        <span className="font-bold">Desktop Software</span> for
+                        unlimited size
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -329,17 +368,22 @@ const Hero = ({ onUploadComplete, onRestore }) => {
 
             {uploading && !completedSession && (
               <div className="w-full flex flex-col items-center py-6">
-                 <div className="w-full max-w-md animate-in fade-in duration-300">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs font-black text-brand-500 uppercase tracking-widest">
-                        {uploadPhase === "uploading" ? "Transferring..." : "Processing..."}
-                      </span>
-                      <span className="text-xs font-black text-slate-400">
-                        {Math.round(progress?.percent || 0)}%
-                      </span>
-                    </div>
-                    <Progress value={progress?.percent || 0} className="h-2 bg-slate-100" />
+                <div className="w-full max-w-md animate-in fade-in duration-300">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-black text-brand-500 uppercase tracking-widest">
+                      {uploadPhase === "uploading"
+                        ? "Transferring..."
+                        : "Processing..."}
+                    </span>
+                    <span className="text-xs font-black text-slate-400">
+                      {Math.round(progress?.percent || 0)}%
+                    </span>
                   </div>
+                  <Progress
+                    value={progress?.percent || 0}
+                    className="h-2 bg-slate-100"
+                  />
+                </div>
               </div>
             )}
           </div>

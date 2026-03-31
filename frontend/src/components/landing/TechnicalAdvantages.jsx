@@ -57,8 +57,8 @@ const TechnicalAdvantages = () => {
         {/* Technical Advantages */}
         <div className="space-y-10 md:space-y-16">
           <div className="text-center space-y-4 px-2">
-            <h2 className="text-brand-500 text-2xl sm:text-3xl md:text-4xl font-bold">
-              Technical Advantages We Offer
+            <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold">
+              Technical <span className="text-brand-500">Advantages</span> We Offer
             </h2>
             <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base md:text-lg font-medium">
               We tackle the complex technical challenges that traditional software often struggles with.
@@ -87,8 +87,8 @@ const TechnicalAdvantages = () => {
         {/* Why Use Our Online Tool? */}
         <div className="space-y-10 md:space-y-16">
           <div className="text-center space-y-4 px-2">
-            <h2 className="text-brand-500 text-2xl sm:text-3xl md:text-4xl font-bold">
-              Why Use Our Online Tool?
+            <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold">
+              Why Use Our Online <span className="text-brand-500">Tool</span>?
             </h2>
             <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base md:text-lg font-medium">
               Experience the most reliable and efficient OST to PST conversion service available online.
@@ -111,7 +111,7 @@ const TechnicalAdvantages = () => {
         <div className="bg-black rounded-3xl md:rounded-[40px] p-8 sm:p-10 md:p-16 text-white text-center space-y-10 md:space-y-12 shadow-2xl overflow-hidden relative">
           <div className="space-y-4 md:space-y-6">
             <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-             Supports All OST and PST File Variants
+             Supports All <span className="text-brand-500">OST to PST</span> File Variants
             </h2>
             <p className="max-w-4xl mx-auto text-slate-300 text-sm sm:text-base md:text-lg font-medium leading-relaxed opacity-90 px-0 sm:px-4">
               Our free OST to PST converter software is engineered to handle every variant of OST and PST files you might encounter.            </p>

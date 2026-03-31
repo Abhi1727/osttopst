@@ -171,113 +171,104 @@ const Faq = () => {
       (activeCategory === "General" && q.category === "General"),
   );
 
-  return (
-    <div className="bg-slate-50 min-h-screen font-sans flex flex-col">
-      {/* Header Section */}
-      <header className="bg-gradient-to-b from-brand-50/80 to-slate-50 pt-8 pb-8 px-4 text-center relative overflow-hidden text-slate-900">
-        {/* Background Blobs matching screenshot style roughly */}
-        <div className="absolute top-0 left-0 w-96 h-96 bg-brand-100/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+   return (
+    <div className="bg-slate-50 min-h-screen flex flex-col">
 
-        <h1 className="mb-6">
-          Frequently Asked <span className="text-brand-600">Questions</span>
+      {/* HEADER */}
+      <header className="bg-gradient-to-b from-brand-50/80 to-slate-50 pt-12 pb-10 px-4 text-center">
+        <h1 className="text-3xl md:text-5xl font-bold text-brand-600 mb-4">
+          Frequently Asked Questions
         </h1>
-        <p className="text-slate-500 max-w-2xl mx-auto text-sm md:text-base mb-10">
+
+        <p className="text-slate-500 max-w-2xl mx-auto mb-8">
           Everything you need to know about the OST to PST conversion process,
           security, and licensing.
         </p>
 
-        {/* Search Bar */}
-        <div className="relative max-w-2xl mx-auto">
-          <div className="relative flex items-center shadow-lg shadow-slate-200/50 rounded-full bg-white">
-            <Search className="absolute left-6 w-5 h-5 text-slate-400" />
+        {/* SEARCH */}
+        <div className="max-w-2xl mx-auto">
+          <div className="relative flex items-center bg-white rounded-full shadow-md">
+            <Search className="absolute left-5 w-5 h-5 text-slate-400" />
             <input
               type="text"
               placeholder="Search for questions..."
-              className="w-full pl-14 pr-32 py-4 rounded-full border-none focus:ring-0 text-slate-700 bg-transparent outline-none h-14"
+              className="w-full pl-12 pr-28 py-3 rounded-full outline-none"
             />
-            <Button className="absolute right-2 top-2 bottom-2 bg-brand-600 hover:bg-brand-700 text-white rounded-full px-8 font-semibold h-auto">
+            <Button className="absolute right-2 bg-brand-600 text-white rounded-full px-6">
               Search
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="max-w-[1400px] mx-auto px-6 w-full flex-1 pb-32">
-        {/* Category Tabs */}
-        <div className="flex flex-wrap justify-center gap-4 mb-20">
-          {["General", "Technical", "Billing"].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-8 py-3 rounded-full text-sm font-bold transition-all duration-300 border ${
-                activeCategory === cat
-                  ? "bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-200 scale-105"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-brand-300 hover:text-brand-600"
-              }`}
-            >
-              {cat} Questions
-            </button>
-          ))}
-        </div>
-
-        {/* FAQ Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-16 gap-y-16">
-          {questions
-            .filter((q) => q.category.includes(activeCategory))
-            .map((item) => (
-              <div
-                key={item.id}
-                className="group relative flex flex-col space-y-4"
-              >
-                <div className="absolute -left-6 top-1 w-1 h-0 bg-brand-500 transition-all duration-500 group-hover:h-full opacity-50 overflow-hidden rounded-full"></div>
-                <h3 className="group-hover:text-brand-700">
-                  {item.question}
-                </h3>
-                <p className="text-slate-600 text-base md:text-lg leading-relaxed font-medium opacity-90">
-                  {item.answer}
-                </p>
-                <div className="pt-2">
-                  <div className="h-px w-20 bg-brand-100 group-hover:w-full transition-all duration-700"></div>
-                </div>
-              </div>
-            ))}
-        </div>
+      {/* CATEGORY TABS */}
+      <div className="flex justify-center gap-4 mt-6 mb-10">
+        {["General", "Technical", "Billing"].map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className={`px-6 py-2 rounded-full text-sm font-medium border transition ${
+              activeCategory === cat
+                ? "bg-brand-600 text-white border-brand-600"
+                : "bg-white text-slate-600 border-slate-300 hover:text-brand-600"
+            }`}
+          >
+            {cat} Questions
+          </button>
+        ))}
       </div>
 
-      {/* Footer Banner */}
-      <div className="max-w-6xl mx-auto px-4 w-full mb-20">
-        <div className="bg-brand-700 rounded-3xl p-8 md:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-brand-900/10">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
+        {/* SHARED CONTAINER */}
+<div className="w-full px-6 md:px-12 lg:px-20 xl:px-24">
 
-          <div className="relative z-10 text-center md:text-left">
-            <h2 className="text-white mb-2">
-              Couldn't find what you needed?
-            </h2>
-            <p className="text-brand-100 text-sm md:text-base max-w-lg">
-              Submit a support ticket and we'll get back to you within 24 hours.
+  <div className="max-w-5xl mx-auto">
+
+    {/* FAQ CONTENT */}
+    <div className="mb-16">
+      {questions
+        .filter((q) => q.category === activeCategory)
+        .map((item, index) => (
+          
+          <div key={item.id} className="mb-10">
+
+            <h3 className="text-xl md:text-2xl font-semibold text-black mb-2">
+              {index + 1}. {item.question}
+            </h3>
+
+            <p className="text-gray-600 text-base md:text-lg leading-relaxed">
+              {item.answer}
             </p>
-          </div>
 
-          <div className="relative z-10 flex gap-4">
-            <Button
-              className="bg-white text-brand-700 hover:bg-brand-50 font-bold h-12 px-6 rounded-lg shadow-lg"
-              onClick={() => navigate("/support")}
-            >
-              Contact Support
-            </Button>
-            <Button
-              variant="outline"
-              className="bg-brand-800/50 text-white border-brand-600 hover:bg-brand-800 hover:text-white font-bold h-12 px-6 rounded-lg"
-              onClick={() => console.log("Live Chat")}
-            >
-              Live Chat
-            </Button>
           </div>
-        </div>
-      </div>
+        ))}
     </div>
+
+    {/* CTA SECTION */}
+    <div className="bg-black rounded-2xl px-8 md:px-12 py-10 mb-20">
+      
+      <h2 className="text-white text-2xl md:text-3xl font-semibold mb-2">
+        Couldn't find what you needed?
+      </h2>
+
+      <p className="text-gray-400 text-base md:text-lg mb-6">
+        Submit a support ticket and we’ll get back to you within 24 hours.
+      </p>
+
+      <div className="flex gap-4">
+        <Button className="bg-white text-black px-6 py-2 rounded-lg font-medium">
+          Contact Support
+        </Button>
+
+        <Button className="bg-white text-black px-6 py-2 rounded-lg font-medium">
+          Live Chat
+        </Button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+      </div>
   );
 };
 
