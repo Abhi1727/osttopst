@@ -5,18 +5,16 @@ import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { fileService } from "../../services/fileService";
 import { conversionService } from "../../services/conversionService";
 import { toast } from "sonner";
-import {
-  FileText,
-  RotateCw,
-  UploadCloud,
-  ArrowRight,
-  Clock,
-  CloudUpload,
-  CheckCircle2,
-  Crown,
-  Hexagon,
-  Shield,
-} from "lucide-react";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import RotateCw from "lucide-react/dist/esm/icons/rotate-cw";
+import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud";
+import ArrowRight from "lucide-react/dist/esm/icons/arrow-right";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import CloudUpload from "lucide-react/dist/esm/icons/cloud-upload";
+import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2";
+import Crown from "lucide-react/dist/esm/icons/crown";
+import Hexagon from "lucide-react/dist/esm/icons/hexagon";
+import Shield from "lucide-react/dist/esm/icons/shield";
 import { Progress } from "@/components/ui/progress";
 
 const ExportDialog = lazy(() => import("../ExportDialog"));

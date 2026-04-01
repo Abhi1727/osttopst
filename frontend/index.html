@@ -34,7 +34,108 @@
     </noscript>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Mission-Critical Loading Shell: Prevents white flash and improves FCP -->
+      <style>
+        .loading-shell {
+          position: fixed;
+          inset: 0;
+          background: #ffffff;
+          display: flex;
+          flex-direction: column;
+          z-index: 9999;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .shell-header {
+          height: 72px;
+          border-bottom: 1px solid #f1f5f9;
+          display: flex;
+          align-items: center;
+          padding: 0 40px;
+          justify-content: space-between;
+        }
+        .shell-logo {
+          width: 150px;
+          height: 24px;
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+        .shell-nav {
+          display: flex;
+          gap: 24px;
+        }
+        .shell-nav-item {
+          width: 60px;
+          height: 12px;
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+        .shell-hero {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 40px;
+          text-align: center;
+        }
+        .shell-h1 {
+          width: 300px;
+          height: 48px;
+          background: #f1f5f9;
+          border-radius: 8px;
+          margin-bottom: 24px;
+        }
+        .shell-p {
+          width: 450px;
+          height: 16px;
+          background: #f8fafc;
+          border-radius: 4px;
+          margin-bottom: 48px;
+        }
+        .shell-uploader {
+          width: 100%;
+          max-width: 500px;
+          height: 300px;
+          background: #ffffff;
+          border: 2px dashed #e2e8f0;
+          border-radius: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .shell-icon {
+          width: 64px;
+          height: 64px;
+          background: #f8fafc;
+          border-radius: 16px;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .animate-pulse {
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+      </style>
+      <div class="loading-shell">
+        <div class="shell-header">
+          <div class="shell-logo animate-pulse"></div>
+          <div class="shell-nav">
+            <div class="shell-nav-item animate-pulse"></div>
+            <div class="shell-nav-item animate-pulse" style="animation-delay: 0.2s"></div>
+            <div class="shell-nav-item animate-pulse" style="animation-delay: 0.4s"></div>
+          </div>
+        </div>
+        <div class="shell-hero">
+          <div class="shell-h1 animate-pulse"></div>
+          <div class="shell-p animate-pulse" style="animation-delay: 0.3s"></div>
+          <div class="shell-uploader animate-pulse" style="animation-delay: 0.6s">
+            <div class="shell-icon"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

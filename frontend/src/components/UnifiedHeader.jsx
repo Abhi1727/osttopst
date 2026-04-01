@@ -1,7 +1,8 @@
 import React from "react";
 import LicenseBadge from "@/components/LicenseBadge";
 import { Button } from "@/components/ui/button";
-import { Menu, Mail } from "lucide-react";
+import Menu from "lucide-react/dist/esm/icons/menu";
+import Mail from "lucide-react/dist/esm/icons/mail";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SignedIn,

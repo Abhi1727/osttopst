@@ -1,13 +1,11 @@
 import React from "react";
-import { 
-  Facebook, 
-  Twitter, 
-  Linkedin, 
-  Instagram, 
-  Youtube, 
-  Mail,
-  ShieldCheck
-} from "lucide-react";
+import Facebook from "lucide-react/dist/esm/icons/facebook";
+import Twitter from "lucide-react/dist/esm/icons/twitter";
+import Linkedin from "lucide-react/dist/esm/icons/linkedin";
+import Instagram from "lucide-react/dist/esm/icons/instagram";
+import Youtube from "lucide-react/dist/esm/icons/youtube";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
 
 const Footer = () => {
   const socialLinks = [
