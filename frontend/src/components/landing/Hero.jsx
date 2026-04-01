@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
-import ExportDialog from "../ExportDialog";
+const ExportDialog = lazy(() => import("../ExportDialog"));
 import licenseService from "../../services/licenseService";
 import { Button } from "@/components/ui/button";
 
@@ -375,11 +375,15 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         </div>
       </div>
 
-      <ExportDialog
-        open={isExportDialogOpen}
-        session={completedSession}
-        onClose={() => setIsExportDialogOpen(false)}
-      />
+      {isExportDialogOpen && (
+        <Suspense fallback={null}>
+          <ExportDialog
+            open={isExportDialogOpen}
+            session={completedSession}
+            onClose={() => setIsExportDialogOpen(false)}
+          />
+        </Suspense>
+      )}
     </section>
   );
 };

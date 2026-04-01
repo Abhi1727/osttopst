@@ -120,7 +120,6 @@ const UnifiedHeader = ({ session, onReset }) => {
             <div className="flex items-center gap-3 ml-2">
               <LicenseBadge />
               <UserButton
-                afterSignOutUrl="/"
                 appearance={{
                   elements: {
                     userButtonAvatarBox: "h-8 w-8 ring-2 ring-slate-100",
