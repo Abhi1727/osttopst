@@ -34,8 +34,17 @@ app.use(
   }),
 );
 
-// Gzip compression
-app.use(compression());
+// Advanced Compression: Aggressive settings for maximum byte savings
+app.use(
+  compression({
+    level: 9, // Maximum compression level
+    threshold: 0, // Compress everything, even small files like index.html
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) return false;
+      return compression.filter(req, res);
+    },
+  }),
+);
 
 // Proxy API requests to backend
 app.use(
@@ -48,11 +57,20 @@ app.use(
   }),
 );
 
-// Serve static files from the React app build directory
-app.use(express.static(path.join(__dirname, "dist")));
+// Serve static files with aggressive caching (1 year for hashed assets)
+app.use(
+  express.static(path.join(__dirname, "dist"), {
+    maxAge: "1y",
+    immutable: true,
+    index: false, // Don't serve index.html from here to avoid wrong headers
+  }),
+);
 
-// SPA fallback: Serve index.html for any unknown routes
+// SPA fallback: Serve index.html with NO CACHE to ensure users always get the latest version
 app.get(/.*/, (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
