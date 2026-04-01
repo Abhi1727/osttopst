@@ -1,16 +1,17 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import Hero from "./Hero";
-import FormatMarquee from "./FormatMarquee";
 import { SignedIn } from "@clerk/clerk-react";
 
-import Glossary from "./Glossary";
-import ConversionMissions from "./ConversionMissions";
-import TechnicalAdvantages from "./TechnicalAdvantages";
-import ReviewSection from "./ReviewSection";
-import ConversionHistory from "../ConversionHistory";
-import HowItWorks from "./HowItWorks";
-import TrustFeatures from "./TrustFeatures";
-import LandingFaq from "./LandingFaq";
+// Lazy-load components below the fold for better LCP
+const FormatMarquee = lazy(() => import("./FormatMarquee"));
+const Glossary = lazy(() => import("./Glossary"));
+const ConversionMissions = lazy(() => import("./ConversionMissions"));
+const TechnicalAdvantages = lazy(() => import("./TechnicalAdvantages"));
+const ReviewSection = lazy(() => import("./ReviewSection"));
+const ConversionHistory = lazy(() => import("../ConversionHistory"));
+const HowItWorks = lazy(() => import("./HowItWorks"));
+const TrustFeatures = lazy(() => import("./TrustFeatures"));
+const LandingFaq = lazy(() => import("./LandingFaq"));
 
 const LandingPage = ({ onUploadComplete, onRestore }) => {
   return (
@@ -27,16 +28,18 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
         </div>
       </div>
 
-      <div className="relative z-10 -mt-12 sm:-mt-16 mb-8">
-        <FormatMarquee />
-      </div>
-      <HowItWorks />
-      <TrustFeatures />
-      <TechnicalAdvantages />
-      <Glossary />
-      <ConversionMissions />
-      <LandingFaq />
-      <ReviewSection />
+      <Suspense fallback={<div className="h-40" />}>
+        <div className="relative z-10 -mt-12 sm:-mt-16 mb-8">
+          <FormatMarquee />
+        </div>
+        <HowItWorks />
+        <TrustFeatures />
+        <TechnicalAdvantages />
+        <Glossary />
+        <ConversionMissions />
+        <LandingFaq />
+        <ReviewSection />
+      </Suspense>
     </div>
   );
 };

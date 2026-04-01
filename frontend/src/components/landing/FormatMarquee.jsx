@@ -124,14 +124,14 @@ const FormatMarquee = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10">
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="wait">
             {displayedFormats.map((item, index) => (
               <motion.div
                 key={item.ext}
                 layout
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.1 } }}
                 transition={{
                   layout: { type: "spring", stiffness: 200, damping: 25 },
                   duration: 0.3,

@@ -7,15 +7,14 @@ import {
   ArrowRight,
   Mail,
   ShieldCheck,
+  Newspaper,
+  FileText
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 // Import images
-import imgMigration from "../assets/blog/blog_email_migration_1772432378369.png";
-import imgSecurity from "../assets/blog/blog_data_security_1772432391754.png";
-import imgCloud from "../assets/blog/blog_cloud_storage_1772432410345.png";
-import imgTrouble from "../assets/blog/blog_troubleshooting_1772432450252.png";
+// blog image imports removed per user request for no images
 
 const CATEGORIES = [
   "All Posts",
@@ -55,12 +54,10 @@ const BlogCard = ({ post, onClick }) => (
     onClick={onClick}
     className="group bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col h-full cursor-pointer relative"
   >
-    <div className="relative aspect-video overflow-hidden m-3 rounded-2xl shadow-inner bg-slate-50">
-      <img
-        src={post.image}
-        alt={post.title}
-        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-      />
+    <div className="relative aspect-video overflow-hidden m-3 rounded-2xl shadow-inner bg-brand-50 flex items-center justify-center border border-brand-100">
+      <div className="flex flex-col items-center gap-3">
+        <Newspaper className="w-12 h-12 text-brand-500/40" />
+      </div>
       <div className="absolute top-3 left-3">
         <span className="bg-white/95 backdrop-blur-md text-brand-700 text-[9px] font-black px-2.5 py-1 rounded-lg border border-brand-100 uppercase tracking-widest shadow-sm">
           {post.category}

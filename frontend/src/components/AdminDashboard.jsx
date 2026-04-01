@@ -11,9 +11,11 @@ import {
   Trash2,
   Search,
   Link2,
+  Newspaper,
+  Image as ImageIcon
 } from "lucide-react";
 import { toast } from "sonner";
-import imgMigration from "../assets/blog/blog_email_migration_1772432378369.png";
+// blog image import removed per user request for no images
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 import DOMPurify from "dompurify";
@@ -40,7 +42,7 @@ const AdminDashboard = () => {
   });
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState(null); // File to upload
-  const [thumbnailPreview, setThumbnailPreview] = useState(imgMigration); // Preview image
+  const [thumbnailPreview, setThumbnailPreview] = useState(null); // Preview image removed per user request
   const [isManualThumbnail, setIsManualThumbnail] = useState(false); // Track if user manually uploaded
 
   // Load posts on mount from API
@@ -309,7 +311,7 @@ const AdminDashboard = () => {
       });
       setIsSlugManuallyEdited(false);
       setThumbnailFile(null);
-      setThumbnailPreview(imgMigration);
+      setThumbnailPreview(null);
       setIsManualThumbnail(false);
     } catch (error) {
       console.error("Publish error:", error);
@@ -531,12 +533,8 @@ const AdminDashboard = () => {
                   Thumbnail Image
                 </label>
                 <div className="flex items-center gap-6">
-                  <div className="w-32 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm shrink-0">
-                    <img
-                      src={thumbnailPreview}
-                      alt="Thumbnail Preview"
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-32 h-20 rounded-xl overflow-hidden bg-brand-50 border border-brand-100 shadow-sm shrink-0 flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-brand-500/30" />
                   </div>
                   <div className="flex-1">
                     <input
@@ -776,12 +774,8 @@ const AdminDashboard = () => {
                   key={post.id}
                   className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow group flex flex-col"
                 >
-                  <div className="h-40 overflow-hidden relative">
-                    <img
-                      src={post.image}
-                      alt={post.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                  <div className="h-40 overflow-hidden relative bg-brand-50 flex items-center justify-center border-b border-slate-100">
+                    <Newspaper className="w-12 h-12 text-brand-500/30" />
                     <div className="absolute top-4 left-4">
                       <span className="bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-black px-2.5 py-1 rounded-md shadow-sm uppercase tracking-wider">
                         {post.category}

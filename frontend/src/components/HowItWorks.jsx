@@ -4,16 +4,29 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion, useScroll, useSpring } from "framer-motion";
 
-// Import step images from assets
-import step1Img from "../assets/step1.png";
-import step2Img from "../assets/step2.png";
-import step3Img from "../assets/step3.png";
+const STEPS = [
+  {
+    title: "Upload OST File",
+    description: "Begin by uploading your OST file to our secure servers. We support all versions of Microsoft Outlook files.",
+    icon: "01"
+  },
+  {
+    title: "Preview & Select",
+    description: "Navigate through your emails, folders, and attachments in our cloud-based previewer to ensure data integrity.",
+    icon: "02"
+  },
+  {
+    title: "Convert & Export",
+    description: "Choose your target format (PST, PDF, EML, etc.) and download your converted files instantly.",
+    icon: "03"
+  }
+];
 
-const StepItem = ({ img, index }) => {
+const StepItem = ({ title, description, index }) => {
   const isEven = index % 2 === 0;
 
   return (
-    <div className="relative flex items-center justify-center w-full min-h-[300px] md:min-h-[500px] mb-16 md:mb-28">
+    <div className="relative flex items-center justify-center w-full min-h-[300px] md:min-h-[400px] mb-16 md:mb-28">
       {/* Timeline Node & Number */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
         <motion.div
@@ -39,7 +52,7 @@ const StepItem = ({ img, index }) => {
           viewport={{ once: true }}
           className={`absolute ${isEven ? "left-full ml-6" : "right-full mr-6"} top-1/2 -translate-y-1/2 whitespace-nowrap hidden md:block`}
         >
-          <span className="text-4xl lg:text-5xl font-black text-slate-800 uppercase tracking-tighter">
+          <span className="text-4xl lg:text-5xl font-black text-slate-800 tracking-tighter opacity-10">
             Step 0{index + 1}
           </span>
         </motion.div>
@@ -50,23 +63,18 @@ const StepItem = ({ img, index }) => {
         className={`w-full grid md:grid-cols-2 gap-10 md:gap-20 items-center px-4`}
       >
         <motion.div
-          initial={{ opacity: 0, x: isEven ? -100 : 0, scale: 0.95 }}
+          initial={{ opacity: 0, x: isEven ? -100 : 100, scale: 0.95 }}
           whileInView={{ opacity: 1, x: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           viewport={{ once: true, margin: "-10%" }}
-          className={`${isEven ? "md:col-start-1" : "md:col-start-2"} order-last md:order-none`}
+          className={`${isEven ? "md:col-start-1" : "md:col-start-2"} flex flex-col gap-4 text-center ${isEven ? "md:text-right" : "md:text-left"}`}
         >
-          <div className="relative group overflow-hidden rounded-[32px] md:rounded-[50px] shadow-2xl shadow-slate-200/50 hover:shadow-brand-500/20 transition-all duration-700">
-            <img
-              src={img}
-              alt={`Step ${index + 1}`}
-              width={1200}
-              height={800}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-auto block transform group-hover:scale-105 transition-transform duration-1000"
-            />
-          </div>
+          <h3 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight">
+            {title}
+          </h3>
+          <p className="text-slate-500 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto md:mx-0">
+            {description}
+          </p>
         </motion.div>
 
         {/* Placeholder for the other side on desktop */}
@@ -78,7 +86,6 @@ const StepItem = ({ img, index }) => {
 
 const HowItWorks = () => {
   const navigate = useNavigate();
-  const images = [step1Img, step2Img, step3Img];
 
   const { scrollYProgress } = useScroll();
   const scaleY = useSpring(scrollYProgress, {
@@ -125,8 +132,8 @@ const HowItWorks = () => {
         </div>
 
         <div className="flex flex-col">
-          {images.map((img, index) => (
-            <StepItem key={index} img={img} index={index} />
+          {STEPS.map((step, index) => (
+            <StepItem key={index} {...step} index={index} />
           ))}
         </div>
       </section>

@@ -1,20 +1,22 @@
 import React from "react";
-import logo from "@/assets/logo.png";
-import facebookIcon from "@/assets/svg/facebook.svg";
-import twitterXIcon from "@/assets/svg/twitter-x.svg";
-import linkedinIcon from "@/assets/svg/linkedin.svg";
-import instagramIcon from "@/assets/svg/instagram.svg";
-import youtubeIcon from "@/assets/svg/youtube.svg";
-import envelopeIcon from "@/assets/svg/envelope-fill.svg";
+import { 
+  Facebook, 
+  Twitter, 
+  Linkedin, 
+  Instagram, 
+  Youtube, 
+  Mail,
+  ShieldCheck
+} from "lucide-react";
 
 const Footer = () => {
   const socialLinks = [
-    { icon: facebookIcon, label: "Facebook", href: "#" },
-    { icon: twitterXIcon, label: "Twitter X", href: "#" },
-    { icon: linkedinIcon, label: "LinkedIn", href: "#" },
-    { icon: instagramIcon, label: "Instagram", href: "#" },
-    { icon: youtubeIcon, label: "YouTube", href: "#" },
-    { icon: envelopeIcon, label: "Email", href: "mailto:support@osttopst.us" },
+    { icon: Facebook, label: "Facebook", href: "#" },
+    { icon: Twitter, label: "Twitter X", href: "#" },
+    { icon: Linkedin, label: "LinkedIn", href: "#" },
+    { icon: Instagram, label: "Instagram", href: "#" },
+    { icon: Youtube, label: "YouTube", href: "#" },
+    { icon: Mail, label: "Email", href: "mailto:support@osttopst.us" },
   ];
 
   return (
@@ -24,7 +26,7 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Logo" width={32} height={32} className="w-8 h-8 object-contain" loading="lazy" decoding="async" />
+              <ShieldCheck className="w-8 h-8 text-brand-600" />
               <span className="text-xl font-bold text-slate-900 tracking-tight">OSTtoPST.us</span>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed">
@@ -38,11 +40,7 @@ const Footer = () => {
                   className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-brand-100 hover:text-brand-600 transition-all duration-300 cursor-pointer group"
                   aria-label={social.label}
                 >
-                  <img
-                    src={social.icon}
-                    alt={social.label}
-                    className="w-4 h-4 object-contain opacity-50 group-hover:opacity-100 transition-opacity"
-                  />
+                  <social.icon className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
                 </a>
               ))}
             </div>
@@ -79,7 +77,7 @@ const Footer = () => {
             </p>
             <div className="space-y-3">
               <a href="mailto:support@osttopst.us" className="text-sm text-slate-500 hover:text-brand-600 flex items-center gap-3">
-                <img src={envelopeIcon} alt="Email" className="w-4 h-4 opacity-50" />
+                <Mail className="w-4 h-4 opacity-50" />
                 support@osttopst.us
               </a>
             </div>

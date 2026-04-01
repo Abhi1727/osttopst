@@ -10,6 +10,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ["framer-motion"],
+  },
   build: {
     // Increase warning threshold for large chunks
     chunkSizeWarningLimit: 600,

@@ -9,8 +9,10 @@ import {
   Star,
   Download,
   ThumbsUp,
+  Newspaper,
+  BookOpen
 } from "lucide-react";
-import fallbackBlogImage from "@/assets/blog/blog_troubleshooting_1772432450252.png";
+// fallback image removed per user request for no images
 
 const formatTitle = (rawTitle) => {
   if (!rawTitle) return "";
@@ -120,14 +122,10 @@ const BlogPostDetail = () => {
           </div>
         </div>
 
-        {/* Hero Image */}
+        {/* Decorative Header (No Image) */}
         <div className="w-full mb-8">
-          <div className="aspect-[16/9] md:aspect-[2/1] rounded-2xl overflow-hidden shadow-sm bg-white border-2 border-slate-50">
-            <img
-              src={post.image || fallbackBlogImage}
-              alt="Blog Hero"
-              className="w-full h-full object-cover"
-            />
+          <div className="aspect-[16/9] md:aspect-[2/1] rounded-2xl overflow-hidden shadow-sm bg-brand-50 border-2 border-slate-50 flex items-center justify-center">
+            <BookOpen className="w-16 h-16 text-brand-500/20" />
           </div>
         </div>
 
@@ -296,12 +294,8 @@ const BlogPostDetail = () => {
                   onClick={() => navigate(`/blogs/${blog.id || blog.slug}`)}
                   className="group cursor-pointer flex flex-col gap-4"
                 >
-                  <div className="aspect-[16/10] overflow-hidden rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
-                    <img
-                      src={blog.image || fallbackBlogImage}
-                      alt={blog.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                  <div className="aspect-[16/10] overflow-hidden rounded-xl bg-brand-50 shadow-sm hover:shadow-md transition-shadow flex items-center justify-center border border-brand-100">
+                    <Newspaper className="w-10 h-10 text-brand-500/20" />
                   </div>
                   <div>
                     <h4 className="text-[18px] md:text-[20px] font-extrabold text-black tracking-tight leading-[1.3] group-hover:text-brand-600 transition-colors">

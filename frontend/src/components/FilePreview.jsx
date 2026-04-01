@@ -24,7 +24,9 @@ import {
   FileText,
   FolderOpen,
   Menu,
-  LayoutDashboard
+  LayoutDashboard,
+  User,
+  ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +39,7 @@ import licenseService from "../services/licenseService";
 import { conversionService } from "../services/conversionService";
 import { toast } from "sonner";
 import SessionGuardModal from "./SessionGuardModal";
-import logo from "@/assets/logo.png";
+// logo import removed per user request for no images
 import { motion, AnimatePresence } from "framer-motion";
 
 const TreeNode = ({ node, level = 0, onSelect, selectedId, onDepthChange }) => {
@@ -180,12 +182,8 @@ const MessageDetail = ({ message }) => {
              </h1>
              
              <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5 p-4 sm:p-6 bg-slate-50/50 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
-                <div className="w-12 h-12 rounded-full border-2 border-white shadow-md overflow-hidden shrink-0">
-                   <img 
-                     src={`https://api.dicebear.com/7.x/initials/svg?seed=${message.from || '?'}`} 
-                     alt="Avatar"
-                     className="w-full h-full object-cover"
-                   />
+                <div className="w-12 h-12 rounded-full border-2 border-white shadow-md overflow-hidden shrink-0 flex items-center justify-center bg-slate-100">
+                   <User className="w-6 h-6 text-slate-400" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between mb-1">
