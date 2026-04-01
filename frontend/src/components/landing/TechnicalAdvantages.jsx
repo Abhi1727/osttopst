@@ -1,15 +1,11 @@
 import React from "react";
 import {
-  Hammer,
-  Scale,
   Copy,
   ShieldCheck,
-  Cpu,
   Database,
   Binary,
   Lock,
   ShieldAlert,
-  ServerCrash,
   UserX,
   UserPlus,
   ArrowRightLeft,

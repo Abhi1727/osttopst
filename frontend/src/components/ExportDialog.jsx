@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   Download,
-  Eye,
   FileText,
   Mail,
   Globe,
@@ -9,7 +8,6 @@ import {
   X,
   CheckCircle2,
   FolderX,
-  ArrowRight,
   Loader2,
   Rocket,
 } from "lucide-react";

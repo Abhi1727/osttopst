@@ -18,7 +18,6 @@ import { deleteSession } from "./services/api";
 
 // Lazy-load all non-critical routes — they are only loaded when navigated to
 const FilePreview = lazy(() => import("./components/FilePreview"));
-const HowItWorks = lazy(() => import("./components/HowItWorks"));
 const Faq = lazy(() => import("./components/Faq"));
 const Support = lazy(() => import("./components/Support"));
 const Blogs = lazy(() => import("./components/Blogs"));
@@ -107,7 +106,7 @@ function App() {
                   />
                 }
               />
-              <Route path="/how-it-works" element={<HowItWorks />} />
+              
               <Route
                 path="/preview"
                 element={<FilePreview session={session} onReset={handleReset} />}

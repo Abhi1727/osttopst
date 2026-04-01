@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Star, MessageSquare, Send, User, Loader2, X } from "lucide-react";
+import { Star, Send, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 

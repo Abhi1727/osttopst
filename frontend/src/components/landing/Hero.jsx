@@ -4,32 +4,18 @@ import { useNavigate } from "react-router-dom";
 import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { fileService } from "../../services/fileService";
 import { conversionService } from "../../services/conversionService";
-import { checkDuplicate } from "../../services/api";
 import { toast } from "sonner";
 import {
   FileText,
-  Loader2,
-  CheckCircle2,
   RotateCw,
-  File,
   UploadCloud,
   ArrowRight,
-  Lock,
-  Upload,
-  Zap,
-  Cloud,
-  Gift,
-  Shield,
-  UserCheck,
   Clock,
-  Headphones,
-  FileUp,
   CloudUpload,
-  ShieldCheck as VerifiedUser,
-  Bolt,
-  Headset,
+  CheckCircle2,
   Crown,
   Hexagon,
+  Shield,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 

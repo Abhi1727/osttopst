@@ -1,5 +1,4 @@
 import React from "react";
-import { FileCode, RefreshCw } from "lucide-react";
 
 const Glossary = () => {
   return (
