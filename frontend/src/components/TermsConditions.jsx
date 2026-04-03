@@ -1,13 +1,9 @@
 import React from "react";
-import { motion } from "framer-motion";
+// import { motion } from "framer-motion";
 import { Scale, MessageSquare, AlertCircle, FileText, CheckCircle } from "lucide-react";
 
 const Section = ({ title, icon: Icon, children }) => (
-  <motion.section 
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.5 }}
+  <section 
     className="mb-12"
   >
     <div className="flex items-center gap-3 mb-4">
@@ -19,7 +15,7 @@ const Section = ({ title, icon: Icon, children }) => (
     <div className="text-slate-600 leading-relaxed space-y-4">
       {children}
     </div>
-  </motion.section>
+  </section>
 );
 
 const TermsConditions = () => {
@@ -28,11 +24,7 @@ const TermsConditions = () => {
       {/* Header Section */}
       <header className="bg-gradient-to-b from-brand-50 to-slate-50 pt-8 pb-8 px-4 text-center relative overflow-hidden">
         <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
+          <div>
             <span className="inline-block bg-brand-100 text-brand-700 text-[10px] sm:text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8">
               Legal
             </span>
@@ -42,7 +34,7 @@ const TermsConditions = () => {
             <p className="text-slate-500 max-w-2xl mx-auto text-lg font-medium">
               Last updated: March 14, 2026. Please read these terms carefully.
             </p>
-          </motion.div>
+          </div>
         </div>
       </header>
 

@@ -12,9 +12,9 @@ import UnifiedHeader from "./components/UnifiedHeader";
 import Footer from "./components/landing/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
-import { toast } from "sonner";
+//import { toast } from "sonner";
 import React from "react";
-import { deleteSession } from "./services/api";
+//import { deleteSession } from "./services/api";
 
 // Lazy-load all non-critical routes — they are only loaded when navigated to
 const FilePreview = lazy(() => import("./components/FilePreview"));
@@ -106,10 +106,12 @@ function App() {
                   />
                 }
               />
-              
+
               <Route
                 path="/preview"
-                element={<FilePreview session={session} onReset={handleReset} />}
+                element={
+                  <FilePreview session={session} onReset={handleReset} />
+                }
               />
               <Route path="/faq" element={<Faq />} />
               <Route path="/support" element={<Support />} />

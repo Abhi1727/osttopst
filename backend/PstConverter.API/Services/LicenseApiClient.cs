@@ -491,6 +491,49 @@ namespace PstConverter.Services
             }
         }
 
+        // ─────────────────────────────────────────────────────────────────────
+        // PATCH .../AddStorage
+        // ─────────────────────────────────────────────────────────────────────
+        public async Task<bool> UpdateItemStorageAsync(string emailOrId,string ToolId,string ModuleId, long ostFileSizeBytes, string itemName)
+        {
+            var licenseId = emailOrId.ToLowerInvariant();
+
+            try
+            {
+                var client = await GetClientAsync(licenseId);
+                string ItemId = itemName+ostFileSizeBytes.ToString();
+                var request = new RestRequest("Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}/AddItemStorage", Method.Patch);
+                request.AddParameter("licenseId", licenseId, ParameterType.UrlSegment);
+                request.AddParameter("toolId", ToolId, ParameterType.UrlSegment);
+                request.AddParameter("moduleId", ModuleId, ParameterType.UrlSegment);
+                request.AddParameter("itemId", ItemId, ParameterType.UrlSegment);
+
+                request.AddJsonBody(new
+                {
+                    Size = ostFileSizeBytes,
+                });
+
+                var response = await ExecuteWithRetryAsync(client, request, licenseId);
+
+                if (response.IsSuccessful)
+                {
+                    if (logger.IsEnabled(LogLevel.Information))
+                        logger.LogInformation("[LICENSE STORAGE UPDATE] [PATCH] Updated {Size} bytes for {LicenseId}", ostFileSizeBytes, licenseId);
+
+                    InvalidateCache(licenseId);
+                    return true;
+                }
+
+                logger.LogWarning("[LICENSE STORAGE UPDATE] [PATCH] Failed for {LicenseId}: {StatusCode}", licenseId, response.StatusCode);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[LICENSE STORAGE UPDATE] [PATCH] Exception for {LicenseId}", licenseId);
+                return false;
+            }
+        }
+
 
 
         // ─────────────────────────────────────────────────────────────────────

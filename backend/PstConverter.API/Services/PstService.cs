@@ -1488,17 +1488,27 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 }
 
                 var itemName = $"{sessionMetadata.OriginalFileName}{sessionMetadata.Size}";
-                var itemStatus = await _licenseClient.GetItemStatus(licenseId, itemName);
+                // var itemStatus = await _licenseClient.GetItemStatus(licenseId, itemName);
 
-                if (itemStatus == ItemStatus.Failed) return;
+                // if (itemStatus == ItemStatus.Failed) return;
 
-                if (itemStatus == ItemStatus.Success)
+                // if (itemStatus == ItemStatus.Success)
+                // {
+                //     await _licenseClient.UpdateStorageAsync(licenseId, sessionMetadata.Size, itemName);
+                // }
+
+                // var storageTracker = new BatchStorageTracker(licenseId, _licenseClient, itemName);
+                // if (itemStatus == ItemStatus.Exist) storageTracker.IsEnabled = false;
+
+                bool bResult = await _licenseClient.UpdateItemStorageAsync(emailOrId,
+                                                                           ToolId,
+                                                                           ModuleId,
+                                                                           sessionMetadata.Size,
+                                                                           sessionMetadata.OriginalFileName);
+                if(!bResult)
                 {
-                    await _licenseClient.UpdateStorageAsync(licenseId, sessionMetadata.Size, itemName);
-                }
-
-                var storageTracker = new BatchStorageTracker(licenseId, _licenseClient, itemName);
-                if (itemStatus == ItemStatus.Exist) storageTracker.IsEnabled = false;
+                    return;
+                }       
 
                 await _pool.AccessAsync(sessionId, filePath, async pst =>
                 {

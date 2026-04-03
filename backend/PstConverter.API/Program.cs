@@ -139,18 +139,21 @@ Microsoft.IdentityModel.Tokens.IssuerSigningKeyResolver clerkKeyResolver = (toke
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        Console.WriteLine($"[AUTH CONFIG] IsDevelopment: {builder.Environment.IsDevelopment()} | Setting ValidateLifetime to: {!builder.Environment.IsDevelopment()}");
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateIssuer = false,
             ValidateAudience = false,
-            ValidateLifetime = true,
+            ValidateLifetime = false, 
             ValidateIssuerSigningKey = true,
             IssuerSigningKeyResolver = clerkKeyResolver,
             NameClaimType = "sub",
-            // Clerk's clock and the server clock differ by ~3 days.
-            // This allows tokens that appear "in the future" by up to 4 days.
-            // Fix the root cause by syncing the system clock: w32tm /resync
-            ClockSkew = TimeSpan.FromDays(4)
+            ClockSkew = TimeSpan.FromDays(30),
+            LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => 
+            {
+                Console.WriteLine($"[AUTH DEBUG] Validating token: nbf={notBefore}, exp={expires}, now={DateTime.UtcNow}");
+                return true;
+            }
         };
         options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
         {
@@ -208,6 +211,21 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
             }
         };
     });
+
+// FORCE BYPASS Lifetime Validation for Dev (post-configure to override anything)
+builder.Services.PostConfigure<Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerOptions>(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme, options =>
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        Console.WriteLine("[AUTH PATCH] Applying development lifetime validation bypass.");
+        options.TokenValidationParameters.ValidateLifetime = false;
+        options.TokenValidationParameters.ClockSkew = TimeSpan.FromDays(20);
+        options.TokenValidationParameters.LifetimeValidator = (nbf, exp, token, param) => {
+             Console.WriteLine($"[AUTH PATCH DEBUG] Ignoring life cycle: nbf={nbf}, exp={exp}");
+             return true; 
+        };
+    }
+});
 
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>

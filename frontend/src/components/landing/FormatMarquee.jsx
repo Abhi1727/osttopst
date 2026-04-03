@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -124,9 +123,9 @@ const FormatMarquee = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10">
-          <AnimatePresence mode="wait">
+          
             {displayedFormats.map((item, index) => (
-              <motion.div
+              <div
                 key={item.ext}
                 layout
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -152,9 +151,9 @@ const FormatMarquee = () => {
                     {item.description}
                   </p>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
+         
         </div>
 
         {FORMATS.length > 12 && (

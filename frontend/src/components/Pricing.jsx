@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from "react";
 import {
-  Check,
-  X,
-  Shield,
   CreditCard,
   Lock,
   Award,
-  Globe,
-  Share2,
-  AtSign,
-  ChevronDown,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,7 +58,7 @@ const toolComparison = [
   {
     feature: "OST Size Limit",
     others: "5-20 GB",
-    ours: "50 GB",
+    ours: "5GB",
   },
   {
     feature: "Cloud Conversion",
@@ -92,6 +85,21 @@ const formatStatusStorage = (bytes) => {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
 };
 
+const CheckIcon = ({ highlighted }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
+    <circle cx="12" cy="12" r="10" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
+    <circle cx="12" cy="12" r="10" />
+    <path d="m15 9-6 6" />
+    <path d="m9 9 6 6" />
+  </svg>
+);
+
 const PricingCard = ({
   title,
   price,
@@ -102,92 +110,79 @@ const PricingCard = ({
   isActive = false,
   onClick,
   isLoading = false,
-  activeDetails = null,
 }) => (
-  <div
-    className={`relative flex flex-col h-full p-8 bg-white rounded-xl shadow-lg border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${isActive ? "border-brand-500 ring-2 ring-brand-500/20" : "border-gray-200"} ${recommended ? "ring-2 ring-yellow-400 z-10" : ""}`}
-  >
-    {isActive && (
-      <div className="absolute -top-4 right-4 bg-brand-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg animate-bounce">
-        Current Plan
-      </div>
-    )}
+  <div className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 ${
+    recommended
+      ? "bg-brand-600 shadow-2xl shadow-brand-500/30 scale-[1.03] z-10"
+      : "bg-white border border-gray-200 shadow-md hover:shadow-xl hover:-translate-y-1"
+  } ${isActive && !recommended ? "ring-2 ring-brand-500" : ""}`}>
+
+    {/* Popular badge */}
     {recommended && (
-      <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-black text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider shadow-sm">
+      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-[11px] font-black px-4 py-1 rounded-full uppercase tracking-[0.15em] shadow-md whitespace-nowrap">
         Most Popular
       </div>
     )}
 
-    <div className="mb-6 min-h-[100px]">
-      <h3 className="mb-2">{title}</h3>
-      <p className="text-sm text-gray-500">{description}</p>
-      {/* Removed activeDetails display */}
-    </div>
-
-    <div className="mb-8">
-      <div className="flex items-baseline gap-1">
-        <span className="text-4xl font-black text-gray-900">${price}</span>
-        <span className="text-gray-500 font-medium text-sm">/ license</span>
+    {/* Current plan badge */}
+    {isActive && (
+      <div className={`absolute -top-3.5 right-4 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md ${
+        recommended ? "bg-white text-brand-600" : "bg-brand-500 text-white"
+      }`}>
+        Current Plan
       </div>
+    )}
+
+    <div className={`p-8 pb-6 border-b ${ recommended ? "border-white/20" : "border-gray-100" }`}>
+      <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${ recommended ? "text-brand-200" : "text-brand-500" }`}>
+        {title}
+      </p>
+      <div className="flex items-end gap-1.5 mb-3">
+        <span className={`text-5xl font-black tracking-tight ${ recommended ? "text-white" : "text-gray-900" }`}>
+          ${price}
+        </span>
+        <span className={`mb-2 text-sm font-medium ${ recommended ? "text-brand-200" : "text-gray-400" }`}>
+          / license
+        </span>
+      </div>
+      <p className={`text-sm leading-relaxed ${ recommended ? "text-brand-100" : "text-gray-500" }`}>
+        {description}
+      </p>
     </div>
 
-    <ul className="space-y-4 mb-8 flex-1">
+    <ul className="px-8 py-6 space-y-3.5 flex-1">
       {features.map((feature, index) => (
-        <li key={index} className="flex items-start gap-3">
-          {feature.included ? (
-            <div className="mt-0.5 min-w-[18px] text-brand-500">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4.5 h-4.5"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="m9 12 2 2 4-4" />
-              </svg>
-            </div>
-          ) : (
-            <div className="mt-0.5 min-w-[18px] text-gray-300">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4.5 h-4.5"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="m15 9-6 6" />
-                <path d="m9 9 6 6" />
-              </svg>
-            </div>
-          )}
-          <span
-            className={`text-sm ${feature.included ? "text-gray-700" : "text-gray-400 line-through"}`}
-          >
+        <li key={index} className="flex items-center gap-3">
+          <span className={feature.included
+            ? (recommended ? "text-yellow-300" : "text-brand-500")
+            : (recommended ? "text-brand-400" : "text-gray-300")
+          }>
+            {feature.included ? <CheckIcon /> : <XIcon />}
+          </span>
+          <span className={`text-sm ${
+            feature.included
+              ? (recommended ? "text-white" : "text-gray-700")
+              : (recommended ? "text-brand-300 line-through" : "text-gray-400 line-through")
+          }`}>
             {feature.text}
           </span>
         </li>
       ))}
     </ul>
 
-    <Button
-      disabled={isLoading}
-      onClick={onClick}
-      className={`w-full py-6 font-bold text-md rounded-md transition-colors bg-brand-600 hover:bg-brand-700 text-white`}
-    >
-      {isLoading ? (
-        <Loader2 className="w-5 h-5 animate-spin" />
-      ) : (
-        ctaText
-      )}
-    </Button>
+    <div className="px-8 pb-8">
+      <Button
+        disabled={isLoading}
+        onClick={onClick}
+        className={`w-full py-6 font-bold text-sm rounded-xl transition-all duration-200 ${
+          recommended
+            ? "bg-white text-brand-700 hover:bg-brand-50 shadow-lg"
+            : "bg-brand-600 hover:bg-brand-700 text-white"
+        }`}
+      >
+        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : ctaText}
+      </Button>
+    </div>
   </div>
 );
 
@@ -372,8 +367,9 @@ const Pricing = () => {
 
 
       {/* Pricing Cards Section */}
-      <div className="max-w-4xl mx-auto px-4 w-full pb-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto px-4 w-full pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+
           {/* Demo Plan */}
           <PricingCard
             title="Demo"
@@ -406,6 +402,23 @@ const Pricing = () => {
               { text: "5 GB Storage limit", included: true },
               { text: "365 Days Validity", included: true },
               { text: "Email Support", included: true },
+            ]}
+          />
+
+          {/* Desktop Plan */}
+          <PricingCard
+            title="Desktop"
+            price={98}
+            description="For power users needing maximum local storage and speed."
+            isLoading={purchasingPlan === 2}
+            onClick={() => handlePurchase(2, 98, 2)}
+            ctaText="Get Desktop"
+            features={[
+              { text: "Full OST to PST conversion", included: true },
+              { text: "Unlimited OST Files", included: true },
+              { text: "More than 5 GB Storage", included: true },
+              { text: "365 Days Validity", included: true },
+              { text: "Priority Email Support", included: true },
             ]}
           />
         </div>

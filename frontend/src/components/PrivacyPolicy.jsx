@@ -28,11 +28,7 @@ const PrivacyPolicy = () => {
       {/* Header Section */}
       <header className="bg-gradient-to-b from-brand-50 to-slate-50 pt-8 pb-8 px-4 text-center relative overflow-hidden">
         <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
+          <div>
             <span className="inline-block bg-brand-100 text-brand-700 text-[10px] sm:text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8">
               Legal
             </span>
@@ -42,7 +38,7 @@ const PrivacyPolicy = () => {
             <p className="text-slate-500 max-w-2xl mx-auto text-lg font-medium">
               Last updated: March 14, 2026. Your privacy is our priority.
             </p>
-          </motion.div>
+          </div>
         </div>
       </header>
 

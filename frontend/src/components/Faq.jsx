@@ -1,15 +1,8 @@
 import React, { useState } from "react";
 import {
   Search,
-  Mail,
-  MessageSquare,
-  Ticket,
-  ArrowRight,
-  Minus,
-  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 
 const Faq = () => {
@@ -165,11 +158,11 @@ const Faq = () => {
     },
   ];
 
-  const filteredQuestions = questions.filter(
-    (q) =>
-      q.category === activeCategory ||
-      (activeCategory === "General" && q.category === "General"),
-  );
+  // const filteredQuestions = questions.filter(
+  //   (q) =>
+  //     q.category === activeCategory ||
+  //     (activeCategory === "General" && q.category === "General"),
+  // );
 
    return (
     <div className="bg-slate-50 min-h-screen flex flex-col">

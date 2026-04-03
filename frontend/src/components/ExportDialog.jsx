@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { conversionService } from "../services/conversionService";
-import { deleteSession } from "../services/api";
+// import { deleteSession } from "../services/api";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { toast } from "sonner";
 
