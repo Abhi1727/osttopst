@@ -26,6 +26,7 @@ const BlogPostDetail = lazy(() => import("./components/BlogPostDetail"));
 const Pricing = lazy(() => import("./components/Pricing"));
 const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./components/TermsConditions"));
+const OstViewer = lazy(() => import("./components/OstViewer"));
 
 function App() {
   const [session, setSession] = useState(() => {
@@ -128,6 +129,7 @@ function App() {
               <Route path="/our-plans" element={<Pricing />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
+              <Route path="/ost-viewer" element={<OstViewer />} />
             </Routes>
           </Suspense>
         </main>

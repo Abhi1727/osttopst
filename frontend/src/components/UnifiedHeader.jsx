@@ -3,6 +3,8 @@ import LicenseBadge from "@/components/LicenseBadge";
 import { Button } from "@/components/ui/button";
 import Menu from "lucide-react/dist/esm/icons/menu";
 import Mail from "lucide-react/dist/esm/icons/mail";
+import Eye from "lucide-react/dist/esm/icons/eye";
+import Rocket from "lucide-react/dist/esm/icons/rocket";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SignedIn,
@@ -62,18 +64,49 @@ const UnifiedHeader = ({ session, onReset }) => {
     handleNavigation(item.path);
   };
 
+  const isViewerActive = location.pathname === "/ost-viewer";
+  const isConverterActive = !isViewerActive;
+
   return (
     <header className="flex h-16 md:h-18 items-center justify-between px-4 md:px-6 lg:px-8 xl:px-14 bg-white fixed top-0 left-0 right-0 z-50 gap-2">
-      <div
-        className="flex items-center gap-2 md:gap-3 cursor-pointer shrink-0"
-        onClick={() => handleNavigation("/")}
-      >
-        <div className="flex items-center justify-center p-1 rounded-md bg-[#0078d4]">
-          <Mail className="w-5 h-5 text-white" />
+      <div className="flex items-center gap-3 shrink-0">
+        <div
+          className="flex items-center gap-2 md:gap-3 cursor-pointer"
+          onClick={() => handleNavigation("/")}
+        >
+          <div className="flex items-center justify-center p-1 rounded-md bg-[#0078d4]">
+            <Mail className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-sm md:text-lg font-medium tracking-tight text-slate-700 whitespace-nowrap">
+            OST to PST Converter
+          </span>
         </div>
-        <span className="text-sm md:text-lg font-medium tracking-tight text-slate-700 whitespace-nowrap">
-          OST to PST Converter
-        </span>
+
+        {/* Module Switcher */}
+        <div className="hidden md:flex items-center gap-1 ml-2 bg-slate-100 rounded-full p-1">
+          <button
+            onClick={() => handleNavigation("/")}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+              isConverterActive
+                ? "bg-white text-brand-600 shadow-sm"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <Rocket size={11} />
+            Converter
+          </button>
+          <button
+            onClick={() => handleNavigation("/ost-viewer")}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+              isViewerActive
+                ? "bg-white text-violet-600 shadow-sm"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <Eye size={11} />
+            Viewer
+          </button>
+        </div>
       </div>
 
       {/* Desktop Nav - Centered */}
@@ -150,6 +183,36 @@ const UnifiedHeader = ({ session, onReset }) => {
               <SheetTitle className="text-left text-brand-500 font-bold text-xl px-4">
                 Menu
               </SheetTitle>
+
+              {/* Mobile Module Switcher */}
+              <div className="flex items-center gap-1 mx-4 bg-slate-100 rounded-full p-1">
+                <SheetClose asChild>
+                  <button
+                    onClick={() => handleNavigation("/")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                      isConverterActive
+                        ? "bg-white text-brand-600 shadow-sm"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    <Rocket size={11} />
+                    Converter
+                  </button>
+                </SheetClose>
+                <SheetClose asChild>
+                  <button
+                    onClick={() => handleNavigation("/ost-viewer")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                      isViewerActive
+                        ? "bg-white text-violet-600 shadow-sm"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    <Eye size={11} />
+                    Viewer
+                  </button>
+                </SheetClose>
+              </div>
 
               <div className="flex flex-col gap-1 px-2">
                 {navItems.map((item) => (
