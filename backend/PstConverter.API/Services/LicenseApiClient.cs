@@ -282,71 +282,71 @@ namespace PstConverter.Services
         // ─────────────────────────────────────────────────────────────────────
         // 3. GET .../Items/{ItemId}  →  ItemStatus
         // ─────────────────────────────────────────────────────────────────────
-        public async Task<ItemStatus> GetItemStatus(string emailOrId, string? itemId = null)
-        {
-            var licenseId = emailOrId.ToLowerInvariant();
+        // public async Task<ItemStatus> GetItemStatus(string emailOrId, string? itemId = null)
+        // {
+        //     var licenseId = emailOrId.ToLowerInvariant();
 
-            // If no itemId is provided, we shouldn't be checking item status. 
-            // Default to Success to allow general flow to continue, but log it.
-            if (string.IsNullOrEmpty(itemId))
-            {
-                logger.LogWarning("[LICENSE] GetItemStatus called without itemId for {User}", licenseId);
-                return ItemStatus.Success;
-            }
+        //     // If no itemId is provided, we shouldn't be checking item status. 
+        //     // Default to Success to allow general flow to continue, but log it.
+        //     if (string.IsNullOrEmpty(itemId))
+        //     {
+        //         logger.LogWarning("[LICENSE] GetItemStatus called without itemId for {User}", licenseId);
+        //         return ItemStatus.Success;
+        //     }
 
-            try
-            {
-                var client = await GetClientAsync(licenseId);
-                var request = new RestRequest("Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}", Method.Get);
-                request.AddParameter("licenseId", licenseId, ParameterType.UrlSegment);
-                request.AddParameter("toolId", _toolId, ParameterType.UrlSegment);
-                request.AddParameter("moduleId", _moduleId, ParameterType.UrlSegment);
-                request.AddParameter("itemId", itemId, ParameterType.UrlSegment);
+        //     try
+        //     {
+        //         var client = await GetClientAsync(licenseId);
+        //         var request = new RestRequest("Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}", Method.Get);
+        //         request.AddParameter("licenseId", licenseId, ParameterType.UrlSegment);
+        //         request.AddParameter("toolId", _toolId, ParameterType.UrlSegment);
+        //         request.AddParameter("moduleId", _moduleId, ParameterType.UrlSegment);
+        //         request.AddParameter("itemId", itemId, ParameterType.UrlSegment);
 
-                var response = await ExecuteWithRetryAsync(client, request, licenseId);
+        //         var response = await ExecuteWithRetryAsync(client, request, licenseId);
 
-                if (logger.IsEnabled(LogLevel.Information))
-                    logger.LogInformation("[LICENSE API RES] {Url} | Status: {Status} | Content: {Content}",
-                        client.BuildUri(request), response.StatusCode, response.Content);
+        //         if (logger.IsEnabled(LogLevel.Information))
+        //             logger.LogInformation("[LICENSE API RES] {Url} | Status: {Status} | Content: {Content}",
+        //                 client.BuildUri(request), response.StatusCode, response.Content);
 
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    return ItemStatus.Success;
-                }
+        //         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        //         {
+        //             return ItemStatus.Success;
+        //         }
 
-                if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
-                {
-                    return ItemStatus.Failed;
-                }
+        //         if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+        //         {
+        //             return ItemStatus.Failed;
+        //         }
 
-                string content = response.Content!.Trim();
+        //         string content = response.Content!.Trim();
 
-                if (content.StartsWith('{'))
-                {
-                    try
-                    {
-                        var detailed = JsonSerializer.Deserialize<DetailedLicenseStatus>(content, _jsonOptions);
-                        if (detailed != null)
-                        {
-                            logger.LogInformation("[LICENSE] JSON received for item {ItemId}. Treating as Exist. Content: {Content}", itemId, content);
-                            return ItemStatus.Exist;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex, "[LICENSE] Failed to deserialize item JSON for {ItemId}", itemId);
-                    }
-                }
+        //         if (content.StartsWith('{'))
+        //         {
+        //             try
+        //             {
+        //                 var detailed = JsonSerializer.Deserialize<DetailedLicenseStatus>(content, _jsonOptions);
+        //                 if (detailed != null)
+        //                 {
+        //                     logger.LogInformation("[LICENSE] JSON received for item {ItemId}. Treating as Exist. Content: {Content}", itemId, content);
+        //                     return ItemStatus.Exist;
+        //                 }
+        //             }
+        //             catch (Exception ex)
+        //             {
+        //                 logger.LogWarning(ex, "[LICENSE] Failed to deserialize item JSON for {ItemId}", itemId);
+        //             }
+        //         }
 
-                var converter = new ConvertStringEnum();
-                return converter.ConvertStringToItemStatus(content);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "[LICENSE ITEM STATUS] GetItemStatus exception for {LicenseId}/{ItemId}", licenseId, itemId);
-                return ItemStatus.Failed;
-            }
-        }
+        //         var converter = new ConvertStringEnum();
+        //         return converter.ConvertStringToItemStatus(content);
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         logger.LogError(ex, "[LICENSE ITEM STATUS] GetItemStatus exception for {LicenseId}/{ItemId}", licenseId, itemId);
+        //         return ItemStatus.Failed;
+        //     }
+        // }
 
 
         // ─────────────────────────────────────────────────────────────────────
@@ -448,48 +448,9 @@ namespace PstConverter.Services
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // PATCH .../AddStorage
-        // ─────────────────────────────────────────────────────────────────────
-        public async Task<bool> UpdateStorageAsync(string emailOrId, long ostFileSizeBytes, string? itemName = null)
-        {
-            var licenseId = emailOrId.ToLowerInvariant();
-
-            try
-            {
-                var client = await GetClientAsync(licenseId);
-                var request = new RestRequest("Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/AddStorage", Method.Patch);
-                request.AddParameter("licenseId", licenseId, ParameterType.UrlSegment);
-                request.AddParameter("toolId", _toolId, ParameterType.UrlSegment);
-                request.AddParameter("moduleId", _moduleId, ParameterType.UrlSegment);
-
-                request.AddJsonBody(new
-                {
-                    Id = 0,
-                    Size = ostFileSizeBytes,
-                    Name = itemName ?? ""
-                });
-
-                var response = await ExecuteWithRetryAsync(client, request, licenseId);
-
-                if (response.IsSuccessful)
-                {
-                    if (logger.IsEnabled(LogLevel.Information))
-                        logger.LogInformation("[LICENSE STORAGE UPDATE] [PATCH] Updated {Size} bytes for {LicenseId}", ostFileSizeBytes, licenseId);
-
-                    InvalidateCache(licenseId);
-                    return true;
-                }
-
-                logger.LogWarning("[LICENSE STORAGE UPDATE] [PATCH] Failed for {LicenseId}: {StatusCode}", licenseId, response.StatusCode);
-                return false;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "[LICENSE STORAGE UPDATE] [PATCH] Exception for {LicenseId}", licenseId);
-                return false;
-            }
-        }
+    
+      
+      
 
         // ─────────────────────────────────────────────────────────────────────
         // PATCH .../AddStorage

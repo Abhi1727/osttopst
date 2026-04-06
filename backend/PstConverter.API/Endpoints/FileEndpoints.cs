@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PstConverter.Services;
+using PstConverter.Models;
 using PstConverter.Data;
 using Microsoft.EntityFrameworkCore;
 using PstConverter.Extensions;
@@ -64,6 +65,18 @@ public static class FileEndpoints
                     logger.LogWarning("Upload rejected: File {FileName} ({Size} bytes) would exceed limit for {UserId}", 
                         file.FileName, file.Length, userId);
                     return Results.Json(new { error = "LimitReached" }, statusCode: StatusCodes.Status403Forbidden);
+                }
+
+                // Professional users: 5GB file size hard limit
+                const long ProfessionalFileSizeLimit = 5L * 1024 * 1024 * 1024;
+                if (file.Length > ProfessionalFileSizeLimit)
+                {
+                    var tier = await licenseClient.GetLicenceStatus(userEmail);
+                    if (tier == LicenseTier.Professional)
+                    {
+                        logger.LogWarning("Upload rejected: Professional user {UserId} file {FileName} ({Size} bytes) exceeds 5GB limit", userId, file.FileName, file.Length);
+                        return Results.Json(new { error = "FileSizeExceeded" }, statusCode: StatusCodes.Status403Forbidden);
+                    }
                 }
 
                 if (logger.IsEnabled(LogLevel.Information))
@@ -141,6 +154,18 @@ public static class FileEndpoints
                     logger.LogWarning("Chunked upload rejected: File {FileName} ({Size} bytes) would exceed limit for {UserId}", 
                         request.FileName, request.TotalSize, userId);
                     return Results.Json(new { error = "LimitReached" }, statusCode: StatusCodes.Status403Forbidden);
+                }
+
+                // Professional users: 5GB file size hard limit
+                const long ProfessionalFileSizeLimit = 5L * 1024 * 1024 * 1024;
+                if (request.TotalSize > ProfessionalFileSizeLimit)
+                {
+                    var tier = await licenseClient.GetLicenceStatus(userEmail);
+                    if (tier == LicenseTier.Professional)
+                    {
+                        logger.LogWarning("Chunked upload rejected: Professional user {UserId} file {FileName} ({Size} bytes) exceeds 5GB limit", userId, request.FileName, request.TotalSize);
+                        return Results.Json(new { error = "FileSizeExceeded" }, statusCode: StatusCodes.Status403Forbidden);
+                    }
                 }
 
                 if (logger.IsEnabled(LogLevel.Information))
