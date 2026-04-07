@@ -114,29 +114,13 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         // Backend returns sessionId, not _id
         const sessionId = session.sessionId || session._id;
         setActiveSessionId(sessionId);
-        setUploadPhase("processing");
-        setUploadDetail("Processing OST structure...");
-
-        // Start conversion in background — only polls for "Ready", does NOT download
-        await conversionService.triggerConversion(
-          sessionId,
-          getToken,
-          (prog) =>
-            setProgress(
-              typeof prog === "object"
-                ? prog
-                : { percent: prog, phase: "processing" },
-            ),
-          controller.signal,
-          user?.primaryEmailAddress?.emailAddress ?? null,
-        );
 
         // Store session object so Preview / Download buttons have the data they need
         const completedData = { ...session, sessionId };
         setCompletedSession(completedData);
         if (onUploadComplete) onUploadComplete(completedData);
         toast.success(
-          "Conversion complete! Choose to preview or download below.",
+          "Upload complete! Click Download to convert and download your PST file.",
         );
       } catch (err) {
         if (err.name === "AbortError") {
@@ -366,9 +350,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                 <div className="w-full max-w-md animate-in fade-in duration-300">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs font-black text-brand-500 uppercase tracking-widest">
-                      {uploadPhase === "uploading"
-                        ? "Transferring..."
-                        : "Processing..."}
+                      Uploading File...
                     </span>
                     <span className="text-xs font-black text-slate-400">
                       {Math.round(progress?.percent || 0)}%

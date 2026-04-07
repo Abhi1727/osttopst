@@ -74,6 +74,26 @@ public static class ConversionEndpoints
                     // New conversion: full gate including item count.
                     if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
                         return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+
+                    if (sessionForCheck != null)
+                    {
+                        // Strict License Check: Reject if prospective conversion exceeds limit
+                        if (await licenseClient.WillExceedLimitAsync(userEmail, sessionForCheck.Size))
+                        {
+                            if (logger.IsEnabled(LogLevel.Information))
+                                logger.LogWarning("Export rejected: File session {SessionId} ({Size} bytes) would exceed limit for {UserId}", sessionId, sessionForCheck.Size, userId);
+                            return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+                        }
+
+                        // Professional users: 5GB file size hard limit
+                        const long ProfessionalFileSizeLimit = 5L * 1024 * 1024 * 1024;
+                        if (sessionForCheck.Size > ProfessionalFileSizeLimit && status.Tier == LicenseTier.Professional)
+                        {
+                            if (logger.IsEnabled(LogLevel.Information))
+                                logger.LogWarning("Export rejected: Professional user {UserId} file session {SessionId} ({Size} bytes) exceeds 5GB limit", userId, sessionId, sessionForCheck.Size);
+                            return Results.Json(new { error = "FileSizeExceeded", status }, statusCode: StatusCodes.Status403Forbidden);
+                        }
+                    }
                 }
             }
             // Track usage
@@ -223,6 +243,26 @@ public static class ConversionEndpoints
                         // New conversion: full gate including item count.
                         if (status.HitFileCountLimit || status.HitSizeLimit || status.HitTimePeriodLimit || status.IsUsageRestricted)
                             return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+
+                        if (sessionForCheck != null)
+                        {
+                            // Strict License Check: Reject if prospective conversion exceeds limit
+                            if (await licenseClient.WillExceedLimitAsync(userEmail, sessionForCheck.Size))
+                            {
+                                if (logger.IsEnabled(LogLevel.Information))
+                                    logger.LogWarning("Convert rejected: File session {SessionId} ({Size} bytes) would exceed limit for {UserId}", sessionId, sessionForCheck.Size, userId);
+                                return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
+                            }
+
+                            // Professional users: 5GB file size hard limit
+                            const long ProfessionalFileSizeLimit = 5L * 1024 * 1024 * 1024;
+                            if (sessionForCheck.Size > ProfessionalFileSizeLimit && status.Tier == LicenseTier.Professional)
+                            {
+                                if (logger.IsEnabled(LogLevel.Information))
+                                    logger.LogWarning("Convert rejected: Professional user {UserId} file session {SessionId} ({Size} bytes) exceeds 5GB limit", userId, sessionId, sessionForCheck.Size);
+                                return Results.Json(new { error = "FileSizeExceeded", status }, statusCode: StatusCodes.Status403Forbidden);
+                            }
+                        }
                     }
                 }
 

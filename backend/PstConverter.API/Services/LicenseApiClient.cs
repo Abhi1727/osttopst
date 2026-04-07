@@ -459,10 +459,17 @@ namespace PstConverter.Services
         {
             var licenseId = emailOrId.ToLowerInvariant();
 
+            // Validate itemName is not empty before making API call
+            if (string.IsNullOrWhiteSpace(itemName))
+            {
+                logger.LogWarning("[LICENSE STORAGE UPDATE] Skipped - itemName is empty for {LicenseId}", licenseId);
+                return true;  // Return success to avoid blocking the conversion flow
+            }
+
             try
             {
                 var client = await GetClientAsync(licenseId);
-                string ItemId = itemName+ostFileSizeBytes.ToString();
+                string ItemId = itemName;  // itemName already contains filename + size
                 var request = new RestRequest("Licences/{licenseId}/Tools/{toolId}/Modules/{moduleId}/Items/{itemId}/AddItemStorage", Method.Patch);
                 request.AddParameter("licenseId", licenseId, ParameterType.UrlSegment);
                 request.AddParameter("toolId", ToolId, ParameterType.UrlSegment);

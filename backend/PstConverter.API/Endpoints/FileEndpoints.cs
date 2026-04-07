@@ -59,26 +59,6 @@ public static class FileEndpoints
                    logger.LogInformation("[AUTH DEBUG] User: {UserId}, Identified Email: {Email}", userId, userEmail);
                 }
 
-                // Strict License Check: Reject if prospective upload exceeds limit
-                if (await licenseClient.WillExceedLimitAsync(userEmail, file.Length))
-                {
-                    logger.LogWarning("Upload rejected: File {FileName} ({Size} bytes) would exceed limit for {UserId}", 
-                        file.FileName, file.Length, userId);
-                    return Results.Json(new { error = "LimitReached" }, statusCode: StatusCodes.Status403Forbidden);
-                }
-
-                // Professional users: 5GB file size hard limit
-                const long ProfessionalFileSizeLimit = 5L * 1024 * 1024 * 1024;
-                if (file.Length > ProfessionalFileSizeLimit)
-                {
-                    var tier = await licenseClient.GetLicenceStatus(userEmail);
-                    if (tier == LicenseTier.Professional)
-                    {
-                        logger.LogWarning("Upload rejected: Professional user {UserId} file {FileName} ({Size} bytes) exceeds 5GB limit", userId, file.FileName, file.Length);
-                        return Results.Json(new { error = "FileSizeExceeded" }, statusCode: StatusCodes.Status403Forbidden);
-                    }
-                }
-
                 if (logger.IsEnabled(LogLevel.Information))
                     logger.LogInformation("Processing file for user: {UserId}", userId);
 
@@ -146,26 +126,6 @@ public static class FileEndpoints
                 if (logger.IsEnabled(LogLevel.Information))
                 {
                     logger.LogInformation("[AUTH DEBUG] InitChunkedUpload - User: {UserId}, Identified Email: {Email}", userId, userEmail);
-                }
-
-                // Strict License Check: Reject if prospective upload exceeds limit
-                if (await licenseClient.WillExceedLimitAsync(userEmail, request.TotalSize))
-                {
-                    logger.LogWarning("Chunked upload rejected: File {FileName} ({Size} bytes) would exceed limit for {UserId}", 
-                        request.FileName, request.TotalSize, userId);
-                    return Results.Json(new { error = "LimitReached" }, statusCode: StatusCodes.Status403Forbidden);
-                }
-
-                // Professional users: 5GB file size hard limit
-                const long ProfessionalFileSizeLimit = 5L * 1024 * 1024 * 1024;
-                if (request.TotalSize > ProfessionalFileSizeLimit)
-                {
-                    var tier = await licenseClient.GetLicenceStatus(userEmail);
-                    if (tier == LicenseTier.Professional)
-                    {
-                        logger.LogWarning("Chunked upload rejected: Professional user {UserId} file {FileName} ({Size} bytes) exceeds 5GB limit", userId, request.FileName, request.TotalSize);
-                        return Results.Json(new { error = "FileSizeExceeded" }, statusCode: StatusCodes.Status403Forbidden);
-                    }
                 }
 
                 if (logger.IsEnabled(LogLevel.Information))

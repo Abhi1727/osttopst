@@ -1500,15 +1500,20 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 var ToolId = _config["LicenseApi:ToolId"] ?? "1";
                 var ModuleId = _config["LicenseApi:ModuleId"] ?? "1";
 
-                bool bResult = await _licenseClient.UpdateItemStorageAsync(emailOrId,
-                                                                           ToolId,
-                                                                           ModuleId,
-                                                                           sessionMetadata.Size,
-                                                                           sessionMetadata.OriginalFileName);
-                if(!bResult)
+                // Only update storage if this is not a re-export (avoid duplicate updates if already charged)
+                if (sessionMetadata.IsPaid == false)
                 {
-                    return;
-                }       
+                    bool bResult = await _licenseClient.UpdateItemStorageAsync(emailOrId,
+                                                                               ToolId,
+                                                                               ModuleId,
+                                                                               sessionMetadata.Size,
+                                                                               itemName);
+                    if(!bResult)
+                    {
+                        return;
+                    }
+                }
+       
 
                 await _pool.AccessAsync(sessionId, filePath, async pst =>
                 {
