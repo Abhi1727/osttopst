@@ -10,6 +10,12 @@ import FileText from "lucide-react/dist/esm/icons/file-text";
 import Braces from "lucide-react/dist/esm/icons/braces";
 import Archive from "lucide-react/dist/esm/icons/archive";
 import MessageSquare from "lucide-react/dist/esm/icons/message-square";
+import Code from "lucide-react/dist/esm/icons/code";
+import FileCode from "lucide-react/dist/esm/icons/file-code";
+import Table from "lucide-react/dist/esm/icons/table";
+import User from "lucide-react/dist/esm/icons/user";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import Image from "lucide-react/dist/esm/icons/image";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -69,7 +75,7 @@ const UnifiedHeader = ({ session, onReset }) => {
     { label: "How It Works", path: "/#how-it-works" },
     { label: "Blogs", path: "/blogs" },
     { label: "FAQ", path: "/faq" },
-    { label: "Contact Us", path: "/support" },
+    { label: "Contact Us", path: "/contact-us" },
   ];
 
   const productsList = [
@@ -80,9 +86,23 @@ const UnifiedHeader = ({ session, onReset }) => {
     { label: "OST to MBOX", path: "/ost-to-mbox", icon: <Archive size={18} /> },
     { label: "OST to EML", path: "/ost-to-eml", icon: <Mail size={18} /> },
     { label: "OST to MSG", path: "/ost-to-msg", icon: <MessageSquare size={18} /> },
+    // { label: "OST to HTML", path: "/ost-to-html", icon: <Code size={18} /> },
+    // { label: "OST to MHTML", path: "/ost-to-mhtml", icon: <FileCode size={18} /> },
+    // { label: "OST to DOC", path: "/ost-to-doc", icon: <FileText size={18} /> },
+    // { label: "OST to DOCX", path: "/ost-to-docx", icon: <FileText size={18} /> },
+    // { label: "OST to TXT", path: "/ost-to-txt", icon: <FileText size={18} /> },
+    // { label: "OST to RTF", path: "/ost-to-rtf", icon: <FileText size={18} /> },
+    // { label: "OST to CSV", path: "/ost-to-csv", icon: <Table size={18} /> },
+    // { label: "OST to XML", path: "/ost-to-xml", icon: <Code size={18} /> },
+    // { label: "OST to VCF", path: "/ost-to-vcf", icon: <User size={18} /> },
+    // { label: "OST to ICS", path: "/ost-to-ics", icon: <Calendar size={18} /> },
+    // { label: "OST to XPS", path: "/ost-to-xps", icon: <FileText size={18} /> },
+    // { label: "OST to TIFF", path: "/ost-to-tiff", icon: <Image size={18} /> },
   ];
 
+
   const handleNavItemClick = (item) => {
+    setIsProductsMenuOpen(false);
     if (item.label === "How It Works" && location.pathname === "/") {
       const el = document.getElementById("how-it-works");
       if (el) {
@@ -92,6 +112,7 @@ const UnifiedHeader = ({ session, onReset }) => {
     }
     handleNavigation(item.path);
   };
+
 
   const isViewerActive = location.pathname === "/ost-viewer";
   const isConverterActive = !isViewerActive;
@@ -154,11 +175,12 @@ const UnifiedHeader = ({ session, onReset }) => {
                 
                 {/* Dropdown Popover */}
                 <div className={`absolute top-16 left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 z-[100] ${isProductsMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none translate-y-2'}`}>
-                  <div className="bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden w-[280px] p-2 flex flex-col">
-                    <div className="px-3 py-2">
-                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">File & Data Tools:</span>
+                  <div className="bg-white rounded-2xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden w-[900px] p-5 flex flex-col">
+                    <div className="px-4 py-2 mb-3 border-b border-slate-50 flex items-center justify-between">
+                       <span className="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em]">Universal Conversion Suite</span>
+                       <span className="text-[10px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">{productsList.length} Tools Available</span>
                     </div>
-                    <div className="grid grid-cols-1 gap-1">
+                    <div className="grid grid-cols-4 gap-2">
                       {productsList.map((prod) => (
                         <span
                           key={prod.label}
@@ -166,12 +188,12 @@ const UnifiedHeader = ({ session, onReset }) => {
                             setIsProductsMenuOpen(false);
                             handleNavigation(prod.path);
                           }}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-brand-500 hover:text-white cursor-pointer transition-colors group/prod"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-500 hover:text-white cursor-pointer transition-all group/prod hover:shadow-lg hover:shadow-brand-500/20 active:scale-95"
                         >
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-50 text-brand-500 group-hover/prod:bg-white/20 group-hover/prod:text-white transition-colors shrink-0 outline outline-1 outline-brand-100 group-hover/prod:outline-transparent">
+                          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-brand-50 text-brand-500 group-hover/prod:bg-white/20 group-hover/prod:text-white transition-colors shrink-0 outline outline-1 outline-brand-100 group-hover/prod:outline-transparent shadow-sm">
                             {prod.icon}
                           </div>
-                          <span className="text-sm font-semibold text-slate-700 group-hover/prod:text-white transition-colors">
+                          <span className="text-sm font-semibold text-slate-700 group-hover/prod:text-white transition-colors truncate">
                             {prod.label}
                           </span>
                         </span>

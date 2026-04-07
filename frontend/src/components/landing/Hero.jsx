@@ -7,7 +7,7 @@ import React, {
   Suspense,
 } from "react";
 import { useDropzone } from "react-dropzone";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { fileService } from "../../services/fileService";
 import { conversionService } from "../../services/conversionService";
@@ -42,8 +42,8 @@ const Hero = ({ onUploadComplete, onRestore }) => {
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [abortController, setAbortController] = useState(null);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [isDownloadingPst, setIsDownloadingPst] = useState(false);
-  const [finishedPstDownload, setFinishedPstDownload] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [finishedDownload, setFinishedDownload] = useState(false);
 
   const { getToken } = useAuth();
   const uploadActive = useRef(false);
@@ -53,6 +53,28 @@ const Hero = ({ onUploadComplete, onRestore }) => {
   const { user } = useUser();
   const clerk = useClerk();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const formatMap = {
+    "/ost-to-pdf": "PDF",
+    "/ost-to-json": "JSON",
+    "/ost-to-mbox": "MBOX",
+    "/ost-to-eml": "EML",
+    "/ost-to-msg": "MSG",
+    "/ost-to-html": "HTML",
+    "/ost-to-mhtml": "MHTML",
+    "/ost-to-doc": "DOC",
+    "/ost-to-docx": "DOCX",
+    "/ost-to-txt": "TXT",
+    "/ost-to-rtf": "RTF",
+    "/ost-to-csv": "CSV",
+    "/ost-to-xml": "XML",
+    "/ost-to-vcf": "VCF",
+    "/ost-to-ics": "ICS",
+    "/ost-to-xps": "XPS",
+    "/ost-to-tiff": "TIFF",
+  };
+  const currentFormat = formatMap[location.pathname] || "PST";
 
   const [licenseStatus, setLicenseStatus] = useState(null);
 
@@ -126,7 +148,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         setCompletedSession(completedData);
         if (onUploadComplete) onUploadComplete(completedData);
         toast.success(
-          "Upload complete! Click Download to convert and download your PST file.",
+          `Upload complete! Click Download to convert and download your ${currentFormat} file.`,
         );
       } catch (err) {
         if (err.name === "AbortError") {
@@ -156,43 +178,59 @@ const Hero = ({ onUploadComplete, onRestore }) => {
     },
   });
 
-  const handleDownloadPst = async () => {
+  const handleDownload = async () => {
     if (!completedSession) return;
-    setIsDownloadingPst(true);
-    setFinishedPstDownload(false);
-
+    setIsDownloading(true);
+    setFinishedDownload(false);
+  
     const controller = new AbortController();
     setAbortController(controller);
-
+  
     try {
       const sessionId = completedSession.sessionId || completedSession._id;
-      await conversionService.convertToPst(
-        sessionId,
-        getToken,
-        false,
-        undefined,
-        controller.signal,
-        user?.primaryEmailAddress?.emailAddress ?? null,
-      );
-      // Assuming convertToPst now handles the browser-native download directly
-      // and toast/license refresh should happen after successful initiation of download
+      const userEmail = user?.primaryEmailAddress?.emailAddress ?? null;
+  
+      if (currentFormat === "PST") {
+        await conversionService.convertToPst(
+          sessionId,
+          getToken,
+          false,
+          undefined,
+          controller.signal,
+          userEmail,
+        );
+      } else {
+        await conversionService.exportAll(
+          sessionId,
+          currentFormat,
+          false,
+          getToken,
+          undefined,
+          controller.signal,
+          { email: userEmail }
+        );
+      }
+
       const name =
         completedSession.originalName ||
         completedSession.originalFileName ||
         completedSession.fileName ||
         "converted";
-      const savedName = name.replace(".ost", "").replace(".pst", "") + ".pst";
+      
+      const ext = currentFormat === "PST" ? ".pst" : ".zip";
+      const savedName = name.replace(/\.(ost|pst)$/i, "") + ext;
+      
       toast.success(`Started downloading: ${savedName}`);
       window.dispatchEvent(new Event("license-refresh"));
-      setFinishedPstDownload(true);
+      setFinishedDownload(true);
     } catch (err) {
       if (err.name === "AbortError" || err.message === "AbortError") {
-        console.log("PST Download cancelled by user");
+        console.log(`${currentFormat} Download cancelled by user`);
         return;
       }
       toast.error("Download failed: " + err.message);
     } finally {
-      setIsDownloadingPst(false);
+      setIsDownloading(false);
       setAbortController(null);
     }
   };
@@ -205,7 +243,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
           <h1 className="mb-3 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 tracking-tighter leading-tight">
             Convert{" "}
             <span className="text-brand-500 font-bold uppercase">
-             &nbsp; OST &nbsp; TO &nbsp; PST
+             &nbsp; OST &nbsp; TO &nbsp; {currentFormat}
             </span>{" "}
             <br />Online - Fast & Secure
           </h1>
@@ -300,7 +338,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                               completedSession?.fileName ||
                               "file") + ""
                           ).replace(/\.(ost|pst)$/i, "")}
-                          .pst — Ready
+                          {currentFormat === "PST" ? ".pst" : ".zip"} — Ready
                         </p>
                       </div>
 
@@ -320,17 +358,17 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDownloadPst();
+                            handleDownload();
                           }}
-                          disabled={isDownloadingPst}
+                          disabled={isDownloading}
                           className="flex-1 h-12 bg-brand-500 hover:bg-brand-600 text-white font-black text-sm uppercase tracking-widest rounded-xl gap-2 shadow-lg shadow-brand-500/25 transition-all active:scale-95"
                         >
-                          {isDownloadingPst ? (
+                          {isDownloading ? (
                             <RotateCw className="w-4 h-4 animate-spin" />
                           ) : (
                             <ArrowRight className="w-4 h-4" />
                           )}
-                          {isDownloadingPst ? "Preparing..." : "Download PST"}
+                          {isDownloading ? "Preparing..." : `Download ${currentFormat}`}
                         </Button>
                       </div>
                     </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const FaqItem = ({ number, question, answer, isOpen, onClick }) => (
   <div className="bg-white overflow-hidden">
@@ -23,6 +24,7 @@ const FaqItem = ({ number, question, answer, isOpen, onClick }) => (
 
 const LandingFaq = () => {
   const [openIndex, setOpenIndex] = useState(0);
+  const navigate = useNavigate();
 
   const faqs = [
     {
@@ -99,7 +101,10 @@ const LandingFaq = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
-            <button className="w-full sm:w-auto bg-white text-black font-bold h-12 sm:h-14 px-8 rounded-xl sm:rounded-2xl hover:bg-slate-100 transition-all text-base sm:text-lg">
+            <button 
+              className="w-full sm:w-auto bg-white text-black font-bold h-12 sm:h-14 px-8 rounded-xl sm:rounded-2xl hover:bg-slate-100 transition-all text-base sm:text-lg"
+              onClick={() => navigate("/contact-us")}
+            >
               Contact Support
             </button>
             <button className="w-full sm:w-auto bg-white text-black font-bold h-12 sm:h-14 px-8 rounded-xl sm:rounded-2xl hover:bg-slate-100 transition-all text-base sm:text-lg">

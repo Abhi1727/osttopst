@@ -458,12 +458,14 @@ const Pricing = () => {
             <Button
               variant="outline"
               className="border-2 border-brand-400 text-white hover:bg-brand-700 bg-transparent px-8 py-6 font-bold rounded-md"
+              onClick={() => navigate("/contact-us")}
             >
               Contact Sales
             </Button>
             <Button
               variant="outline"
               className="border-2 border-brand-400 text-white hover:bg-brand-700 bg-transparent px-8 py-6 font-bold rounded-md"
+              onClick={() => navigate("/contact-us")}
             >
               Request a Quote
             </Button>

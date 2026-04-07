@@ -9,11 +9,13 @@ import {
   Trash2,
   RefreshCcw,
   ExternalLink,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getRecentSessions, deleteSession } from "../services/api";
+import { getRecentSessions, deleteSession, deleteAllSessions } from "../services/api";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "sonner";
+import { conversionService } from "../services/conversionService";
 
 const formatDistanceToNow = (date) => {
   const diffTime = Math.abs(new Date() - date);
@@ -59,10 +61,42 @@ const ConversionHistory = ({ onRestore }) => {
       await deleteSession(sessionId, token);
       setSessions(sessions.filter((s) => s.sessionId !== sessionId));
       toast.success("Session deleted");
+      fetchHistory();
     } catch (err) {
-      toast.error("Failed to delete session");
+      toast.error("Failed to delete");
     }
   };
+
+  const handleDownloadPst = async (session) => {
+    try {
+      const toastId = toast.loading("Preparing download...");
+      await conversionService.convertToPst(
+        session.sessionId,
+        getToken,
+        false, // excludeEmpty
+        null,  // onProgress
+        null,  // signal
+        session.email
+      );
+      toast.dismiss(toastId);
+      toast.success("Download started!");
+    } catch (err) {
+      toast.error("Download failed: " + err.message);
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (!window.confirm("Are you sure you want to clear all recent conversions?")) return;
+    try {
+      const token = await getToken();
+      await deleteAllSessions(token);
+      setSessions([]);
+      toast.success("All sessions cleared");
+    } catch (err) {
+      toast.error("Failed to clear sessions");
+    }
+  };
+
 
   if (!isLoaded || !isSignedIn) return null;
 
@@ -95,14 +129,25 @@ const ConversionHistory = ({ onRestore }) => {
             Recent Conversions
           </h3>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={fetchHistory}
-          className="text-zinc-400 hover:text-zinc-600"
-        >
-          <RefreshCcw className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearAll}
+            className="text-red-400 hover:text-red-600 hover:bg-red-50 text-[10px] font-bold uppercase tracking-wider"
+          >
+            Clear All
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchHistory}
+            className="text-zinc-400 hover:text-zinc-600"
+          >
+            <RefreshCcw className="w-4 h-4" />
+          </Button>
+        </div>
+
       </div>
 
       <div className="divide-y divide-zinc-50">
@@ -131,10 +176,14 @@ const ConversionHistory = ({ onRestore }) => {
                   <span
                     className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
                       session.status === "Uploaded"
-                        ? "bg-brand-100 text-brand-700"
-                        : session.status === "Assembling"
-                          ? "bg-brand-100 text-brand-700"
-                          : "bg-zinc-100 text-zinc-500"
+                        ? "bg-brand-100 text-brand-700 font-bold"
+                        : ["Assembling", "Converting", "Exporting", "Processing"].includes(session.status)
+                          ? "bg-brand-50 text-brand-600 animate-pulse"
+                          : session.status === "Ready" || session.status?.includes("Ready")
+                            ? "bg-green-100 text-green-700"
+                            : session.status?.includes("Failed") || session.status?.includes("Limit")
+                              ? "bg-red-100 text-red-700"
+                              : "bg-zinc-100 text-zinc-500"
                     }`}
                   >
                     {session.status}
@@ -144,21 +193,70 @@ const ConversionHistory = ({ onRestore }) => {
             </div>
 
             <div className="flex items-center gap-2">
-              {session.status === "Uploaded" && (
+              {["Uploaded", "Converting", "Exporting", "Assembling", "Failed", "AssemblyFailed"].some(s => session.status?.includes(s)) && (
                 <Button
                   size="sm"
                   onClick={() => onRestore(session)}
                   className="bg-brand-600 hover:bg-brand-700 text-white rounded-xl gap-2 font-bold px-4"
+                  title="Return to conversion flow"
                 >
-                  <Download className="w-4 h-4" />
-                  Re-convert
+                  <RefreshCcw className="w-4 h-4" />
+                  {session.status === "Uploaded" ? "Re-convert" : "Restore"}
                 </Button>
               )}
+
+              {(session.status === "Ready" || session.status?.includes("Ready")) && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDownloadPst(session)}
+                    className="border-green-200 text-green-700 hover:bg-green-50 rounded-xl gap-2 font-bold px-4"
+                    title="Download converted PST file directly"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onRestore(session)}
+                    className="text-zinc-500 hover:text-zinc-900 border border-zinc-200/50 hover:bg-zinc-50 rounded-xl gap-2 font-bold px-4"
+                    title="View file structure"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    View
+                  </Button>
+                </div>
+              )}
+
+              {["Converting", "Exporting", "Assembling"].includes(session.status) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={async () => {
+                    try {
+                      const token = await getToken();
+                      await fetch(`/api/sessions/${session.sessionId}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+                      toast.success("Cancel request sent");
+                      fetchHistory();
+                    } catch (err) {
+                      toast.error("Failed to cancel");
+                    }
+                  }}
+                  className="rounded-xl text-orange-400 hover:text-orange-600 hover:bg-orange-50"
+                  title="Cancel active operation"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => handleDelete(session.sessionId)}
                 className="rounded-xl text-zinc-300 hover:text-red-500 hover:bg-red-50"
+                title="Delete history entry"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>

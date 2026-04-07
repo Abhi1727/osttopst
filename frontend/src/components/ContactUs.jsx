@@ -43,7 +43,7 @@ const SupportCard = ({
   </div>
 );
 
-const Support = () => {
+const ContactUs = () => {
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* Hero Section */}
@@ -280,4 +280,4 @@ const Support = () => {
   );
 };
 
-export default Support;
+export default ContactUs;

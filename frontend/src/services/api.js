@@ -41,6 +41,16 @@ export const deleteSession = async (sessionId, token) => {
   return handleResponse(res);
 };
 
+export const deleteAllSessions = async (token) => {
+  const res = await fetch(`${API_BASE_URL}/sessions/all`, {
+    method: "DELETE",
+    headers: getHeaders(token),
+  });
+  if (res.status === 204) return;
+  return handleResponse(res);
+};
+
+
 export const cancelOperation = async (sessionId, token) => {
   const res = await fetch(`${API_BASE_URL}/sessions/${sessionId}/cancel`, {
     method: "POST",

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
+import { useAuth, useClerk } from "@clerk/clerk-react";
 import {
   CloudUpload,
   Check,
@@ -31,6 +32,8 @@ import { fileService } from "../services/fileService";
 // ─── Hero / Upload ───────────────────────────────────────────────────────────
 
 const HeroUpload = ({ onSessionReady }) => {
+  const { isSignedIn, isLoaded, getToken } = useAuth();
+  const { openSignIn } = useClerk();
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(null);
@@ -52,7 +55,7 @@ const HeroUpload = ({ onSessionReady }) => {
       setUploading(true);
       setProgress({ phase: "init", percent: 0, detail: "Initializing..." });
       try {
-        const result = await fileService.uploadFile(file, null, (info) => setProgress(info), null, null, null);
+        const result = await fileService.uploadFile(file, getToken, (info) => setProgress(info), null, null, null);
         onSessionReady({ sessionId: result.sessionId, originalFileName: result.originalFileName || file.name, size: file.size });
       } catch (err) {
         toast.error("Upload failed: " + err.message);
@@ -63,19 +66,46 @@ const HeroUpload = ({ onSessionReady }) => {
     [onSessionReady],
   );
 
+  const handleBrowseClick = () => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      openSignIn({ afterSignInUrl: window.location.pathname });
+      return;
+    }
+    if (!uploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      openSignIn({ afterSignInUrl: window.location.pathname });
+      return;
+    }
+    handleFile(e.dataTransfer.files[0]);
+  };
+
+  const handleFileInputChange = (e) => {
+    if (!isLoaded || !isSignedIn) return;
+    handleFile(e.target.files[0]);
+  };
+
   return (
     <div
-      onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFile(e.dataTransfer.files[0]); }}
+      onDrop={handleFileDrop}
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
-      onClick={() => !uploading && fileInputRef.current?.click()}
+      onClick={handleBrowseClick}
       className={cn(
         "w-full max-w-[520px] mx-auto rounded-[28px] border-2 border-dashed p-10 text-center cursor-pointer transition-all duration-300 bg-white shadow-xl shadow-slate-200/60",
         isDragging ? "border-brand-500 bg-brand-50/60 scale-[1.01]" : "border-slate-200 hover:border-brand-400 hover:bg-brand-50/20",
         uploading && "pointer-events-none",
       )}
     >
-      <input ref={fileInputRef} type="file" accept=".ost,.pst" className="hidden" onChange={(e) => handleFile(e.target.files[0])} />
+      <input ref={fileInputRef} type="file" accept=".ost,.pst" className="hidden" onChange={handleFileInputChange} />
       {uploading ? (
         <div className="flex flex-col items-center gap-4">
           <div className="relative w-16 h-16">
@@ -113,7 +143,7 @@ const HeroUpload = ({ onSessionReady }) => {
             ))}
           </div>
           <div className="flex flex-wrap justify-center gap-3 mt-1">
-            {["No account required", "100% private"].map((l) => (
+            {["Secure access", "100% private"].map((l) => (
               <div key={l} className="flex items-center gap-1.5">
                 <Check size={11} className="text-emerald-500" />
                 <span className="text-[11px] font-bold text-slate-400">{l}</span>

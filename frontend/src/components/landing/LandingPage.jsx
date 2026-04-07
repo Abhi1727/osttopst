@@ -17,7 +17,7 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
   return (
     <div className="font-sans">
       {/* First Screen Wrapper */}
-      <div className="min-h-[calc(100vh-76px)] flex flex-col bg-[#f0f9ff]/50 relative overflow-hidden">
+      <div className="min-h-[calc(100vh-76px)] flex flex-col bg-[#f0f9ff]/50 relative">
         <div className="flex-1 flex flex-col justify-center">
           <Hero onUploadComplete={onUploadComplete} />
         </div>
@@ -29,7 +29,7 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
       </div>
 
       <Suspense fallback={<div className="h-40" />}>
-        <div className="relative z-10 -mt-12 sm:-mt-16 mb-8">
+        <div className="relative z-[0] -mt-8 sm:-mt-10 mb-8">
           <FormatMarquee />
         </div>
         <HowItWorks />

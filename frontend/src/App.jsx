@@ -6,6 +6,7 @@ import {
   useNavigate,
   useLocation,
   useNavigationType,
+  Navigate,
 } from "react-router-dom";
 import LandingPage from "./components/landing/LandingPage";
 import UnifiedHeader from "./components/UnifiedHeader";
@@ -19,7 +20,7 @@ import React from "react";
 // Lazy-load all non-critical routes — they are only loaded when navigated to
 const FilePreview = lazy(() => import("./components/FilePreview"));
 const Faq = lazy(() => import("./components/Faq"));
-const Support = lazy(() => import("./components/Support"));
+const ContactUs = lazy(() => import("./components/ContactUs"));
 const Blogs = lazy(() => import("./components/Blogs"));
 const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
 const BlogPostDetail = lazy(() => import("./components/BlogPostDetail"));
@@ -90,7 +91,7 @@ function App() {
         className={`flex flex-col professional-gradient ${
           location.pathname === "/preview"
             ? "h-screen overflow-hidden bg-[#1a1a1a]"
-            : "min-h-screen pt-14 md:pt-16"
+            : "min-h-screen pt-16 md:pt-20"
         }`}
       >
         <main
@@ -117,7 +118,8 @@ function App() {
                 }
               />
               <Route path="/faq" element={<Faq />} />
-              <Route path="/support" element={<Support />} />
+              <Route path="/contact-us" element={<ContactUs />} />
+              <Route path="/support" element={<Navigate to="/contact-us" replace />} />
               <Route path="/blogs" element={<Blogs />} />
               <Route
                 path="/admin/blogs"
@@ -131,7 +133,27 @@ function App() {
               <Route path="/our-plans" element={<Pricing />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
-              <Route path="/ost-viewer" element={<OstViewer />} />
+              <Route path="/ost-to-pdf" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-json" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-mbox" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-eml" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-msg" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-html" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-mhtml" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-doc" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-docx" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-txt" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-rtf" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-csv" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-xml" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-vcf" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-ics" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-xps" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route path="/ost-to-tiff" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
+              <Route
+                path="/ost-viewer"
+                element={<OstViewer />}
+              />
               <Route path="/refund-policy" element={<RefundPolicy />} />
             </Routes>
           </Suspense>

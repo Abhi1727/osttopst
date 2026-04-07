@@ -16,9 +16,11 @@ public static class SessionEndpoints
     /// <param name="app">The IEndpointRouteBuilder instance.</param>
     public static void MapSessionEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/sessions").RequireAuthorization();
+        var groupAuth = app.MapGroup("/api/sessions").RequireAuthorization();
+        var groupPublic = app.MapGroup("/api/sessions");
+        
         //this is for getting the recent sessions for the user
-        group.MapGet("/recent", async (AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
+        groupAuth.MapGet("/recent", async (AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
         {
             var userId = user.GetInternalUserId();
             // Get last 10 successful sessions for this user
@@ -28,7 +30,18 @@ public static class SessionEndpoints
                 .Take(10)
                 .ToListAsync();
 
-            return Results.Ok(sessions.Select(s => new
+            // Filter to only include sessions that have actual files on disk or are in a "Ready" state
+            var validSessions = sessions.Where(s =>
+            {
+                var pstExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{s.SessionId}.pst"));
+                var ostExists = File.Exists(Path.Combine(StorageConstants.UploadDir, $"{s.SessionId}.ost"));
+                var isReady = (s.Status ?? "").StartsWith("Ready", StringComparison.OrdinalIgnoreCase);
+                
+                // Include session if files exist on disk OR if it's marked as Ready (conversion/export complete)
+                return pstExists || ostExists || isReady;
+            }).ToList();
+
+            return Results.Ok(validSessions.Select(s => new
             {
                 sessionId = s.SessionId,
                 originalFileName = s.OriginalFileName,
@@ -40,7 +53,7 @@ public static class SessionEndpoints
             }));
         });
         //this is for checking if the session is a duplicate
-        group.MapGet("/duplicate-check", async (string fingerprint, AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
+        groupAuth.MapGet("/duplicate-check", async (string fingerprint, AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
         {
             var userId = user.GetInternalUserId();
             var cutoff = DateTime.Now.AddHours(-24);
@@ -70,16 +83,22 @@ public static class SessionEndpoints
             return Results.Ok(new { found = false });
         });
         //this is for checking the status of the session
-        group.MapGet("/{sessionId}/check", async (string sessionId, AppDbContext db, LicenseApiClient licenseClient, ClaimsPrincipal user, IConfiguration config, HttpContext httpContext) =>
+        groupPublic.MapGet("/{sessionId}/check", async (string sessionId, AppDbContext db, LicenseApiClient licenseClient, ClaimsPrincipal user, IConfiguration config, HttpContext httpContext) =>
         {
             var userId = user.GetInternalUserId();
-            var session = await db.ConversionSessions
-                .FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+            
+            // For authenticated users, check ownership. For anonymous users, allow access to any sessionId
+            // (they have it from the upload response and can't be verified anyway)
+            var isAnonymous = userId == "unauthenticated";
+            
+            var session = isAnonymous
+                ? await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId)
+                : await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
 
             if (session == null)
             {
                 var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("SessionEndpoints");
-                logger.LogWarning("Session check failed (404): sessionId={SessionId}, userId={UserId}. Session not found or ownership mismatch.", sessionId, userId);
+                logger.LogWarning("Session check failed (404): sessionId={SessionId}, userId={UserId}, isAnonymous={IsAnonymous}. Session not found or ownership mismatch.", sessionId, userId, isAnonymous);
                 return Results.NotFound();
             }
 
@@ -152,8 +171,8 @@ public static class SessionEndpoints
                 splitFiles = string.IsNullOrEmpty(session.SplitFilesJson) ? null : System.Text.Json.JsonSerializer.Deserialize<string[]>(session.SplitFilesJson)
             });
         });
-        //this is for deleting the session
-        group.MapDelete("/{sessionId}", async (string sessionId, PstService pstService, AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
+        //this is for deleting a specific session
+        groupAuth.MapDelete("/{sessionId}", async (string sessionId, PstService pstService, AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
         {
             var userId = user.GetInternalUserId();
             var session = await db.ConversionSessions
@@ -161,15 +180,49 @@ public static class SessionEndpoints
 
             if (session != null)
             {
-                await pstService.CleanUpAsync(sessionId);
-                db.ConversionSessions.Remove(session);
-                await db.SaveChangesAsync();
+                try
+                {
+                    await pstService.CleanUpAsync(sessionId);
+                    db.ConversionSessions.Remove(session);
+                    await db.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[SessionEndpoints] Error deleting individual session {sessionId}: {ex.Message}");
+                    try { db.ConversionSessions.Remove(session); await db.SaveChangesAsync(); } catch { }
+                }
             }
 
             return Results.NoContent();
         });
+
+        //this is for deleting all sessions for the user
+        groupAuth.MapDelete("/all", async (PstService pstService, AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
+        {
+            var userId = user.GetInternalUserId();
+            var sessions = await db.ConversionSessions
+                .Where(s => s.UserId == userId)
+                .ToListAsync();
+
+            foreach (var session in sessions)
+            {
+                try
+                {
+                    await pstService.CleanUpAsync(session.SessionId);
+                    db.ConversionSessions.Remove(session);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[SessionEndpoints] Error cleaning up session {session.SessionId} during bulk delete: {ex.Message}");
+                    try { db.ConversionSessions.Remove(session); } catch { }
+                }
+            }
+
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
         //this is for cancelling the session
-        group.MapPost("/{sessionId}/cancel", async (string sessionId, PstService pstService, ClaimsPrincipal user, IConfiguration config) =>
+        groupAuth.MapPost("/{sessionId}/cancel", async (string sessionId, PstService pstService, ClaimsPrincipal user, IConfiguration config) =>
         {
             var userId = user.GetInternalUserId();
             // We verify ownership by having PstService check the session inside its cancel logic if needed,

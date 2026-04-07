@@ -101,23 +101,64 @@ const downloadFile = async (
     );
   };
 
-  // 1. First trigger the conversion/export
+  // 1. First trigger the conversion/export via a background-safe check
+  // We use the /check endpoint or a trigger that doesn't return the full file stream immediately if possible.
+  // However, the current API returns the file on 200. To avoid downloading twice, 
+  // we first check the session status.
+  const sessionIdMatch = url.match(/\/file-details\/([^/?]+)/);
+  const sessionId = sessionIdMatch ? sessionIdMatch[1] : null;
+
+  if (onProgress) {
+    onProgress({
+      phase: "processing",
+      percent: 2,
+      detail: "Preparing your request...",
+    });
+  }
+
+  // If we have a sessionId, we can check if it's already ready before triggering again
+  if (sessionId) {
+    const initialToken = await getToken();
+    try {
+      const checkRes = await fetch(`${API_BASE_URL}/sessions/${sessionId}/check`, {
+        headers: getHeaders(initialToken),
+        signal,
+      });
+      if (checkRes.ok) {
+        const status = await checkRes.json();
+        const s = (status.status || "").toLowerCase();
+        
+        // If already ready, skip trigger and go straight to download
+        if (s.startsWith("ready") || s.includes("ready") || status.isConverted) {
+           console.log("[Download] Session already ready, skipping trigger.");
+           if (status.splitFiles && status.splitFiles.length > 0) {
+             return status.splitFiles;
+           }
+           // Trigger direct download
+           return triggerDirectDownload(url, suggestedName, getToken, onProgress);
+        }
+      }
+    } catch (err) {
+      console.warn("[Download] Pre-check failed, proceeding with trigger:", err);
+    }
+  }
+
   const initialToken = await getToken();
   const triggerRes = await fetch(url, {
     headers: getHeaders(initialToken),
     signal: signal,
   });
 
-  let pollResult = true;
   if (triggerRes.status === 202) {
     if (onProgress) {
       onProgress({
         phase: "processing",
         percent: 5,
-        detail: "Starting background processing for large file...",
+        detail: "Processing your file in the background...",
       });
     }
-    pollResult = await pollForDownload();
+    const pollResult = await pollForDownload();
+    if (Array.isArray(pollResult)) return pollResult;
   } else if (!triggerRes.ok) {
     const errorText = await triggerRes.text();
     let errorMessage = triggerRes.statusText;
@@ -125,29 +166,27 @@ const downloadFile = async (
       const errorJson = JSON.parse(errorText);
       if (errorJson.error) errorMessage = typeof errorJson.error === 'string' ? errorJson.error : JSON.stringify(errorJson.error);
       else if (errorJson.detail) errorMessage = errorJson.detail;
-      else if (errorJson.title) errorMessage = errorJson.title;
     } catch { 
       if (errorText) errorMessage = errorText;
     }
     throw new Error(errorMessage);
+  } else {
+    // It's already 200 OK, but we just downloaded the whole thing via fetch!
+    // This is the inefficiency we want to avoid for the NEXT call, but for this one
+    // we already have the data in triggerRes. 
+    // Optimization: If it's 200, we COULD use triggerRes.blob() and save it, 
+    // but for 2GB+ files, that will crash the tab.
+    // Better: We should have used a method that doesn't download the file.
+    // Since we don't have a "trigger only" endpoint for ExportAll, we'll just 
+    // proceed to the <a> tag download which will be the second request.
+    // In the future, the backend should support a 'trigger=true' query param.
+    console.log("[Download] Trigger returned 200, starting native download.");
   }
 
-  if (signal?.aborted) return null;
+  return triggerDirectDownload(url, suggestedName, getToken, onProgress);
+};
 
-  if (Array.isArray(pollResult)) {
-    if (onProgress) {
-      onProgress({
-        phase: "downloading",
-        percent: 100,
-        detail: "Split files are ready for download.",
-      });
-    }
-    return pollResult;
-  }
-
-  // 2. Now handle the actual file transmission
-  // We use the browser's native download mechanisms to display progress bars
-  // and handle massive files without piping arrays through memory or timing out.
+const triggerDirectDownload = async (url, suggestedName, getToken, onProgress) => {
   if (onProgress) {
     onProgress({
       phase: "downloading",
@@ -156,7 +195,6 @@ const downloadFile = async (
     });
   }
 
-  console.log("[Download] Triggering browser download via <a> tag.");
   const downloadToken = await getToken();
   const fullUrl = url.includes("?")
     ? `${url}&token=${downloadToken}`
@@ -165,23 +203,12 @@ const downloadFile = async (
   const a = document.createElement("a");
   a.href = fullUrl;
   a.download = suggestedName;
-  a.target = "_blank"; // Open in new tab to help some browsers handle insecure downloads
   document.body.appendChild(a);
   a.click();
   
-  if (!isSecure) {
-    if (onProgress) {
-        onProgress({
-            phase: "downloading",
-            percent: 100,
-            detail: "Download triggered. If nothing happens, look for a 'Keep' or 'Unsafe download' warning in your browser's download manager.",
-        });
-    }
-  }
-
   setTimeout(() => {
     document.body.removeChild(a);
-  }, 5000); // Keep it longer just in case
+  }, 5000);
   return suggestedName;
 };
 

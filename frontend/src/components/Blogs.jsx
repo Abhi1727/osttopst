@@ -269,7 +269,7 @@ const Blogs = () => {
         </div>
           <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-white text-center mt-10">Ask the Expert !</h1>
           <p className="text-brand-50/90 text-xl max-w-2xl mx-auto font-medium leading-relaxed text-center">Submit your problem related to the OST File or Outlook, and our expert will guide you!</p>
-          <button className="bg-[#FFB800] hover:bg-white text-slate-900 font-black px-12 py-5 rounded-full transition-all shadow-xl hover:scale-[1.02] active:scale-95 whitespace-nowrap mx-auto block mt-5" onClick={() => navigate("/support")}>Contact Us</button>
+          <button className="bg-[#FFB800] hover:bg-white text-slate-900 font-black px-12 py-5 rounded-full transition-all shadow-xl hover:scale-[1.02] active:scale-95 whitespace-nowrap mx-auto block mt-5" onClick={() => navigate("/contact-us")}>Contact Us</button>
       </div>
     </div>
   );

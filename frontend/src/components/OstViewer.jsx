@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import { useUser, useClerk, useAuth } from "@clerk/clerk-react";
 import {
   ChevronRight,
   ChevronDown,
@@ -438,7 +439,7 @@ const UploadPhase = ({ onSessionReady }) => {
 
 // ─── Preview Phase ────────────────────────────────────────────────────────────
 
-const PreviewPhase = ({ session, onReset }) => {
+const PreviewPhase = ({ session, onReset, getToken }) => {
   const [folders, setFolders] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState(null);
@@ -465,7 +466,8 @@ const PreviewPhase = ({ session, onReset }) => {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await fileService.getFolders(session.sessionId, null, true);
+        const freshToken = await getToken();
+        const data = await fileService.getFolders(session.sessionId, freshToken, true);
         setFolders(data || []);
       } catch (err) {
         toast.error("Failed to load folders");
@@ -475,17 +477,18 @@ const PreviewPhase = ({ session, onReset }) => {
       }
     };
     load();
-  }, [session.sessionId]);
+  }, [session.sessionId, getToken]);
 
   const handleFolderSelect = async (folder) => {
     setSelectedFolder(folder);
     setSelectedMessage(null);
     try {
       setLoadingMessages(true);
+      const freshToken = await getToken();
       const data = await fileService.getMessages(
         session.sessionId,
         folder.folderId,
-        null,
+        freshToken,
         {},
         sortBy,
         sortOrder,
@@ -504,10 +507,11 @@ const PreviewPhase = ({ session, onReset }) => {
     setSelectedMessage(msg);
     try {
       setLoadingDetail(true);
+      const freshToken = await getToken();
       const detail = await fileService.getMessageDetail(
         session.sessionId,
         msg.entryId,
-        null,
+        freshToken,
       );
       setSelectedMessage(detail);
     } catch (err) {
@@ -960,18 +964,99 @@ const PreviewPhase = ({ session, onReset }) => {
 
 const OstViewer = () => {
   const [session, setSession] = useState(null);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+  const { openSignIn } = useClerk();
+  const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
+
+  // Get auth token when user is authenticated
+  useEffect(() => {
+    const fetchToken = async () => {
+      if (user && isLoaded) {
+        try {
+          const token = await getToken();
+          setAuthToken(token);
+        } catch (err) {
+          console.error("Failed to get auth token:", err);
+        }
+      }
+    };
+    fetchToken();
+  }, [user, isLoaded, getToken]);
 
   const handleSessionReady = useCallback((sessionData) => {
+    // If not loaded, store session and wait - the useEffect below will clear the prompt if user is found
+    if (!isLoaded) {
+      setSession(sessionData);
+      return;
+    }
+
+    if (!user) {
+      setSession(sessionData);
+      setShowSignInPrompt(true);
+      return;
+    }
+
     setSession(sessionData);
-  }, []);
+    setShowSignInPrompt(false);
+  }, [isLoaded, user]);
 
   const handleReset = useCallback(() => {
     setSession(null);
+    setShowSignInPrompt(false);
   }, []);
+
+  const handleSignInComplete = useCallback(() => {
+    // After sign-in, proceed to preview with stored session
+    setShowSignInPrompt(false);
+  }, []);
+
+  // Auto-clear sign-in prompt if user becomes available
+  useEffect(() => {
+    if (isLoaded && user && showSignInPrompt) {
+      setShowSignInPrompt(false);
+    }
+  }, [isLoaded, user, showSignInPrompt]);
+
+  // If session is set but auth wasn't loaded, check again once loaded
+  useEffect(() => {
+    if (isLoaded && session && !user && !showSignInPrompt) {
+      setShowSignInPrompt(true);
+    }
+  }, [isLoaded, session, user, showSignInPrompt]);
 
   return (
     <AnimatePresence mode="wait">
-      {session ? (
+      {showSignInPrompt && session && !user ? (
+        <motion.div
+          key="signin-prompt"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          className="flex-1 flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-brand-50/30 px-4"
+        >
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-xl shadow-brand-500/30 mx-auto mb-6">
+              <Eye size={32} />
+            </div>
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Sign in to browse</h2>
+            <p className="text-slate-500 font-medium mb-8">
+              Please sign in to preview and browse your file's contents.
+            </p>
+            <button
+              onClick={() => {
+                openSignIn({ afterSignInUrl: window.location.pathname });
+              }}
+              className="px-6 py-3 bg-brand-500 text-white font-bold rounded-xl hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/30"
+            >
+              Sign in now
+            </button>
+          </div>
+        </motion.div>
+      ) : null}
+      {session && user ? (
         <motion.div
           key="preview"
           initial={{ opacity: 0 }}
@@ -980,7 +1065,7 @@ const OstViewer = () => {
           transition={{ duration: 0.25 }}
           className="flex-1 flex flex-col min-h-0"
         >
-          <PreviewPhase session={session} onReset={handleReset} />
+          <PreviewPhase session={session} onReset={handleReset} getToken={getToken} />
         </motion.div>
       ) : (
         <motion.div

@@ -25,9 +25,9 @@ const Footer = () => {
     {
       title: "Resources",
       links: [
-        { label: "Official Blog", path: "/blogs" },
+        { label: "Blogs", path: "/blogs" },
         { label: "F.A.Q", path: "/faq" },
-        { label: "Technical Support", path: "/support" },
+        { label: "Technical Support", path: "/contact-us" },
         { label: "How it Works", path: "/#how-it-works" },
       ],
     },

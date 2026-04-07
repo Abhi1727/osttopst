@@ -248,7 +248,10 @@ const Faq = () => {
       </p>
 
       <div className="flex gap-4">
-        <Button className="bg-white text-black px-6 py-2 rounded-lg font-medium">
+        <Button 
+          className="bg-white text-black px-6 py-2 rounded-lg font-medium"
+          onClick={() => navigate("/contact-us")}
+        >
           Contact Support
         </Button>
 

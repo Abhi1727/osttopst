@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using PstConverter.Data;
+using PstConverter.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace PstConverter.Services;
@@ -170,6 +171,41 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
                 await TryDeleteWithRetryAsync(convertedOst);
             }
             db.ConversionSessions.RemoveRange(oldSessions);
+            await db.SaveChangesAsync(stoppingToken);
+        }
+
+        // Clean up orphaned database records (sessions with missing files on disk)
+        var allSessions = await db.ConversionSessions.ToListAsync(stoppingToken);
+        var orphanedSessions = new List<ConversionSession>();
+
+        foreach (var session in allSessions)
+        {
+            var pstExists = File.Exists(Path.Combine(_uploadDir, $"{session.SessionId}.pst"));
+            var ostExists = File.Exists(Path.Combine(_uploadDir, $"{session.SessionId}.ost"));
+            var isReady = (session.Status ?? "").StartsWith("Ready", StringComparison.OrdinalIgnoreCase);
+
+            // If no files exist and not in Ready state, mark for removal
+            if (!pstExists && !ostExists && !isReady)
+            {
+                orphanedSessions.Add(session);
+            }
+        }
+
+        if (orphanedSessions.Count > 0)
+        {
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Removing {Count} orphaned sessions (files missing, not in Ready state)", orphanedSessions.Count);
+            }
+            foreach (var session in orphanedSessions)
+            {
+                try
+                {
+                    await pool.RemoveAsync(session.SessionId);
+                }
+                catch { }
+            }
+            db.ConversionSessions.RemoveRange(orphanedSessions);
             await db.SaveChangesAsync(stoppingToken);
         }
     }
