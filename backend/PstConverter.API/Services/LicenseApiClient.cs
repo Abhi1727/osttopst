@@ -125,11 +125,11 @@ namespace PstConverter.Services
                 if (updateAllotment || isNewRecord)
                 {
                     // PURCHASE PATH or NEW RECORD: Write allotment.
-                    if (s.TotalItemsAllotted > 0)
+                    if (s.TotalItemsAllotted != 0)
                         license.TotalItemsAllotted = s.TotalItemsAllotted;
-                    if (s.TotalStorageAllotted > 0)
+                    if (s.TotalStorageAllotted != 0)
                         license.TotalStorageAllotted = s.TotalStorageAllotted;
-                    if (s.TotalDaysAllotted > 0)
+                    if (s.TotalDaysAllotted != 0)
                         license.TotalDaysAllotted = s.TotalDaysAllotted;
 
                     license.ExpiryDate = s.ExpiryDate ?? DateTime.Now.AddDays(s.TotalDaysAllotted > 0 ? s.TotalDaysAllotted : 365);
@@ -582,8 +582,8 @@ namespace PstConverter.Services
 
                     return new DetailedLicenseStatus
                     {
-                        TotalItemsAllotted = int.TryParse(quota.TotalItems, out var items) ? items : 4,
-                        TotalStorageAllotted = long.TryParse(quota.Storage, out var storage) ? storage : 2073741824L,
+                        TotalItemsAllotted = int.TryParse(quota.TotalItems, out var items) ? items : 50,
+                        TotalStorageAllotted = long.TryParse(quota.Storage, out var storage) ? storage : 524288000L,
                         TotalDaysAllotted = int.TryParse(quota.TotalDays, out var days) ? days : 365,
                     };
                 }
@@ -624,7 +624,7 @@ namespace PstConverter.Services
             Tier = tier,
             CanConvert = tier != LicenseTier.DemoExpired,
             ExportFileLimit = tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit,
-            TotalItemsAllotted = tier == LicenseTier.Professional ? 100 : 50, // 50 items for Demo
+            TotalItemsAllotted = tier == LicenseTier.Professional ? -1 : 50, // -1 for Pro (Unlimited), 50 for Demo (Per Folder)
             TotalItemsUsed = existing?.TotalItemsUsed ?? 0,
             TotalStorageAllotted = tier == LicenseTier.Professional ? 5368709120L : 524288000L, // 5GB vs 500MB
             TotalStorageUsed = existing?.TotalStorageUsed ?? 0,

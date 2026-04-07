@@ -246,6 +246,12 @@ const UploadPhase = ({ onSessionReady }) => {
         return;
       }
 
+      const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
+      if (file.size > MAX_SIZE) {
+        toast.error("File size exceeds the 5GB limit. Please choose a smaller file.");
+        return;
+      }
+
       setUploading(true);
       setProgress({ phase: "init", percent: 0, detail: "Initializing..." });
 

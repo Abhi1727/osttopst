@@ -44,6 +44,12 @@ public static class FileEndpoints
                     return Results.BadRequest(new { error = "No file uploaded" });
                 }
 
+                if (file.Length > AllConstants.MaxUploadSize)
+                {
+                    logger.LogWarning("Upload rejected: File size {Size} exceeds maximum limit of 5GB", file.Length);
+                    return Results.BadRequest(new { error = "File size exceeds the 5GB limit. Please contact support for larger files." });
+                }
+
                 var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
                 if (ext != ".pst" && ext != ".ost")
                 {
@@ -110,6 +116,12 @@ public static class FileEndpoints
                 var ext = Path.GetExtension(request.FileName).ToLowerInvariant();
                 if (ext != ".pst" && ext != ".ost")
                     return Results.BadRequest(new { error = $"Only .pst and .ost files are accepted." });
+
+                if (request.TotalSize > AllConstants.MaxUploadSize)
+                {
+                    logger.LogWarning("Chunked upload initialization rejected: File size {Size} exceeds 5GB limit", request.TotalSize);
+                    return Results.BadRequest(new { error = "File size exceeds the 5GB limit. Please contact support for larger files." });
+                }
 
                 if (request.TotalChunks <= 0)
                     return Results.BadRequest(new { error = "TotalChunks must be positive" });

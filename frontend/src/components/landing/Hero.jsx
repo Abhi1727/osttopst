@@ -85,6 +85,12 @@ const Hero = ({ onUploadComplete, onRestore }) => {
       }
 
       const selectedFile = acceptedFiles[0];
+
+      const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
+      if (selectedFile.size > MAX_SIZE) {
+        toast.error("File size exceeds the 5GB limit. Please use our Desktop Software for unlimited file sizes.");
+        return;
+      }
       setFile(selectedFile);
       setUploading(true);
       setUploadPhase("uploading");
