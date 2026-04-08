@@ -1,54 +1,43 @@
 using System.Text;
 using System.Security.Claims;
 using Aspose.Email;
-using PstConverter.Endpoints;
-using PstConverter.Services;
-using PstConverter.Data;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Mvc;
+using PstConverter.Endpoints; // This is for endpoints
+using PstConverter.Services; // This is for services
+using PstConverter.Data; // This is for data
+using Microsoft.EntityFrameworkCore; // This is for database
+using System.Threading.RateLimiting; // This is for rate limiting
+using Microsoft.Extensions.DependencyInjection; // This is for dependency injection
+using Microsoft.AspNetCore.Mvc; // This is for [FromQuery] and other MVC attributes
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.Extensions.Caching.Distributed;
-using PstConverter.Models;
-using PstConverter.Extensions;
 
 // Initialize Aspose.Email License
 try
 {
-    var license = new Aspose.Email.License();
+    var license = new License();
+
+    //  License licObj = new License();
+    // string Lic = "<?xml version=\\\"1.0\\\"?>\\r\\n<License>\\r\\n  <Data>\\r\\n    <LicensedTo>Shef USA</LicensedTo>\\r\\n    <EmailTo>tarunlamba@shefusa.com</EmailTo>\\r\\n    <LicenseType>Developer OEM</LicenseType>\\r\\n    <LicenseNote>1 Developer And Unlimited Deployment Locations</LicenseNote>\\r\\n    <OrderID>260226165350</OrderID>\\r\\n    <UserID>1327979</UserID>\\r\\n    <OEM>This is a redistributable license</OEM>\\r\\n    <Products>\\r\\n      <Product>Aspose.Total Product Family</Product>\\r\\n    </Products>\\r\\n    <EditionType>Professional</EditionType>\\r\\n    <SerialNumber>b9f2d0d5-bdef-4f1d-968d-4cdd2111ade2</SerialNumber>\\r\\n    <SubscriptionExpiry>20270226</SubscriptionExpiry>\\r\\n    <LicenseExpiry>20260326</LicenseExpiry>\\r\\n    <ExpiryNote>This is a temporary license for non-commercial use only and it will expire on 2026-03-26</ExpiryNote>\\r\\n    <LicenseVersion>3.0</LicenseVersion>\\r\\n    <LicenseInstructions>https://purchase.aspose.com/policies/use-license</LicenseInstructions>\\r\\n  </Data>\\r\\n  <Signature>mFYcemoPfrXsGUWnC0oT2uR289LbOmnbnSNh3b756tCIeWVAJw5jivY236zdzaoU0+gyu8CnQq9Soiwz93HF6ychmsiqUaBcH/8EDTQqom1E/19rAKkSoDBpOwLO6sgl4CX2EmE3IdxTKzEd78j85fmUHSSql9WpW+UASSId/EE=</Signature>\\r\\n</License>";
     string Lic = "<?xml version=\"1.0\"?>\r\n<License>\r\n  <Data>\r\n    <LicensedTo>Shef USA</LicensedTo>\r\n    <EmailTo>tarunlamba@shefusa.com</EmailTo>\r\n    <LicenseType>Developer OEM</LicenseType>\r\n    <LicenseNote>1 Developer And Unlimited Deployment Locations</LicenseNote>\r\n    <OrderID>260226165350</OrderID>\r\n    <UserID>1327979</UserID>\r\n    <OEM>This is a redistributable license</OEM>\r\n    <Products>\r\n      <Product>Aspose.Total Product Family</Product>\r\n    </Products>\r\n    <EditionType>Professional</EditionType>\r\n    <SerialNumber>b9f2d0d5-bdef-4f1d-968d-4cdd2111ade2</SerialNumber>\r\n    <SubscriptionExpiry>20270226</SubscriptionExpiry>\r\n    <LicenseExpiry>20260326</LicenseExpiry>\r\n    <ExpiryNote>This is a temporary license for non-commercial use only and it will expire on 2026-03-26</ExpiryNote>\r\n    <LicenseVersion>3.0</LicenseVersion>\r\n    <LicenseInstructions>https://purchase.aspose.com/policies/use-license</LicenseInstructions>\r\n  </Data>\r\n  <Signature>mFYcemoPfrXsGUWnC0oT2uR289LbOmnbnSNh3b756tCIeWVAJw5jivY236zdzaoU0+gyu8CnQq9Soiwz93HF6ychmsiqUaBcH/8EDTQqom1E/19rAKkSoDBpOwLO6sgl4CX2EmE3IdxTKzEd78j85fmUHSSql9WpW+UASSId/EE=</Signature>\r\n</License>";
     byte[] byteArray = Encoding.UTF8.GetBytes(Lic);
     MemoryStream objStream = new(byteArray);
-    license.SetLicense(objStream);
 
-    if (File.Exists("Aspose.Email.lic"))
+    license.SetLicense(objStream);
+    try
     {
-        license.SetLicense("Aspose.Email.lic");
+        var logPath = @"C:\temp\debug_log.txt";
+        File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] Aspose.Email License applied successfully.{Environment.NewLine}");
     }
+    catch { }
+
+
+    //if (File.Exists("Aspose.Email.lic"))
+    //{
+    //    license.SetLicense("Aspose.Email.lic");
+    //}
 }
 catch (Exception ex)
 {
     Console.WriteLine($"Aspose.Email License Error: {ex.Message}");
-}
-
-// Initialize Aspose.Words License
-try
-{
-    var license = new Aspose.Words.License();
-    string Lic = "<?xml version=\"1.0\"?>\r\n<License>\r\n  <Data>\r\n    <LicensedTo>Shef USA</LicensedTo>\r\n    <EmailTo>tarunlamba@shefusa.com</EmailTo>\r\n    <LicenseType>Developer OEM</LicenseType>\r\n    <LicenseNote>1 Developer And Unlimited Deployment Locations</LicenseNote>\r\n    <OrderID>260226165350</OrderID>\r\n    <UserID>1327979</UserID>\r\n    <OEM>This is a redistributable license</OEM>\r\n    <Products>\r\n      <Product>Aspose.Total Product Family</Product>\r\n    </Products>\r\n    <EditionType>Professional</EditionType>\r\n    <SerialNumber>b9f2d0d5-bdef-4f1d-968d-4cdd2111ade2</SerialNumber>\r\n    <SubscriptionExpiry>20270226</SubscriptionExpiry>\r\n    <LicenseExpiry>20260326</LicenseExpiry>\r\n    <ExpiryNote>This is a temporary license for non-commercial use only and it will expire on 2026-03-26</ExpiryNote>\r\n    <LicenseVersion>3.0</LicenseVersion>\r\n    <LicenseInstructions>https://purchase.aspose.com/policies/use-license</LicenseInstructions>\r\n  </Data>\r\n  <Signature>mFYcemoPfrXsGUWnC0oT2uR289LbOmnbnSNh3b756tCIeWVAJw5jivY236zdzaoU0+gyu8CnQq9Soiwz93HF6ychmsiqUaBcH/8EDTQqom1E/19rAKkSoDBpOwLO6sgl4CX2EmE3IdxTKzEd78j85fmUHSSql9WpW+UASSId/EE=</Signature>\r\n</License>";
-    byte[] byteArray = Encoding.UTF8.GetBytes(Lic);
-    MemoryStream objStream = new(byteArray);
-    license.SetLicense(objStream);
-
-    Aspose.Words.Fonts.FontSettings.DefaultInstance.SetFontsFolders(new[]
-    {
-        @"C:\Windows\Fonts",
-        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts")
-    }, true);
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Aspose.Words License Error: {ex.Message}");
 }
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,181 +47,86 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
+builder.Services.AddMemoryCache();// This is for memory cache
+builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();// This is for storage pool
+builder.Services.AddScoped<PstService>();// This is for pst service
+builder.Services.AddHostedService<CleanupBackgroundService>();// This is for cleanup background service
+builder.Services.AddSingleton<LicenseAuthService>();// License auth (token caching)
+builder.Services.AddSingleton<LicenseApiClient>();// License API wrapper
+builder.Services.AddEndpointsApiExplorer();// This is for endpoints api explorer
+builder.Services.AddSwaggerGen();// This is for swagger gen
+builder.Services.AddOpenApi();// This is for open api
 
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-});
-
-builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();
-builder.Services.AddScoped<PstService>();
-builder.Services.AddHostedService<CleanupBackgroundService>();
-builder.Services.AddSingleton<LicenseAuthService>();
-builder.Services.AddSingleton<LicenseApiClient>();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddOpenApi();
-
+// Configure Response Compression
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
     options.Providers.Add<BrotliCompressionProvider>();
+    // We EXCLUDE large binary formats like PST/OST/ZIP from compression 
+    // because compressing 10GB+ files on-the-fly crushes server CPU and slows down transfer rates.
     options.MimeTypes = ResponseCompressionDefaults.MimeTypes;
 });
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
-// SQL Server
+// SQL Server Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions =>
-        sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null))
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null))
     .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
-// Clerk Auth — bypass OIDC discovery and use direct JWKS resolver
-// (OIDC discovery via Authority was failing silently for Clerk dev instances)
+// Clerk Authentication
 var clerkConfig = builder.Configuration.GetSection("Clerk");
-var clerkAuthority = clerkConfig["Authority"]?.TrimEnd('/') ?? "https://evolved-monkfish-45.clerk.accounts.dev";
-var clerkJwksUri = $"{clerkAuthority}/.well-known/jwks.json";
-
-Microsoft.IdentityModel.Tokens.JsonWebKeySet? _cachedJwks = null;
-DateTime _jwksCacheExpiry = DateTime.MinValue;
-var _jwksLock = new object();
-
-Microsoft.IdentityModel.Tokens.IssuerSigningKeyResolver clerkKeyResolver = (token, securityToken, kid, parameters) =>
-{
-    if (_cachedJwks == null || DateTime.Now > _jwksCacheExpiry)
-    {
-        lock (_jwksLock)
-        {
-            if (_cachedJwks == null || DateTime.Now > _jwksCacheExpiry)
-            {
-                try
-                {
-                    using var http = new HttpClient();
-                    http.Timeout = TimeSpan.FromSeconds(10);
-                    var jwksJson = http.GetStringAsync(clerkJwksUri).GetAwaiter().GetResult();
-                    _cachedJwks = new Microsoft.IdentityModel.Tokens.JsonWebKeySet(jwksJson);
-                    _jwksCacheExpiry = DateTime.Now.AddMinutes(10);
-                    Console.WriteLine($"[CLERK JWKS] Fetched {_cachedJwks.Keys.Count} keys from {clerkJwksUri}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[CLERK JWKS ERROR] Failed to fetch JWKS: {ex.Message}");
-                    return Array.Empty<Microsoft.IdentityModel.Tokens.SecurityKey>();
-                }
-            }
-        }
-    }
-
-    var keys = _cachedJwks?.GetSigningKeys() ?? Array.Empty<Microsoft.IdentityModel.Tokens.SecurityKey>();
-    if (!string.IsNullOrEmpty(kid))
-        keys = keys.Where(k => k.KeyId == kid).ToList();
-    return keys;
-};
-
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        Console.WriteLine($"[AUTH CONFIG] IsDevelopment: {builder.Environment.IsDevelopment()} | Setting ValidateLifetime to: {!builder.Environment.IsDevelopment()}");
+        options.Authority = clerkConfig["Authority"];
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = false, 
+            ValidateIssuer = true,
+            ValidateAudience = false, // Clerk doesn't strictly require audience validation for simple setups
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKeyResolver = clerkKeyResolver,
-            NameClaimType = "sub",
-            ClockSkew = TimeSpan.FromDays(30),
-            LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => 
-            {
-                Console.WriteLine($"[AUTH DEBUG] Validating token: nbf={notBefore}, exp={expires}, now={DateTime.UtcNow}");
-                return true;
-            }
+            NameClaimType = "sub" // Map Clerk 'sub' claim to Identity.Name
         };
         options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
         {
             OnAuthenticationFailed = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogError("[AUTH FAILED] {Message} | Type: {Type}", context.Exception.Message, context.Exception.GetType().Name);
-                if (context.Exception.InnerException != null)
-                    logger.LogError("[AUTH FAILED] Inner: {Message}", context.Exception.InnerException.Message);
-                context.NoResult();
+                logger.LogError("Authentication failed: {Message}", context.Exception.Message);
+                try
+                {
+                    var logPath = @"C:\temp\debug_log.txt";
+                    File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] AUTH FAILED: {context.Exception.Message}{Environment.NewLine}");
+                }
+                catch { }
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                var sub = context.Principal?.FindFirst("sub")?.Value ?? "unknown";
-                logger.LogInformation("[AUTH OK] JWT validated. sub={Sub}", sub);
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-
-                // Always suppress the default WWW-Authenticate 401 challenge.
-                // Without this, JWT Bearer issues a 401 for ALL unauthenticated requests
-                // even when the endpoint is AllowAnonymous.
-                context.HandleResponse();
-
-                // Only write a 401 response if the endpoint actually requires authorization.
-                // AllowAnonymous endpoints should pass through without any 401.
-                var endpoint = context.HttpContext.GetEndpoint();
-                var isAnonymous = endpoint?.Metadata
-                    .GetMetadata<Microsoft.AspNetCore.Authorization.IAllowAnonymous>() != null;
-
-                if (!isAnonymous)
+                if (logger.IsEnabled(LogLevel.Information))
                 {
-                    logger.LogWarning("[AUTH CHALLENGE] Returning 401 for protected endpoint {Path}. Error: {Error}",
-                        context.Request.Path, context.Error);
-                    context.Response.StatusCode = 401;
-                    context.Response.ContentType = "application/json";
-                    return context.Response.WriteAsync(
-                        "{\"error\":\"Authentication required\",\"message\":\"Please provide a valid Bearer token.\"}");
+                    logger.LogInformation("Token validated successfully for user: {User}", context.Principal?.Identity?.Name);
                 }
-
-                logger.LogInformation("[AUTH CHALLENGE] Suppressed challenge for AllowAnonymous endpoint {Path}",
-                    context.Request.Path);
-                return Task.CompletedTask;
-            },
-            OnMessageReceived = context =>
-            {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("[JWT RECEIVED] {Path} | Header size: {Size}",
-                    context.Request.Path, context.Request.Headers["Authorization"].ToString().Length);
                 return Task.CompletedTask;
             }
         };
     });
 
-// FORCE BYPASS Lifetime Validation for Dev (post-configure to override anything)
-builder.Services.PostConfigure<Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerOptions>(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme, options =>
-{
-    if (builder.Environment.IsDevelopment())
-    {
-        Console.WriteLine("[AUTH PATCH] Applying development lifetime validation bypass.");
-        options.TokenValidationParameters.ValidateLifetime = false;
-        options.TokenValidationParameters.ClockSkew = TimeSpan.FromDays(20);
-        options.TokenValidationParameters.LifetimeValidator = (nbf, exp, token, param) => {
-             Console.WriteLine($"[AUTH PATCH DEBUG] Ignoring life cycle: nbf={nbf}, exp={exp}");
-             return true; 
-        };
-    }
-});
-
-// Rate Limiting
+// Add Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "guest",
+            partitionKey: httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
             factory: partition => new FixedWindowRateLimiterOptions
             {
                 AutoReplenishment = true,
@@ -241,22 +135,34 @@ builder.Services.AddRateLimiter(options =>
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 Window = TimeSpan.FromMinutes(1)
             }));
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(new { error = "Too many requests. Please try again later." }, token);
+    };
 });
 
-// CORS
+// Add CORS 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp", policy =>
-    {
-        if (builder.Environment.IsDevelopment())
+    options.AddPolicy("AllowReactApp",
+        policy =>
         {
-            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-        }
-        else
-        {
-            policy.WithOrigins("https://osttopst.us", "https://www.osttopst.us").AllowAnyMethod().AllowAnyHeader();
-        }
-    });
+            if (builder.Environment.IsDevelopment())
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+            else
+            {
+                // Tighten CORS for production
+                policy.WithOrigins("https://osttopst.us", "https://www.osttopst.us")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+        });
 });
 
 builder.Services.AddAuthorization();
@@ -276,18 +182,22 @@ else
     builder.Services.AddDistributedMemoryCache();
 }
 
+// Configure upload limit per request (chunked uploads use ~100MB chunks)
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize = 2_147_483_648;
+    options.Limits.MaxRequestBodySize = 2_147_483_648; // 2 GB per chunk request
     options.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(30);
     options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(30);
-    options.Limits.MinRequestBodyDataRate = null;
-    options.Limits.MaxResponseBufferSize = 1024 * 1024;
-    options.Limits.MinResponseDataRate = null;
+    options.Limits.MinRequestBodyDataRate = null; // Disable minimum data rate for slow uploads
+
+    // Performance tuning for large file downloads
+    options.Limits.MaxResponseBufferSize = 1024 * 1024; // 1MB buffer
+    options.Limits.MinResponseDataRate = null; // Don't kill slow connections
 });
 
 var app = builder.Build();
 
+// Configure pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -298,25 +208,11 @@ if (app.Environment.IsDevelopment())
 app.UseResponseCompression();
 app.UseCors("AllowReactApp");
 
-// Custom Request Logging Middleware
+// Middleware to support token in query string for downloads
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path.Value?.StartsWith("/api") == true)
-    {
-        var msg = $"[API DEBUG] {context.Request.Method} {context.Request.Path} | Auth Header: {context.Request.Headers.Authorization.ToString().Length > 0}";
-        Console.WriteLine(msg); // Hard output to console
-        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("[API REQUEST] {Method} {Path} | Auth Header: {HasAuth} | Size: {Size}",
-            context.Request.Method, context.Request.Path,
-            context.Request.Headers.ContainsKey("Authorization"),
-            context.Request.Headers["Authorization"].ToString().Length);
-    }
-    await next();
-});
-
-app.Use(async (context, next) =>
-{
-    if (context.Request.Query.ContainsKey("token") && string.IsNullOrEmpty(context.Request.Headers.Authorization))
+    if (context.Request.Query.ContainsKey("token") &&
+        string.IsNullOrEmpty(context.Request.Headers.Authorization))
     {
         var token = context.Request.Query["token"];
         context.Request.Headers.Authorization = $"Bearer {token}";
@@ -328,15 +224,20 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
-// DB Init
-try
+// Initialize Database Schema (Add missing columns if needed)
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
-    DbInitializer.Initialize(scope.ServiceProvider.GetRequiredService<AppDbContext>());
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"[STARTUP ERROR] {ex.Message}");
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        DbInitializer.Initialize(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while initializing the database.");
+    }
 }
 
 app.UseDefaultFiles();
@@ -353,35 +254,38 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// Minimal API Test Root
 app.MapGet("/api/status", () => Results.Ok(new { status = "API is running", timestamp = DateTime.Now }));
 
-app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsPrincipal user, [FromQuery] string? email, [FromQuery] string? itemId, ILogger<Program> logger) =>
+// License server connectivity test
+app.MapGet("/api/license/test", async (LicenseApiClient licenseClient, IConfiguration config) =>
 {
-    var licenseId = user.GetUserEmailId(email, builder.Configuration["LicenseApi:UserId"]);
+    var userId = config["LicenseApi:UserId"] ?? "test";
+    var toolId = config["LicenseApi:ToolId"] ?? "1";
+    var result = await licenseClient.GetLicenceStatus(userId);
+    return Results.Ok(new { userId, toolId, response = result });
+});
 
-    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId, itemId);
-    return Results.Ok(status);
-}).AllowAnonymous();
-
-app.MapPost("/api/license/subscription", async (
-    [FromBody] SubscriptionRequest subscriptionRequest,
-    LicenseApiClient licenseClient,
-    ClaimsPrincipal user,
-    [FromQuery] string? email,
-    ILogger<Program> logger) =>
+app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsPrincipal user, [FromQuery] string? email, ILogger<Program> logger) =>
 {
-    var licenseId = user.GetUserEmailId(email, builder.Configuration["LicenseApi:UserId"]);
+    // Prioritize email address passed from frontend, otherwise fallback to JWT claims
+    var licenseId = email
+                 ?? user.FindFirstValue(ClaimTypes.Email)
+                 ?? user.FindFirstValue("email")
+                 ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
+                 ?? "anonymous";
 
-    var toolId = ((int)Tool.ConvertOSTToPST).ToString();
-    var result = await licenseClient.GenerateSubscriptionRequestAsync(licenseId, toolId, subscriptionRequest);
-
-    if (!result.Success)
+    if (logger.IsEnabled(LogLevel.Information))
     {
-        return Results.Json(new { error = result.Message, raw = result.RawResponse }, statusCode: 502);
+        logger.LogInformation("[LICENSE REQ] Using License ID: {LicenseId} (Source: {Source})",
+            licenseId,
+            email != null ? "QueryParam" : (user.FindFirstValue(ClaimTypes.Email) != null ? "ClaimTypes.Email" : "Fallback"));
     }
 
-    return Results.Ok(result);
-}).RequireAuthorization();
+    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId, null);
+    return Results.Ok(status);
+});
+
 
 app.MapFileEndpoints();
 app.MapFolderEndpoints();
@@ -390,48 +294,16 @@ app.MapConversionEndpoints();
 app.MapSessionEndpoints();
 app.MapHowItWorksEndpoints();
 app.MapReviewEndpoints();
-app.MapControllers();
+
+app.MapControllers(); // Register attribute-routed API controllers like BlogsController
+
+// Fallback to index.html for SPA-style routing (useful if we serve React from here, though we are decoupled)
 app.MapFallbackToFile("index.html");
 
-// DEV UTILITY: Set usage and allotments for testing
-app.MapPost("/api/dev/set-usage", async (AppDbContext db, LicenseApiClient licenseClient, IDistributedCache cache,
-    [FromQuery] string email,
-    [FromQuery] int? items,
-    [FromQuery] long? storage,
-    [FromQuery] int? allottedItems,
-    [FromQuery] long? allottedStorage,
-    [FromQuery] int? tier) =>
-{
-    var id = email.ToLowerInvariant();
-    var license = await db.MockLicenses.FirstOrDefaultAsync(l => l.LicenseId == id);
-    if (license == null)
-    {
-        license = new MockLicense { LicenseId = id };
-        db.MockLicenses.Add(license);
-    }
-
-    if (items.HasValue) license.TotalItemsUsed = items.Value;
-    if (storage.HasValue) license.TotalStorageUsed = storage.Value;
-    if (allottedItems.HasValue) license.TotalItemsAllotted = allottedItems.Value;
-    if (allottedStorage.HasValue) license.TotalStorageAllotted = allottedStorage.Value;
-    if (tier.HasValue) license.Tier = (LicenseTier)tier.Value;
-    else license.Tier = LicenseTier.Professional;
-
-    license.LastUpdated = DateTime.Now;
-    await db.SaveChangesAsync();
-
-    licenseClient.InvalidateCache(id);
-    await cache.RemoveAsync($"license_status_{id}");
-
-    return Results.Ok(new
-    {
-        message = "Usage and Allotment updated",
-        used = license.TotalItemsUsed,
-        allotted = license.TotalItemsAllotted,
-        storageUsed = license.TotalStorageUsed,
-        storageAllotted = license.TotalStorageAllotted,
-        tier = license.Tier.ToString()
-    });
-});
-
+Console.WriteLine("=================================================");
+Console.WriteLine("   PST CONVERTER API - SYSTEM READY             ");
+Console.WriteLine("=================================================");
+Console.WriteLine($"URL: http://localhost:5000");
+Console.WriteLine($"Time: {DateTime.Now}");
+Console.WriteLine("-------------------------------------------------");
 app.Run();

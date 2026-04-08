@@ -17,12 +17,14 @@ public static class FileEndpoints
     public static void MapFileEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/file-details");
-        
-        group.MapGet("/diag/claims", (ClaimsPrincipal user) => {
+
+        group.MapGet("/diag/claims", (ClaimsPrincipal user) =>
+        {
             return Results.Ok(user.Claims.Select(c => new { c.Type, c.Value }));
         }).RequireAuthorization();
 
-        group.MapGet("/diag/licenses", async (PstConverter.Data.AppDbContext db) => {
+        group.MapGet("/diag/licenses", async (PstConverter.Data.AppDbContext db) =>
+        {
             var licenses = await db.MockLicenses.ToListAsync();
             return Results.Ok(licenses);
         }).AllowAnonymous();
@@ -47,7 +49,12 @@ public static class FileEndpoints
                 if (file.Length > AllConstants.MaxUploadSize)
                 {
                     logger.LogWarning("Upload rejected: File size {Size} exceeds maximum limit of 5GB", file.Length);
-                    return Results.BadRequest(new { error = "File size exceeds the 5GB limit. Please contact support for larger files." });
+
+                    return Results.BadRequest(new
+                    {
+                        code = "FILE_TOO_LARGE",   // ✅ ADD THIS
+                        error = "File size exceeds the 5GB limit. Please use our Desktop Software for unlimited file sizes."
+                    });
                 }
 
                 var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -59,10 +66,10 @@ public static class FileEndpoints
 
                 var userId = user.GetInternalUserId();
                 var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
-                
+
                 if (logger.IsEnabled(LogLevel.Information))
                 {
-                   logger.LogInformation("[AUTH DEBUG] User: {UserId}, Identified Email: {Email}", userId, userEmail);
+                    logger.LogInformation("[AUTH DEBUG] User: {UserId}, Identified Email: {Email}", userId, userEmail);
                 }
 
                 if (logger.IsEnabled(LogLevel.Information))
@@ -75,7 +82,7 @@ public static class FileEndpoints
                     return Results.BadRequest(new { error = $"The file '{file.FileName}' does not have a valid {ext.ToUpperInvariant().TrimStart('.')} signature." });
                 }
                 var sessionId = await pstService.SaveUploadedFileAsync(stream, file.FileName, userId, file.Length, userEmail, password);
-                
+
                 if (logger.IsEnabled(LogLevel.Information))
                     logger.LogInformation("File uploaded successfully. SessionId: {SessionId}, FileName: {FileName}", sessionId, file.FileName);
                 return Results.Ok(new { sessionId, fileName = file.FileName, size = file.Length, fileType = ext.TrimStart('.') });
@@ -119,8 +126,11 @@ public static class FileEndpoints
 
                 if (request.TotalSize > AllConstants.MaxUploadSize)
                 {
-                    logger.LogWarning("Chunked upload initialization rejected: File size {Size} exceeds 5GB limit", request.TotalSize);
-                    return Results.BadRequest(new { error = "File size exceeds the 5GB limit. Please contact support for larger files." });
+                    return Results.BadRequest(new
+                    {
+                        code = "FILE_TOO_LARGE",
+                        error = "File size exceeds the 5GB limit."
+                    });
                 }
 
                 if (request.TotalChunks <= 0)
@@ -321,7 +331,7 @@ public static class FileEndpoints
     /// <param name="stream">The file stream to validate.</param>
     /// <param name="expectedExtension">The expected file extension (.pst or .ost).</param>
     /// <returns>True if the file signature and version are valid; otherwise, false.</returns>
-    
+
     //this is for validating the outlook data file
     public static bool IsValidOutlookDataFile(Stream stream, string expectedExtension)
     {

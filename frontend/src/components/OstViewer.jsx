@@ -572,7 +572,7 @@ const PreviewPhase = ({ session, onReset, getToken }) => {
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-violet-50 border border-violet-100 rounded-full">
               <Eye size={10} className="text-violet-500" />
-              <span className="text-[9px] font-black text-violet-600 uppercase tracking-widest">
+              <span className="text-[9px] font-black text-brand-600 uppercase tracking-widest">
                 Preview Mode
               </span>
             </div>

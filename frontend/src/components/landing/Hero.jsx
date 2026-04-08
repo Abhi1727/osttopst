@@ -7,7 +7,7 @@ import React, {
   Suspense,
 } from "react";
 import { useDropzone } from "react-dropzone";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Route } from "react-router-dom";
 import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { fileService } from "../../services/fileService";
 import { conversionService } from "../../services/conversionService";
@@ -22,7 +22,9 @@ import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2";
 import Crown from "lucide-react/dist/esm/icons/crown";
 import Hexagon from "lucide-react/dist/esm/icons/hexagon";
 import Shield from "lucide-react/dist/esm/icons/shield";
+import X from "lucide-react/dist/esm/icons/x";
 import { Progress } from "@/components/ui/progress";
+import UpgradeModal from "./pricingpop";
 
 const ExportDialog = lazy(() => import("../ExportDialog"));
 import licenseService from "../../services/licenseService";
@@ -44,6 +46,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [finishedDownload, setFinishedDownload] = useState(false);
+  const [showOversizedFileModal, setShowOversizedFileModal] = useState(false);
 
   const { getToken } = useAuth();
   const uploadActive = useRef(false);
@@ -110,6 +113,20 @@ const Hero = ({ onUploadComplete, onRestore }) => {
 
       const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
       if (selectedFile.size > MAX_SIZE) {
+        // Check if user is on professional tier
+        let tierStr = "";
+        if (licenseStatus?.tier !== undefined) tierStr = String(licenseStatus.tier);
+        else if (licenseStatus?.Tier !== undefined) tierStr = String(licenseStatus.Tier);
+        
+        const isProfessional = tierStr === "3" || tierStr.toLowerCase() === "professional";
+        
+        if (isProfessional) {
+          // Show pricing modal for professional users with oversized files
+          setShowOversizedFileModal(true);
+          return;
+        }
+        
+        // For non-professional users, show error toast
         toast.error("File size exceeds the 5GB limit. Please use our Desktop Software for unlimited file sizes.");
         return;
       }
@@ -164,7 +181,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         setUploading(false);
       }
     },
-    [isSignedIn, getToken, uploading, clerk, onUploadComplete],
+    [isSignedIn, getToken, uploading, clerk, onUploadComplete, licenseStatus],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({

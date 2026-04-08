@@ -6,16 +6,6 @@ import Mail from "lucide-react/dist/esm/icons/mail";
 import Eye from "lucide-react/dist/esm/icons/eye";
 import Rocket from "lucide-react/dist/esm/icons/rocket";
 import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
-import FileText from "lucide-react/dist/esm/icons/file-text";
-import Braces from "lucide-react/dist/esm/icons/braces";
-import Archive from "lucide-react/dist/esm/icons/archive";
-import MessageSquare from "lucide-react/dist/esm/icons/message-square";
-import Code from "lucide-react/dist/esm/icons/code";
-import FileCode from "lucide-react/dist/esm/icons/file-code";
-import Table from "lucide-react/dist/esm/icons/table";
-import User from "lucide-react/dist/esm/icons/user";
-import Calendar from "lucide-react/dist/esm/icons/calendar";
-import Image from "lucide-react/dist/esm/icons/image";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -79,25 +69,13 @@ const UnifiedHeader = ({ session, onReset }) => {
   ];
 
   const productsList = [
-    { label: "OST Viewer Online", path: "/ost-viewer", icon: <Eye size={18} /> },
-    { label: "OST Converter", path: "/", icon: <Rocket size={18} /> },
-    { label: "OST to PDF", path: "/ost-to-pdf", icon: <FileText size={18} /> },
-    { label: "OST to JSON", path: "/ost-to-json", icon: <Braces size={18} /> },
-    { label: "OST to MBOX", path: "/ost-to-mbox", icon: <Archive size={18} /> },
-    { label: "OST to EML", path: "/ost-to-eml", icon: <Mail size={18} /> },
-    { label: "OST to MSG", path: "/ost-to-msg", icon: <MessageSquare size={18} /> },
-    // { label: "OST to HTML", path: "/ost-to-html", icon: <Code size={18} /> },
-    // { label: "OST to MHTML", path: "/ost-to-mhtml", icon: <FileCode size={18} /> },
-    // { label: "OST to DOC", path: "/ost-to-doc", icon: <FileText size={18} /> },
-    // { label: "OST to DOCX", path: "/ost-to-docx", icon: <FileText size={18} /> },
-    // { label: "OST to TXT", path: "/ost-to-txt", icon: <FileText size={18} /> },
-    // { label: "OST to RTF", path: "/ost-to-rtf", icon: <FileText size={18} /> },
-    // { label: "OST to CSV", path: "/ost-to-csv", icon: <Table size={18} /> },
-    // { label: "OST to XML", path: "/ost-to-xml", icon: <Code size={18} /> },
-    // { label: "OST to VCF", path: "/ost-to-vcf", icon: <User size={18} /> },
-    // { label: "OST to ICS", path: "/ost-to-ics", icon: <Calendar size={18} /> },
-    // { label: "OST to XPS", path: "/ost-to-xps", icon: <FileText size={18} /> },
-    // { label: "OST to TIFF", path: "/ost-to-tiff", icon: <Image size={18} /> },
+    { bullet: "•", label: "OST Viewer Online", path: "/ost-viewer" },
+    { bullet: "•", label: "OST Converter", path: "/" },
+    { bullet: "•", label: "OST to PDF", path: "/ost-to-pdf" },
+    { bullet: "•", label: "OST to JSON", path: "/ost-to-json" },
+    { bullet: "•", label: "OST to MBOX", path: "/ost-to-mbox" },
+    { bullet: "•", label: "OST to EML", path: "/ost-to-eml" },
+    { bullet: "•", label: "OST to MSG", path: "/ost-to-msg" },
   ];
 
 
@@ -149,7 +127,7 @@ const UnifiedHeader = ({ session, onReset }) => {
             onClick={() => handleNavigation("/ost-viewer")}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
               isViewerActive
-                ? "bg-white text-violet-600 shadow-sm"
+                ? "bg-white text-brand-600 shadow-sm"
                 : "text-slate-400 hover:text-slate-600"
             }`}
           >
@@ -183,18 +161,15 @@ const UnifiedHeader = ({ session, onReset }) => {
                     <div className="grid grid-cols-4 gap-2">
                       {productsList.map((prod) => (
                         <span
-                          key={prod.label}
-                          onClick={() => {
+                        key={prod.label}
+                        onClick={() => {
                             setIsProductsMenuOpen(false);
                             handleNavigation(prod.path);
                           }}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-500 hover:text-white cursor-pointer transition-all group/prod hover:shadow-lg hover:shadow-brand-500/20 active:scale-95"
                         >
-                          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-brand-50 text-brand-500 group-hover/prod:bg-white/20 group-hover/prod:text-white transition-colors shrink-0 outline outline-1 outline-brand-100 group-hover/prod:outline-transparent shadow-sm">
-                            {prod.icon}
-                          </div>
                           <span className="text-sm font-semibold text-slate-700 group-hover/prod:text-white transition-colors truncate">
-                            {prod.label}
+                            {prod.bullet} {prod.label}
                           </span>
                         </span>
                       ))}
@@ -297,7 +272,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                     onClick={() => handleNavigation("/ost-viewer")}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
                       isViewerActive
-                        ? "bg-white text-violet-600 shadow-sm"
+                        ? "bg-white text-brand-600 shadow-sm"
                         : "text-slate-400"
                     }`}
                   >
@@ -321,10 +296,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                               onClick={() => handleNavigation(prod.path)}
                               className="flex items-center gap-3 py-3 px-6 text-sm font-semibold rounded-xl transition-colors text-slate-700 hover:bg-brand-500 hover:text-white group"
                             >
-                              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-brand-50 text-brand-500 outline outline-1 outline-brand-100 group-hover:bg-white/20 group-hover:text-white group-hover:outline-transparent transition-colors shrink-0">
-                                {React.cloneElement(prod.icon, { size: 14 })}
-                              </div>
-                              {prod.label}
+                              {prod.bullet} {prod.label}
                             </button>
                           </SheetClose>
                         ))}
