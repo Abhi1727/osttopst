@@ -28,6 +28,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { fileService } from "../services/fileService";
+import UpgradeModal from "./landing/pricingpop";
+
 
 // ─── Hero / Upload ───────────────────────────────────────────────────────────
 
@@ -37,6 +39,7 @@ const HeroUpload = ({ onSessionReady }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFile = useCallback(
@@ -49,7 +52,7 @@ const HeroUpload = ({ onSessionReady }) => {
       }
       const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
       if (file.size > MAX_SIZE) {
-        toast.error("File size exceeds the 5GB limit. Please choose a smaller file.");
+        setShowUpgradeModal(true);
         return;
       }
       setUploading(true);
@@ -94,65 +97,67 @@ const HeroUpload = ({ onSessionReady }) => {
   };
 
   return (
-    <div
-      onDrop={handleFileDrop}
-      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-      onDragLeave={() => setIsDragging(false)}
-      onClick={handleBrowseClick}
-      className={cn(
-        "w-full max-w-[520px] mx-auto rounded-[28px] border-2 border-dashed p-10 text-center cursor-pointer transition-all duration-300 bg-white shadow-xl shadow-slate-200/60",
-        isDragging ? "border-brand-500 bg-brand-50/60 scale-[1.01]" : "border-slate-200 hover:border-brand-400 hover:bg-brand-50/20",
-        uploading && "pointer-events-none",
-      )}
-    >
-      <input ref={fileInputRef} type="file" accept=".ost,.pst" className="hidden" onChange={handleFileInputChange} />
-      {uploading ? (
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative w-16 h-16">
-            <div className="w-16 h-16 rounded-full border-4 border-brand-100" />
-            <div className="absolute inset-0 rounded-full border-4 border-brand-500 border-t-transparent animate-spin" style={{ animationDuration: "0.8s" }} />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-black text-brand-600">{progress?.percent ?? 0}%</span>
-            </div>
-          </div>
-          <div>
-            <div className="text-base font-black text-slate-900">
-              {progress?.phase === "init" && "Initializing..."}
-              {progress?.phase === "uploading" && "Uploading file..."}
-              {progress?.phase === "finalizing" && "Processing..."}
-              {progress?.phase === "complete" && "Almost ready!"}
-            </div>
-            <div className="text-sm text-slate-400 mt-1">{progress?.detail}</div>
-          </div>
-          <div className="w-full max-w-[260px] bg-slate-100 rounded-full h-1.5 overflow-hidden">
-            <div className="h-full bg-brand-500 rounded-full transition-all duration-300" style={{ width: `${progress?.percent ?? 0}%` }} />
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-5">
-          <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300", isDragging ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-brand-500 group-hover:text-white")}>
-            <CloudUpload size={30} />
-          </div>
-          <div>
-            <div className="text-xl font-black text-slate-900 mb-1">{isDragging ? "Drop to preview" : "Drop your OST / PST file"}</div>
-            <div className="text-sm text-slate-400">or <span className="text-brand-500 font-bold underline underline-offset-4">click to browse</span></div>
-          </div>
-          <div className="flex gap-2">
-            {[".OST", ".PST"].map((ext) => (
-              <span key={ext} className="px-3 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest">{ext}</span>
-            ))}
-          </div>
-          <div className="flex flex-wrap justify-center gap-3 mt-1">
-            {["Secure access", "100% private"].map((l) => (
-              <div key={l} className="flex items-center gap-1.5">
-                <Check size={11} className="text-emerald-500" />
-                <span className="text-[11px] font-bold text-slate-400">{l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="w-full max-w-[950px] bg-white rounded-[24px] sm:rounded-[32px] px-6 py-8 sm:px-10 sm:py-12 md:py-16 lg:px-10 lg:py-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center text-center relative overflow-hidden transition-all">
+
+  <div className="w-full transition-all duration-300 border-none cursor-pointer group">
+    
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept=".ost,.pst"
+      className="hidden"
+      onChange={handleFileInputChange}
+    />
+
+    <div className="flex flex-col items-center gap-6 sm:gap-8 lg:gap-6">
+      
+      {/* ICON */}
+      <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-24 lg:h-24 flex items-center justify-center">
+        <CloudUpload size={96} className="w-full h-full text-slate-900 stroke-[1.2]" />
+      </div>
+
+      {/* TITLE */}
+      <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-bold text-slate-900 tracking-tight mb-1">
+        Upload Your OST File
+      </h3>
+
+      {/* BUTTON */}
+      <div className="w-full max-w-sm sm:max-w-md lg:max-w-sm">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleBrowseClick();
+          }}
+          disabled={uploading}
+          className="w-full h-14 bg-brand-500 hover:bg-brand-600 text-lg md:text-xl font-bold rounded-xl flex gap-3 items-center justify-center shadow-[0_12px_35px_-8px_rgba(14,165,233,0.3)] transition-all active:scale-95 text-white"
+        >
+          {uploading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Upload className="w-6 h-6" />
+          )}
+          {uploading ? "Uploading..." : "Upload OST File"}
+        </button>
+      </div>
+
+      {/* FOOTER TEXT */}
+      <div className="flex flex-col gap-3">
+        <p className="text-xs sm:text-sm font-bold tracking-tight">
+          Supports .ost/.pst files · Max 5GB
+        </p>
+        <p className="text-xs sm:text-sm text-slate-900 font-medium">
+          Secure upload · No data stored
+        </p>
+      </div>
+
     </div>
+  </div>
+
+  {/* MODAL */}
+  {showUpgradeModal && (
+    <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+  )}
+</div>
   );
 };
 
