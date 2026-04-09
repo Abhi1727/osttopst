@@ -16,6 +16,17 @@ using Aspose.Words;
 using Aspose.Email.Calendar;
 using Aspose.Email.Mapi;
 
+
+// Frontend
+//    ↓
+// FileEndpoints
+//    ↓
+// PstService
+//    ↓
+// Disk (files) + DB (sessions)
+//    ↓
+// Aspose.Email (conversion)
+
 namespace PstConverter.Services;
 
 

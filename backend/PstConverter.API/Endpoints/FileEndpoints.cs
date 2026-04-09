@@ -8,15 +8,26 @@ using PstConverter.Extensions;
 
 namespace PstConverter.Endpoints;
 
+
+// 1. User selects file (React)
+// 2. Frontend calls → /upload/init
+// 3. Backend checks size (5GB limit)
+// 4. Returns uploadId
+// 5. Frontend uploads chunks
+// 6. Backend stores chunks
+// 7. Frontend calls finalize
+// 8. Backend merges → creates session
+
 public static class FileEndpoints
 {
     /// <summary>
     /// Extension method to map file-related API endpoints (upload, initialization, chunking, finalization, and deletion).
     /// </summary>
     /// <param name="app">The IEndpointRouteBuilder instance.</param>
+    
     public static void MapFileEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/file-details");
+        var group = app.MapGroup("/api/file-details");//Everything (upload, chunking, delete) comes from here.
 
         group.MapGet("/diag/claims", (ClaimsPrincipal user) =>
         {
@@ -30,78 +41,78 @@ public static class FileEndpoints
         }).AllowAnonymous();
 
         // ======== LEGACY SINGLE-FILE UPLOAD (kept for backward compatibility with small files) ========
-        group.MapPost("/upload", async ([FromForm] IFormFile file, [FromForm] string? password, [FromForm] string? email, PstService pstService, LicenseApiClient licenseClient, ClaimsPrincipal user, IConfiguration config, ILogger<Program> logger) =>
-        {
-            try
-            {
-                if (logger.IsEnabled(LogLevel.Information))
-                {
-                    logger.LogInformation("Upload request received. File: {FileName}, Size: {Size} bytes",
-                        file?.FileName, file?.Length);
-                }
+        // group.MapPost("/upload", async ([FromForm] IFormFile file, [FromForm] string? password, [FromForm] string? email, PstService pstService, LicenseApiClient licenseClient, ClaimsPrincipal user, IConfiguration config, ILogger<Program> logger) =>
+        // {
+        //     try
+        //     {
+        //         if (logger.IsEnabled(LogLevel.Information))
+        //         {
+        //             logger.LogInformation("Upload request received. File: {FileName}, Size: {Size} bytes",
+        //                 file?.FileName, file?.Length);
+        //         }
 
-                if (file == null || file.Length == 0)
-                {
-                    logger.LogWarning("Upload rejected: No file uploaded");
-                    return Results.BadRequest(new { error = "No file uploaded" });
-                }
+        //         if (file == null || file.Length == 0)
+        //         {
+        //             logger.LogWarning("Upload rejected: No file uploaded");
+        //             return Results.BadRequest(new { error = "No file uploaded" });
+        //         }
 
-                if (file.Length > AllConstants.MaxUploadSize)
-                {
-                    logger.LogWarning("Upload rejected: File size {Size} exceeds maximum limit of 5GB", file.Length);
+        //         if (file.Length > AllConstants.MaxUploadSize)
+        //         {
+        //             logger.LogWarning("Upload rejected: File size {Size} exceeds maximum limit of 5GB", file.Length);
 
-                    return Results.BadRequest(new
-                    {
-                        code = "FILE_TOO_LARGE",   // ✅ ADD THIS
-                        error = "File size exceeds the 5GB limit. Please use our Desktop Software for unlimited file sizes."
-                    });
-                }
+        //             return Results.BadRequest(new
+        //             {
+        //                 code = "FILE_TOO_LARGE",   // ✅ ADD THIS
+        //                 error = "File size exceeds the 5GB limit. Please use our Desktop Software for unlimited file sizes."
+        //             });
+        //         }
 
-                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (ext != ".pst" && ext != ".ost")
-                {
-                    logger.LogWarning("Upload rejected: Invalid file type {Extension} for file {FileName}", ext, file.FileName);
-                    return Results.BadRequest(new { error = $"The file '{file.FileName}' is not a valid Outlook data file. Only .pst and .ost are allowed." });
-                }
+        //         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        //         if (ext != ".pst" && ext != ".ost")
+        //         {
+        //             logger.LogWarning("Upload rejected: Invalid file type {Extension} for file {FileName}", ext, file.FileName);
+        //             return Results.BadRequest(new { error = $"The file '{file.FileName}' is not a valid Outlook data file. Only .pst and .ost are allowed." });
+        //         }
 
-                var userId = user.GetInternalUserId();
-                var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
+        //         var userId = user.GetInternalUserId();
+        //         var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
 
-                if (logger.IsEnabled(LogLevel.Information))
-                {
-                    logger.LogInformation("[AUTH DEBUG] User: {UserId}, Identified Email: {Email}", userId, userEmail);
-                }
+        //         if (logger.IsEnabled(LogLevel.Information))
+        //         {
+        //             logger.LogInformation("[AUTH DEBUG] User: {UserId}, Identified Email: {Email}", userId, userEmail);
+        //         }
 
-                if (logger.IsEnabled(LogLevel.Information))
-                    logger.LogInformation("Processing file for user: {UserId}", userId);
+        //         if (logger.IsEnabled(LogLevel.Information))
+        //             logger.LogInformation("Processing file for user: {UserId}", userId);
 
-                using var stream = file.OpenReadStream();
-                if (!IsValidOutlookDataFile(stream, ext))
-                {
-                    logger.LogWarning("Upload rejected: Invalid file signature for file {FileName} with extension {Extension}", file.FileName, ext);
-                    return Results.BadRequest(new { error = $"The file '{file.FileName}' does not have a valid {ext.ToUpperInvariant().TrimStart('.')} signature." });
-                }
-                var sessionId = await pstService.SaveUploadedFileAsync(stream, file.FileName, userId, file.Length, userEmail, password);
+        //         using var stream = file.OpenReadStream();
+        //         if (!IsValidOutlookDataFile(stream, ext))
+        //         {
+        //             logger.LogWarning("Upload rejected: Invalid file signature for file {FileName} with extension {Extension}", file.FileName, ext);
+        //             return Results.BadRequest(new { error = $"The file '{file.FileName}' does not have a valid {ext.ToUpperInvariant().TrimStart('.')} signature." });
+        //         }
+        //         var sessionId = await pstService.SaveUploadedFileAsync(stream, file.FileName, userId, file.Length, userEmail, password);
 
-                if (logger.IsEnabled(LogLevel.Information))
-                    logger.LogInformation("File uploaded successfully. SessionId: {SessionId}, FileName: {FileName}", sessionId, file.FileName);
-                return Results.Ok(new { sessionId, fileName = file.FileName, size = file.Length, fileType = ext.TrimStart('.') });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Upload failed with exception: {Message}", ex.Message);
-                return Results.Problem(
-                    detail: ex.InnerException?.Message ?? ex.Message,
-                    title: "Failed to process file",
-                    statusCode: 500);
-            }
-        })
-        .DisableAntiforgery()
-        .AllowAnonymous()
-        .WithName("UploadPst")
-        .WithTags("File Operations")
-        .WithSummary("Upload a PST/OST file (single request, for small files)")
-        .WithDescription("Saves the uploaded file and returns a session ID for subsequent operations.");
+        //         if (logger.IsEnabled(LogLevel.Information))
+        //             logger.LogInformation("File uploaded successfully. SessionId: {SessionId}, FileName: {FileName}", sessionId, file.FileName);
+        //         return Results.Ok(new { sessionId, fileName = file.FileName, size = file.Length, fileType = ext.TrimStart('.') });
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         logger.LogError(ex, "Upload failed with exception: {Message}", ex.Message);
+        //         return Results.Problem(
+        //             detail: ex.InnerException?.Message ?? ex.Message,
+        //             title: "Failed to process file",
+        //             statusCode: 500);
+        //     }
+        // })
+        // .DisableAntiforgery()
+        // .AllowAnonymous()
+        // .WithName("UploadPst")
+        // .WithTags("File Operations")
+        // .WithSummary("Upload a PST/OST file (single request, for small files)")
+        // .WithDescription("Saves the uploaded file and returns a session ID for subsequent operations.");
         //.RequireAuthorization();
 
         // ======== CHUNKED UPLOAD ENDPOINTS ========
