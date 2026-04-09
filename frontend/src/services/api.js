@@ -9,10 +9,15 @@ export const getHeaders = (token) => {
 };
 
 export const getRecentSessions = async (token) => {
-  const res = await fetch(`${API_BASE_URL}/sessions/recent`, {
-    headers: getHeaders(token),
-  });
-  return handleResponse(res);
+  try {
+    const res = await fetch(`${API_BASE_URL}/sessions/recent`, {
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.warn("[ConversionHistory] Backend unavailable, skipping history fetch.");
+    return [];
+  }
 };
 
 export const checkDuplicate = async (fingerprint, token) => {
@@ -69,11 +74,16 @@ export const getFolderTree = async (sessionId, token, excludeEmpty = true) => {
 
 // Helper to handle response errors consistently
 export const handleResponse = async (res) => {
+  const contentType = res.headers.get("content-type") || "";
   if (!res.ok) {
-    const errorBody = await res.json().catch(() => ({}));
-    throw new Error(
-      errorBody.error || `Request failed with status ${res.status}`,
-    );
+    if (contentType.includes("application/json")) {
+      const errorBody = await res.json().catch(() => ({}));
+      throw new Error(errorBody.error || `Request failed with status ${res.status}`);
+    }
+    throw new Error(`Request failed with status ${res.status}`);
+  }
+  if (!contentType.includes("application/json")) {
+    throw new Error("Unexpected non-JSON response from server");
   }
   return res.json();
 };
