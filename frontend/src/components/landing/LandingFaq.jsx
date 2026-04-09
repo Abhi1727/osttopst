@@ -67,11 +67,11 @@ const LandingFaq = () => {
   ];
 
   return (
-    <section className="bg-[#f0f9ff] py-16 md:py-24 px-4 md:px-6 lg:px-12">
+    <section className="bg-[#f0f9ff] pt-4 md:pt-8 pb-16 md:pb-24 px-4 md:px-6 lg:px-12">
       <div className="max-w-4xl mx-auto space-y-12 md:space-y-16">
         <div className="space-y-6 md:space-y-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center sm:text-left">
-            Frequently Asked <span className="text-brand-500">Question</span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center">
+            Frequently Asked <span className="text-brand-500">Questions</span>
           </h2>
           
           <div className="space-y-4 mt-8">
