@@ -3,21 +3,22 @@ import { UserCircle, ShieldCheck, GraduationCap, Building2 } from "lucide-react"
 
 const ConversionMissions = () => {
   const audiences = [
-    {
-      title: "Outlook Users",
-      description: "This product is useful for regular Outlook users whose mailbox cannot be accessed when the Exchange server is down or offline, and need to have access, recovery, or backup of their OST files.",
+     {
+      title: "Data Migration Specialists",
+      description: "Great for data migration specialists who need to be able to easily migrate data from one mail platform & server to another with no data loss.",
     },
+   
     {
       title: "IT Administrators",
-      description: "Great for IT Administrators managing multiple user accounts, it can quickly convert/move/restore all OSTs quickly and accurately across an organization.",
+      description: "Great for IT Administrators managing multiple user accounts, it can quickly convert, move, and restore all OSTs quickly and accurately across an organization.",
     },
     {
-      title: "Data Migration Specialists",
-      description: "Great for data migration specialists who need to be able to easily migrate data from one mail platform/server to another with no data loss.",
+      title: "Outlook Users",
+      description: "This product is useful for regular Outlook users whose mailbox cannot be accessed when the Exchange server is down or offline, and need to have access, recovery, or backup.",
     },
     {
       title: "Small to Large Businesses",
-      description: "Whether you are a growing startup business or a very large, established corporation, our converter is designed and built for you and keeps pace with the ever-increasing demand for bulk mailbox migrations and data recoveries quickly, reliably, and cost-efficiently.",
+      description: "Whether you are a growing startup business or a very large, established corporation, our converter is designed and built for you and keeps pace with the ever-increasing demand for bulk mailbox migrations.",
     },
   ];
 

@@ -17,6 +17,21 @@ const TechnicalAdvantages = () => {
   const whyReasons = [
     {
       icon: Database,
+      title: "Export in 16+ formats",
+      description: "Get the 16+ export formats, which provide flexibility. If you require PST, MSG, PDF, EML, MBOX, and other formats, our tool converts OST files into the strucuture that is suitable as per your accessibility."
+    },
+    {
+      icon: Database,
+      title: "Use Advanced Filters",
+      description: "Take complete control of data migration through the advanced filters, such as date, year, and filter-based selection, that instantly identify the items with the search feature. This makes sure only the needed data is converted, which saves time and effort."
+    },
+    {
+      icon: Database,
+      title: "Preview Data with Attachments",
+      description: "With the help of our online tool, you can preview all the mailbox data items containing emails, contacts, calendars, and attachments. You can also verify and choose the same data you want to export without any assumptions."
+    },
+    {
+      icon: Database,
       title: "Crash of Exchange Server",
       description: "A crash of Exchange can cause orphaning of your OST files, so they won't be recognized or available. Our software will allow for the conversion of your orphaned file to a portable, viewable PST file, enabling you to immediately access your data again."
     },

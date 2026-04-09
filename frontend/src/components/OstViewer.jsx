@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { fileService } from "../services/fileService";
 import OstViewerLanding from "./OstViewerLanding";
+import UpgradeModal from "./landing/pricingpop";
 
 // ─── Tree Node ───────────────────────────────────────────────────────────────
 
@@ -236,6 +237,7 @@ const UploadPhase = ({ onSessionReady }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFile = useCallback(
@@ -249,7 +251,7 @@ const UploadPhase = ({ onSessionReady }) => {
 
       const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
       if (file.size > MAX_SIZE) {
-        toast.error("File size exceeds the 5GB limit. Please choose a smaller file.");
+        setShowUpgradeModal(true);
         return;
       }
 
@@ -433,6 +435,9 @@ const UploadPhase = ({ onSessionReady }) => {
           ))}
         </div>
       </motion.div>
+      {showUpgradeModal && (
+        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+      )}
     </div>
   );
 };

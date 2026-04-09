@@ -18,7 +18,7 @@ const IconStepCard = ({ number, title, description, icon: Icon }) => (
         {description}
       </p>
     </div>
-  </div>
+  </div>  
 );
 
 const DetailStepCard = ({ number, title, description }) => (
@@ -61,7 +61,8 @@ const HowItWorks = () => {
         <div className="mb-16 md:mb-24">
           <div className="text-center mb-10 md:mb-12">
             <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-              How Do I Convert<span className="text-brand-600"> OST to PST</span>?
+              How to Convert<span className="text-brand-600"> OST to PST</span>{" "}
+              File?
             </h2>
           </div>
 
@@ -79,12 +80,12 @@ const HowItWorks = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 justify-center gap-6 lg:gap-8 max-w-6xl mx-auto">
             <IconStepCard
               number={1}
-              title="Upload the OST File"
+              title="Select the OST File"
               icon={UploadCloud}
             />
             <IconStepCard
               number={2}
-             title="Convert to PST"
+              title="Upload the OST File"
               icon={RefreshCw}
             />
             <IconStepCard
@@ -99,9 +100,9 @@ const HowItWorks = () => {
         <div className="border-t border-slate-200/50 pt-16 md:pt-24">
           <div className="text-center mb-12 md:mb-16 space-y-4 px-2">
             <p className="text-slate-600 text-base md:text-lg font-medium max-w-3xl mx-auto leading-relaxed">
-              The process of converting from OST to PST is simple even if you do
-              not have a technical background. This service is designed for the
-              average computer user.
+              The process of converting from OST to PST is simple, even if you
+              do not have a technical background. This service is designed for
+              the average computer user.
             </p>
           </div>
 
@@ -111,16 +112,17 @@ const HowItWorks = () => {
               title="Upload Your OST File"
               description={
                 <>
-                  Simply drag and drop your file or click <strong>Browse</strong> to
-                  find the field on your computer. We currently support files up to 50
-                  GB in size.
+                  Simply drag and drop your file or click{" "}
+                  <strong>Browse</strong> to find the file on your computer. We
+                  currently support files up to 5 GB in size in our Professional
+                  Plan.
                 </>
               }
             />
             <DetailStepCard
               number={2}
               title="Automatic Conversion Begins"
-              description="When your .ost file is uploading, it instantly begins the conversion process(your file will first be repaired if it is corrupt) and then will be converted to a PST file."
+              description="When your .ost file is uploaded, it instantly begins the conversion process(your file will first be repaired if the ost file is corrupt) and then will be converted to a PST file."
             />
             <DetailStepCard
               number={3}

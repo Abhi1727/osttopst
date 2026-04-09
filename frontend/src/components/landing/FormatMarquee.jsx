@@ -19,13 +19,13 @@ const FORMATS = [
     ext: "EML",
     bg: "bg-green-700",
     description:
-      "Save the Emails in a widely supported format that works on email clients without any compatibility problems",
+      "Save the Emails in a widely supported format that works on email clients without any compatibility problems.",
   },
   {
     ext: "PDF",
     bg: "bg-red-800",
     description:
-      "Protect your emails in a professional format that's perfect for sharing, printing, and compliance.",
+      "Save your emails in a professional format that's perfect for sharing, printing, and compliance.",
   },
   {
     ext: "DOCX",
@@ -49,7 +49,7 @@ const FORMATS = [
     ext: "CSV",
     bg: "bg-green-600",
     description:
-      "Export email data and contacts into a spreadsheet structure for filtering, sorting, and analysis",
+      "Export email data and contacts into a spreadsheet structure for filtering, sorting, and analysis.",
   },
   {
     ext: "XML",
@@ -73,13 +73,13 @@ const FORMATS = [
     ext: "ICS",
     bg: "bg-brand-600",
     description:
-      "Protect calendar events with full information, making it simple to import into any calendar application.",
+      "Save calendar events with full information, making it simple to import into any calendar application.",
   },
   {
     ext: "TXT",
     bg: "bg-slate-500",
     description:
-      "Protect emails as normal plain text files for fast access, lightweight storage, and easy readability.",
+      "Save emails as normal plain text files for fast access, lightweight storage, and easy readability.",
   },
   {
     ext: "RTF",

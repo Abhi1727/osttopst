@@ -66,12 +66,12 @@ const TrustFeatures = () => {
     {
       icon: Box,
       title: "User Friendly UI",
-      description: "Intuitive interface designed for touch, making file management effortless on any mobile device.",
+      description: "Our Tool UI is user friendly, making file management effortless and easy to navigate.",
     },
     {
       icon: Cloud,
-      title: "Supports Outlook 2021",
-      description: "Compatible With Outlook 2021 And Earlier Versions. Compatible with all versions of Outlook 2021 and below.",
+      title: "Supports Outlook 2021 & Earlier",
+      description: "Compatible with all versions of Outlook 2021 and below. We have no restrictions for using Outlook.",
     },
     {
       icon: Box,
@@ -86,7 +86,7 @@ const TrustFeatures = () => {
     {
       icon: CloudUpload,
       title: "Direct Migration",
-      description: "Migrate OST directly to Gmail, Outlook.com, and Yahoo accounts.",
+      description: "Users can easily migrate PST files directly to Gmail, Outlook and Yahoo accounts.",
     },
   ];
 
@@ -94,8 +94,11 @@ const TrustFeatures = () => {
     <section className="bg-[#f0f9ff] py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 space-y-4">
-          <h2 className=" text-3xl md:text-4xl font-extrabold tracking-tight">
+          {/* <h2 className=" text-3xl md:text-4xl font-extrabold tracking-tight">
             Our Professional <span className="text-[#0EA5E9]">Capabilities</span>
+          </h2> */}
+          <h2 className=" text-3xl md:text-4xl font-extrabold tracking-tight">
+            Features that Make It <span className="text-[#0EA5E9]">Powerful</span>
           </h2>
           <p className="text-slate-600 text-lg font-medium max-w-3xl mx-auto leading-relaxed">
             Advanced features designed to handle even the most complex Outlook data migration scenarios.

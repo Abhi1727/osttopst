@@ -22,7 +22,7 @@ import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2";
 import Crown from "lucide-react/dist/esm/icons/crown";
 import Hexagon from "lucide-react/dist/esm/icons/hexagon";
 import Shield from "lucide-react/dist/esm/icons/shield";
-import X from "lucide-react/dist/esm/icons/x";
+// import X from "lucide-react/dist/esm/icons/x";
 import { Progress } from "@/components/ui/progress";
 import UpgradeModal from "./pricingpop";
 
@@ -113,21 +113,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
 
       const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
       if (selectedFile.size > MAX_SIZE) {
-        // Check if user is on professional tier
-        let tierStr = "";
-        if (licenseStatus?.tier !== undefined) tierStr = String(licenseStatus.tier);
-        else if (licenseStatus?.Tier !== undefined) tierStr = String(licenseStatus.Tier);
-        
-        const isProfessional = tierStr === "3" || tierStr.toLowerCase() === "professional";
-        
-        if (isProfessional) {
-          // Show pricing modal for professional users with oversized files
-          setShowOversizedFileModal(true);
-          return;
-        }
-        
-        // For non-professional users, show error toast
-        toast.error("File size exceeds the 5GB limit. Please use our Desktop Software for unlimited file sizes.");
+        setShowOversizedFileModal(true);
         return;
       }
       setFile(selectedFile);
@@ -355,7 +341,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                               completedSession?.fileName ||
                               "file") + ""
                           ).replace(/\.(ost|pst)$/i, "")}
-                          {currentFormat === "PST" ? ".pst" : ".zip"} — Ready
+                          {currentFormat === "PST" ? ".ost" : ".zip"} — Ready
                         </p>
                       </div>
 
@@ -436,6 +422,9 @@ const Hero = ({ onUploadComplete, onRestore }) => {
             onClose={() => setIsExportDialogOpen(false)}
           />
         </Suspense>
+      )}
+      {showOversizedFileModal && (
+        <UpgradeModal onClose={() => setShowOversizedFileModal(false)} />
       )}
     </section>
   );

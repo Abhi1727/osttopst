@@ -106,7 +106,7 @@ const UnifiedHeader = ({ session, onReset }) => {
             <Mail className="w-5 h-5 text-white" />
           </div>
           <span className="text-sm md:text-lg font-medium tracking-tight text-slate-700 whitespace-nowrap">
-            OST to PST Converter
+            OSTTOPST.US
           </span>
         </div>
 
