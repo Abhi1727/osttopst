@@ -101,9 +101,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             _db.Entry(session).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
         }
 
-        var pstPath = Path.Combine(_uploadDir, $"{sessionId}.pst");
+        var pstPath = Path.Combine(_uploadDir, $"{sessionId}.pst");//This is for pst file path
         if (File.Exists(pstPath)) return (pstPath, session.Password);
-        var ostPath = Path.Combine(_uploadDir, $"{sessionId}.ost");
+        var ostPath = Path.Combine(_uploadDir, $"{sessionId}.ost");//This is for ost file path
         if (File.Exists(ostPath)) return (ostPath, session.Password);
 
         // File is missing on disk (e.g. container volume was reset).
@@ -132,6 +132,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <param name="userEmail">Optional email of the user.</param>
     /// <param name="password">Optional password for the PST/OST file.</param>
     /// <returns>The unique session ID for the uploaded file.</returns>
+    
     public async Task<string> SaveUploadedFileAsync(Stream fileStream, string originalFileName, string userId, long size, string? userEmail = null, string? password = null)
     {
         var sessionId = Guid.NewGuid().ToString("N");
@@ -181,6 +182,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <param name="totalChunks">The total number of chunks expected.</param>
     /// <param name="totalSize">The total size of the file in bytes.</param>
     /// <returns>A unique upload ID for the chunked session.</returns>
+    
+
     public async Task<string> InitChunkedUploadAsync(string originalFileName, string userId, int totalChunks, long totalSize, string? userEmail = null)
     {
         var uploadId = Guid.NewGuid().ToString("N");
@@ -213,6 +216,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <param name="chunkIndex">The zero-based index of the chunk.</param>
     /// <param name="chunkStream">The stream containing the chunk data.</param>
     /// <returns>A tuple indicating success and the total number of chunks received so far.</returns>
+    
+    //this is for chunked upload
     public async Task<(bool success, int receivedCount)> SaveChunkAsync(string uploadId, string userId, int chunkIndex, Stream chunkStream)
     {
         var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
@@ -441,6 +446,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <param name="deduplicate">Whether to remove duplicate messages during conversion.</param>
     /// <param name="splitSizeMb">Optional size in MB to split the resulting PST into multiple parts.</param>
     /// <returns>A tuple containing the output path, filename, and whether it's ready.</returns>
+    
+    //this is for chunked upload conversion
     public async Task<(string FilePath, string FileName, bool isReady)> ConvertOstToPstAsync(string sessionId,
                                                                                              string userId,
                                                                                              bool isDemo,
@@ -487,6 +494,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <param name="userId">The ID of the user requesting the split.</param>
     /// <param name="chunkSizeMb">The maximum size of each chunk in megabytes.</param>
     /// <returns>A list of paths to the split PST files.</returns>
+     
+    //this is for split pst file
     public async Task<List<string>> SplitPstAsync(string sessionId, string userId, long chunkSizeMb)
     {
         var (srcPath, password) = await GetSessionDataAsync(sessionId, userId);
@@ -2081,6 +2090,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <summary>
     /// Sanitizes a string to be used as a safe filename.
     /// </summary>
+    
     private static string SanitizeFileName(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();
@@ -2136,7 +2146,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             }
             return true;
         }
-
+        //this is for batch storage tracker
         public async Task<bool> FlushAsync()
         {
             if (!IsEnabled || PendingSize <= 0) return true;
