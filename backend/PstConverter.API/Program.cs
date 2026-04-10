@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection; // This is for dependency inject
 using Microsoft.AspNetCore.Mvc; // This is for [FromQuery] and other MVC attributes
 using Microsoft.AspNetCore.ResponseCompression;
 
-// Initialize Aspose.Email License
+// Initialize Aspose.Email License  
 try
 {
     var license = new License();

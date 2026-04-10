@@ -419,6 +419,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     if (s != null)
                     {
                         s.Status = "AssemblyFailed";
+                        s.ErrorMessage = ex.Message;
                         await scopedDb.SaveChangesAsync();
                     }
                 }
@@ -701,6 +702,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     return;
                 }
 
+                // Release the pool's open handle before any direct file operation to avoid lock conflict.
+                // Especially important if the user was browsing the OST/PST in the UI just before converting.
+                await _pool.RemoveAsync(sessionId);
+
                 // HYPER FAST PATH: Direct OST to PST conversion (Native implementation)
                 if (!deduplicate && !excludeEmptyFolders && exportLimit == -1)
                 {
@@ -710,9 +715,27 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         if (_logger.IsEnabled(LogLevel.Information))
                             _logger.LogInformation("[PstService] Using HYPER FAST PATH for session {SessionId}", sessionId);
 
-                        using (var storage = PersonalStorage.FromFile(srcPath))
+                        // Use a retry policy for opening the file, as RemoveAsync might take a millisecond to release the OS handle
+                        int retryCount = 0;
+                        PersonalStorage? storage = null;
+                        while (retryCount < 3)
                         {
-                            storage.SaveAs(outputPath, FileFormat.Pst);
+                            try
+                            {
+                                storage = PersonalStorage.FromFile(srcPath);
+                                break;
+                            }
+                            catch (IOException ioEx) when (ioEx.Message.Contains("in use") || ioEx.Message.Contains("sharing violation"))
+                            {
+                                retryCount++;
+                                if (retryCount >= 3) throw;
+                                await Task.Delay(500, token);
+                            }
+                        }
+
+                        using (storage)
+                        {
+                            storage?.SaveAs(outputPath, FileFormat.Pst);
                         }
 
                         token.ThrowIfCancellationRequested();
@@ -746,8 +769,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         await scopedDb.SaveChangesAsync();
                     }
 
-                    // Release the pool's open handle before MergeWith to avoid file lock conflict.
-                    await _pool.RemoveAsync(sessionId);
+                    // Pool was already removed at the start of the method to ensure clean file access for MergeWith.
 
                     using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
                     destStorage.MergeWith([srcPath]);
@@ -846,6 +868,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         s.Status = ex.Message.Contains("License limit exceeded", StringComparison.OrdinalIgnoreCase)
                             ? "LimitReached"
                             : "ConversionFailed";
+                        s.ErrorMessage = ex.Message; // Store actual error for UI visibility
                         await scopedDb.SaveChangesAsync();
                     }
                 }

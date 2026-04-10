@@ -63,7 +63,7 @@ const downloadFile = async (
           }
 
           if (s.includes("failed")) {
-            const errMsg = status.message || status.status || "Unknown error";
+            const errMsg = status.errorMessage || status.message || status.status || "Unknown error";
             console.error("[Download] Backend reported failure:", errMsg);
             throw new Error(`Conversion or export failed: ${errMsg}`);
           }
@@ -83,6 +83,10 @@ const downloadFile = async (
               detail: displayDetail,
             });
           }
+        } else if (checkRes.status === 404) {
+          throw new Error("Session not found or has expired. Please try uploading again.");
+        } else {
+          console.warn(`[Download] Poll failed with status ${checkRes.status}, retrying...`);
         }
 
         attempts++;
@@ -262,14 +266,22 @@ const triggerConversion = async (sessionId, getToken, onProgress, signal, email 
       signal,
     });
 
-    if (!checkRes.ok) continue;
+    if (!checkRes.ok) {
+      if (checkRes.status === 404) {
+        throw new Error("Session not found or has expired. Please try again.");
+      }
+      continue;
+    }
 
     const status = await checkRes.json();
     const s = (status.status || "").toLowerCase();
 
     if (s.startsWith("ready") || s.includes("ready")) return;
     if (s === "limitreached") throw new Error("LICENSE_LIMIT_EXCEEDED");
-    if (s.includes("failed")) throw new Error(`Conversion failed: ${status.status}`);
+    if (s.includes("failed")) {
+      const errMsg = status.errorMessage || status.status || "Conversion failed";
+      throw new Error(errMsg);
+    }
   }
 
   throw new Error("Timed out waiting for conversion. Please try again.");

@@ -376,8 +376,9 @@ const Pricing = () => {
             price={0}
             description="Perfect for a quick trial and small file conversions."
             isLoading={purchasingPlan === 0}
-            onClick={() => handlePurchase(1, 0, 0)}
-            ctaText="Start Free Trial"
+            onClick={(!isSignedIn || tierLower !== "demo") ? () => handlePurchase(1, 0, 0) : undefined}
+            ctaText={isSignedIn && tierLower === "demo" ? "Trial Active" : "Start Free Trial"}
+            isActive={isSignedIn && tierLower === "demo"}
             features={[
               { text: "Full OST to PST conversion", included: true },
               { text: "1 OST File", included: true },

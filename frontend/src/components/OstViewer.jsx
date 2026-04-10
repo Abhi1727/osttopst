@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { fileService } from "../services/fileService";
+import licenseService from "../services/licenseService";
 import OstViewerLanding from "./OstViewerLanding";
 import UpgradeModal from "./landing/pricingpop";
 
@@ -237,8 +238,31 @@ const UploadPhase = ({ onSessionReady }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(null);
+  const { isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
+  const [licenseStatus, setLicenseStatus] = useState(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const fetchLicense = async () => {
+      if (isSignedIn) {
+        try {
+          const token = await getToken();
+          const email = user?.primaryEmailAddress?.emailAddress;
+          const status = await licenseService.getLicenseStatus(token, email);
+          setLicenseStatus(status);
+        } catch (err) {
+          console.error("Error in fetchLicense:", err);
+        }
+      }
+    };
+    fetchLicense();
+  }, [isSignedIn, getToken, user]);
+
+  const rawTier = licenseStatus?.tier ?? licenseStatus?.Tier;
+  const tierStr = String(rawTier ?? "").toLowerCase();
+  const isProfessional = tierStr === "3" || tierStr === "professional";
 
   const handleFile = useCallback(
     async (file) => {
@@ -249,7 +273,10 @@ const UploadPhase = ({ onSessionReady }) => {
         return;
       }
 
-      const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
+      const MAX_SIZE = isProfessional 
+        ? 5 * 1024 * 1024 * 1024 // 5 GB
+        : 500 * 1024 * 1024;     // 500 MB
+
       if (file.size > MAX_SIZE) {
         setShowUpgradeModal(true);
         return;
@@ -261,7 +288,7 @@ const UploadPhase = ({ onSessionReady }) => {
       try {
         const result = await fileService.uploadFile(
           file,
-          null,
+          getToken,
           (info) => setProgress(info),
           null,
           null,
@@ -278,7 +305,7 @@ const UploadPhase = ({ onSessionReady }) => {
         setProgress(null);
       }
     },
-    [onSessionReady],
+    [onSessionReady, getToken, isProfessional],
   );
 
   const onDrop = (e) => {

@@ -301,6 +301,8 @@ async function chunkedUpload(
         if (checkRes.ok) {
           result = await checkRes.json();
           // If status is "Uploaded", we are done
+        } else if (checkRes.status === 404) {
+          throw new Error("Upload session not found or has expired. Please try uploading again.");
         }
       }
 

@@ -138,6 +138,7 @@ namespace PstConverter.Models
     {
         public static int DemoExportLimit { get; } = 50;
         public static long MaxUploadSize { get; } = 5368709120L; // 5 GB
+        public static long DemoMaxUploadSize { get; } = 524288000L; // 500 MB
     }
     // public class LicenseStatus : IComparable<LicenseStatus>
     // {

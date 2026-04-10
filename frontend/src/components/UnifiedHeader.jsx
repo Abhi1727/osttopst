@@ -61,7 +61,7 @@ const UnifiedHeader = ({ session, onReset }) => {
   const navItems = [
     { label: "Home", path: "/" },
     { label: "Products", path: "/#products" },
-    { label: "Our Plan", path: "/our-plans" },
+    { label: "Pricing", path: "/our-plans" },
     { label: "How It Works", path: "/#how-it-works" },
     { label: "Blogs", path: "/blogs" },
     { label: "FAQ", path: "/faq" },

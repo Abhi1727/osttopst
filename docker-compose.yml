@@ -1,33 +1,21 @@
 services:
-  # MySQL Database
-  mysql:
-    image: mysql:8.0
-    container_name: pstconverter-mysql
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pstconverter-sqlserver
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_PID: Developer
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d
+      - sqlserver_data:/var/opt/mssql
     ports:
-      - "3307:3306"
+      - "1434:1433"
     networks:
       - pstconverter-network
     healthcheck:
-      test:
-        [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "root",
-          "-p${MYSQL_ROOT_PASSWORD}",
-        ]
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1", "-C"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -59,14 +47,14 @@ services:
     container_name: pstconverter-backend
     restart: unless-stopped
     depends_on:
-      mysql:
+      sqlserver:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ConnectionStrings__DefaultConnection=Server=pstconverter-sqlserver,1433;Database=PstConverterDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD}
       - Clerk__SecretKey=${CLERK_SECRET_KEY}
       - Clerk__Authority=${CLERK_AUTHORITY}
@@ -75,8 +63,6 @@ services:
       - backend_uploads:/app/uploads
       - backend_storage:/app/storage
       - backend_logs:/app/logs
-      # Mount Aspose.Email license (if available)
-      # - ./backend/PstConverter.API/Aspose.Email.lic:/app/Aspose.Email.lic:ro
     ports:
       - "5000:5000"
     networks:
@@ -118,7 +104,7 @@ services:
 
 # Volumes for data persistence
 volumes:
-  mysql_data:
+  sqlserver_data:
     driver: local
   redis_data:
     driver: local

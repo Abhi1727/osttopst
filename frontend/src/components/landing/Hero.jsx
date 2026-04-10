@@ -12,6 +12,7 @@ import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { fileService } from "../../services/fileService";
 import { conversionService } from "../../services/conversionService";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 import FileText from "lucide-react/dist/esm/icons/file-text";
 import RotateCw from "lucide-react/dist/esm/icons/rotate-cw";
 import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud";
@@ -99,6 +100,26 @@ const Hero = ({ onUploadComplete, onRestore }) => {
     return () => window.removeEventListener("license-refresh", fetchLicense);
   }, [isSignedIn, getToken]);
 
+  const showTrialExpiredToast = () => {
+    toast.error(
+      <span>
+        Your trial has expired.{" "}
+        <Link
+          to="/pricing"
+          style={{ color: "#3b82f6", fontWeight: 700, textDecoration: "underline" }}
+        >
+          Buy a plan
+        </Link>{" "}
+        to continue uploading files.
+      </span>,
+      { duration: 6000 }
+    );
+  };
+
+  const rawTier = licenseStatus?.tier ?? licenseStatus?.Tier;
+  const tierStr = String(rawTier ?? "").toLowerCase();
+  const isProfessional = tierStr === "3" || tierStr === "professional";
+
   const onDrop = useCallback(
     async (acceptedFiles) => {
       if (acceptedFiles.length === 0) return;
@@ -109,9 +130,17 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         return;
       }
 
-      const selectedFile = acceptedFiles[0];
+      if (licenseStatus && licenseStatus.canConvert === false) {
+        showTrialExpiredToast();
+        return;
+      }
 
-      const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
+      const selectedFile = acceptedFiles[0];
+      
+      const MAX_SIZE = isProfessional 
+        ? 5 * 1024 * 1024 * 1024 // 5 GB
+        : 500 * 1024 * 1024;     // 500 MB
+
       if (selectedFile.size > MAX_SIZE) {
         setShowOversizedFileModal(true);
         return;
@@ -125,12 +154,10 @@ const Hero = ({ onUploadComplete, onRestore }) => {
       setAbortController(controller);
 
       try {
-        const token = await getToken();
-
         // Start Upload
         const session = await fileService.uploadFile(
           selectedFile,
-          token,
+          getToken,
           (prog) =>
             setProgress(
               typeof prog === "object"
@@ -167,7 +194,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         setUploading(false);
       }
     },
-    [isSignedIn, getToken, uploading, clerk, onUploadComplete, licenseStatus],
+    [isSignedIn, getToken, uploading, clerk, onUploadComplete, licenseStatus, isProfessional],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -313,6 +340,8 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                         e.stopPropagation();
                         if (!isSignedIn) {
                           clerk.openSignIn();
+                        } else if (licenseStatus && licenseStatus.canConvert === false) {
+                          showTrialExpiredToast();
                         } else {
                           open();
                         }
@@ -378,7 +407,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                   ) : (
                     <div className=" flex flex-col gap-3">
                       <p className="text-xs font-bold sm:text-sm  font-bold tracking-tight">
-                        Supports .ost files · Max 5GB · Unlimited with desktop app
+                        Supports .ost files · Max {isProfessional ? "5GB" : "500MB"} · Unlimited with desktop app
                       </p>
                       <p className="text-xs sm:text-sm md:text-base text-slate-900 font-medium sm:whitespace-nowrap px-2">
                         Agreed to{" "}

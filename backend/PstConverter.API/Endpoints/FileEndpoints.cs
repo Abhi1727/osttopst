@@ -135,12 +135,23 @@ public static class FileEndpoints
                 if (ext != ".pst" && ext != ".ost")
                     return Results.BadRequest(new { error = $"Only .pst and .ost files are accepted." });
 
-                if (request.TotalSize > AllConstants.MaxUploadSize)
+                var userId = user.GetInternalUserId();
+                var userEmail = user.GetUserEmailId(request.Email, config["LicenseApi:UserId"]);
+
+                // Check license status for upload limits
+                var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, null);
+                long allowedSize = licenseStatus.Tier == LicenseTier.Professional 
+                    ? AllConstants.MaxUploadSize 
+                    : AllConstants.DemoMaxUploadSize;
+
+                if (request.TotalSize > allowedSize)
                 {
+                    logger.LogWarning("Upload rejected for {Email}: Size {Size} exceeds {Limit} limit", 
+                        userEmail, request.TotalSize, allowedSize);
                     return Results.BadRequest(new
                     {
                         code = "FILE_TOO_LARGE",
-                        error = "File size exceeds the 5GB limit."
+                        error = $"File size exceeds the {(allowedSize / (1024 * 1024))}MB limit for your current plan."
                     });
                 }
 
@@ -151,14 +162,6 @@ public static class FileEndpoints
                 {
                     var claimsList = string.Join(", ", user.Claims.Select(c => $"{c.Type}={c.Value}"));
                     logger.LogInformation("[AUTH DIAG] InitChunkedUpload - Claims: {Claims}", claimsList);
-                }
-
-                var userId = user.GetInternalUserId();
-                var userEmail = user.GetUserEmailId(request.Email, config["LicenseApi:UserId"]);
-
-                if (logger.IsEnabled(LogLevel.Information))
-                {
-                    logger.LogInformation("[AUTH DEBUG] InitChunkedUpload - User: {UserId}, Identified Email: {Email}", userId, userEmail);
                 }
 
                 if (logger.IsEnabled(LogLevel.Information))

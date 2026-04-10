@@ -41,9 +41,17 @@ public static class IdentityExtensions
     {
         // When NameClaimType = "sub" is set in JWT options, ASP.NET maps the JWT "sub" claim
         // to ClaimTypes.Name (not ClaimTypes.NameIdentifier). So we check both.
-        return user.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? user.FindFirstValue("sub")
+        // We prioritize "sub" as it's the standard for Clerk and most JWT providers.
+        var userId = user.FindFirstValue("sub")
+            ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? user.FindFirstValue(ClaimTypes.Name)
-            ?? "unauthenticated";
+            ?? user.Identity?.Name;
+            
+        if (string.IsNullOrEmpty(userId))
+        {
+            return "unauthenticated";
+        }
+
+        return userId;
     }
 }

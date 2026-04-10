@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from "react";
-import { useAuth, useClerk } from "@clerk/clerk-react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import {
   CloudUpload,
   Check,
@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { fileService } from "../services/fileService";
 import UpgradeModal from "./landing/pricingpop";
+import licenseService from "../services/licenseService";
 
 // ─── Hero / Upload ───────────────────────────────────────────────────────────
 
@@ -39,7 +40,31 @@ const HeroUpload = ({ onSessionReady }) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { user } = useUser();
+  const [licenseStatus, setLicenseStatus] = useState(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const fetchLicense = async () => {
+      if (isSignedIn) {
+        try {
+          const token = await getToken();
+          const email = user?.primaryEmailAddress?.emailAddress;
+          const status = await licenseService.getLicenseStatus(token, email);
+          setLicenseStatus(status);
+        } catch (err) {
+          console.error("Error in fetchLicense:", err);
+        }
+      }
+    };
+    fetchLicense();
+    window.addEventListener("license-refresh", fetchLicense);
+    return () => window.removeEventListener("license-refresh", fetchLicense);
+  }, [isSignedIn, getToken, user]);
+
+  const rawTier = licenseStatus?.tier ?? licenseStatus?.Tier;
+  const tierStr = String(rawTier ?? "").toLowerCase();
+  const isProfessional = tierStr === "3" || tierStr === "professional";
 
   const handleFile = useCallback(
     async (file) => {
@@ -49,7 +74,9 @@ const HeroUpload = ({ onSessionReady }) => {
         toast.error("Only .ost and .pst files are supported.");
         return;
       }
-      const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
+      const MAX_SIZE = isProfessional 
+        ? 5 * 1024 * 1024 * 1024 // 5 GB
+        : 500 * 1024 * 1024;     // 500 MB
       if (file.size > MAX_SIZE) {
         setShowUpgradeModal(true);
         return;
@@ -150,25 +177,22 @@ const HeroUpload = ({ onSessionReady }) => {
             </button>
           </div>
 
-          {/* FOOTER TEXT */}
-          <div className="flex flex-col gap-3">
-            <p className="text-xs sm:text-sm font-bold tracking-tight">
-              Supports .ost/.pst files · Max 5GB
+            <p className="text-xs sm:text-sm font-bold tracking-tight mt-6">
+              Supports .ost/.pst files · Max {isProfessional ? "5GB" : "500MB"}
             </p>
             <p className="text-xs sm:text-sm text-slate-900 font-medium">
               Secure upload · No data stored
             </p>
           </div>
         </div>
-      </div>
 
-      {/* MODAL */}
-      {showUpgradeModal && (
-        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
-      )}
-    </div>
-  );
-};
+        {/* MODAL */}
+        {showUpgradeModal && (
+          <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+        )}
+      </div>
+    );
+  };
 
 // ─── Section Heading ─────────────────────────────────────────────────────────
 

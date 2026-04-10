@@ -98,7 +98,20 @@ public static class SessionEndpoints
             if (session == null)
             {
                 var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("SessionEndpoints");
-                logger.LogWarning("Session check failed (404): sessionId={SessionId}, userId={UserId}, isAnonymous={IsAnonymous}. Session not found or ownership mismatch.", sessionId, userId, isAnonymous);
+                
+                // DIAGNOSTIC CORE: If session not found for user, check if it exists AT ALL
+                var rawSession = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                if (rawSession != null)
+                {
+                    logger.LogWarning("[OWNERSHIP MISMATCH] Session {SessionId} exists but belongs to '{OwnerId}'. Request user is '{RequestId}'. isAnonymous={IsAnonymous}", 
+                        sessionId, rawSession.UserId, userId, isAnonymous);
+                }
+                else
+                {
+                    logger.LogWarning("[SESSION NOT FOUND] Session {SessionId} does not exist in DB at all. userId={UserId}, isAnonymous={IsAnonymous}", 
+                        sessionId, userId, isAnonymous);
+                }
+                
                 return Results.NotFound();
             }
 
@@ -168,6 +181,7 @@ public static class SessionEndpoints
                 fileType = session.FileType,
                 createdAt = session.CreatedAt,
                 storeGuid = session.StoreGuid,
+                errorMessage = session.ErrorMessage,
                 splitFiles = string.IsNullOrEmpty(session.SplitFilesJson) ? null : System.Text.Json.JsonSerializer.Deserialize<string[]>(session.SplitFilesJson)
             });
         });
