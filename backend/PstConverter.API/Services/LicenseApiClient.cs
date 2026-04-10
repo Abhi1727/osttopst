@@ -30,8 +30,8 @@ namespace PstConverter.Services
             this._scopeFactory = scopeFactory;
 
             _baseUrl = configuration["LicenseApi:BaseUrl"] ?? throw new InvalidOperationException("LicenseApi:BaseUrl missing");
-            _toolId = configuration["LicenseApi:ToolId"] ?? "1";
-            _moduleId = configuration["LicenseApi:ModuleId"] ?? "1";
+            _toolId = ((int)Tool.ConvertOSTToPST).ToString();
+            _moduleId = ((int)Module.ConvertOSTToPST).ToString();
 
             if (logger.IsEnabled(LogLevel.Information))
             {
@@ -70,36 +70,36 @@ namespace PstConverter.Services
         // ─────────────────────────────────────────────────────────────────────
 
 
-        private async Task<DetailedLicenseStatus?> LoadStatusFromDbAsync(string licenseId)
-        {
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var license = await db.MockLicenses.AsNoTracking().FirstOrDefaultAsync(l => l.LicenseId == licenseId);
-                if (license != null)
-                {
-                    var status = new DetailedLicenseStatus
-                    {
-                        Tier = license.Tier,
-                        TotalItemsAllotted = license.TotalItemsAllotted,
-                        TotalItemsUsed = license.TotalItemsUsed,
-                        TotalStorageAllotted = license.TotalStorageAllotted,
-                        TotalStorageUsed = license.TotalStorageUsed,
-                        TotalDaysAllotted = license.TotalDaysAllotted,
-                        ExpiryDate = license.ExpiryDate,
-                        CanConvert = license.Tier != LicenseTier.DemoExpired && license.ExpiryDate > DateTime.Now,
-                        ExportFileLimit = license.Tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit
-                    };
-                    return ApplyLimits(status);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "[LICENSE DB] Failed to load status for {LicenseId}", licenseId);
-            }
-            return null;
-        }
+        // private async Task<DetailedLicenseStatus?> LoadStatusFromDbAsync(string licenseId)
+        // {
+        //     try
+        //     {
+        //         using var scope = _scopeFactory.CreateScope();
+        //         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        //         var license = await db.MockLicenses.AsNoTracking().FirstOrDefaultAsync(l => l.LicenseId == licenseId);
+        //         if (license != null)
+        //         {
+        //             var status = new DetailedLicenseStatus
+        //             {
+        //                 Tier = license.Tier,
+        //                 TotalItemsAllotted = license.TotalItemsAllotted,
+        //                 TotalItemsUsed = license.TotalItemsUsed,
+        //                 TotalStorageAllotted = license.TotalStorageAllotted,
+        //                 TotalStorageUsed = license.TotalStorageUsed,
+        //                 TotalDaysAllotted = license.TotalDaysAllotted,
+        //                 ExpiryDate = license.ExpiryDate,
+        //                 CanConvert = license.Tier != LicenseTier.DemoExpired && license.ExpiryDate > DateTime.Now,
+        //                 ExportFileLimit = license.Tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit
+        //             };
+        //             return ApplyLimits(status);
+        //         }
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         logger.LogError(ex, "[LICENSE DB] Failed to load status for {LicenseId}", licenseId);
+        //     }
+        //     return null;
+        // }
 
         /// <param name="updateAllotment">If true, also updates allotment limits (items/storage/days).
         /// Set to true ONLY for subscription purchases. Server syncs MUST pass false to prevent
@@ -403,6 +403,7 @@ namespace PstConverter.Services
                 {
                     quotaStatus.Tier = tier;
                     quotaStatus.CanConvert = tier != LicenseTier.DemoExpired;
+                    //no use
                     quotaStatus.ExportFileLimit = tier == LicenseTier.Professional ? -1 : AllConstants.DemoExportLimit;
 
                     // Carry over local usage counts only when the tier hasn't changed.
@@ -507,54 +508,54 @@ namespace PstConverter.Services
         // ─────────────────────────────────────────────────────────────────────
         // 5. GenerateSubscriptionRequestAsync
         // ─────────────────────────────────────────────────────────────────────
-        public async Task<SubscriptionResponse> GenerateSubscriptionRequestAsync(string emailOrId, string toolId, SubscriptionRequest subscriptionRequest)
-        {
-            var licenseId = emailOrId.ToLowerInvariant();
-            try
-            {
-                var client = await GetClientAsync(licenseId);
-                var request = new RestRequest("Licences/{licenseId}/Tools/{toolId}/GenerateSubscriptionRequest", Method.Post);
-                request.AddParameter("licenseId", licenseId, ParameterType.UrlSegment);
-                request.AddParameter("toolId", toolId, ParameterType.UrlSegment);
-                request.AddJsonBody<object[]>(
-                [
-                    new
-                    {
-                        subscriptionRequest.TotalItems,
-                        subscriptionRequest.Storage,
-                        subscriptionRequest.TotalDays,
-                        subscriptionRequest.ModuleId
-                    }
-                ]);
+        // public async Task<SubscriptionResponse> GenerateSubscriptionRequestAsync(string emailOrId, string toolId, SubscriptionRequest subscriptionRequest)
+        // {
+        //     var licenseId = emailOrId.ToLowerInvariant();
+        //     try
+        //     {
+        //         var client = await GetClientAsync(licenseId);
+        //         var request = new RestRequest("Licences/{licenseId}/Tools/{toolId}/GenerateSubscriptionRequest", Method.Post);
+        //         request.AddParameter("licenseId", licenseId, ParameterType.UrlSegment);
+        //         request.AddParameter("toolId", toolId, ParameterType.UrlSegment);
+        //         request.AddJsonBody<object[]>(
+        //         [
+        //             new
+        //             {
+        //                 subscriptionRequest.TotalItems,
+        //                 subscriptionRequest.Storage,
+        //                 subscriptionRequest.TotalDays,
+        //                 subscriptionRequest.ModuleId
+        //             }
+        //         ]);
 
-                var response = await ExecuteWithRetryAsync(client, request, licenseId);
-                if (!response.IsSuccessful)
-                {
-                    return new SubscriptionResponse { Success = false, Message = response.Content };
-                }
+        //         var response = await ExecuteWithRetryAsync(client, request, licenseId);
+        //         if (!response.IsSuccessful)
+        //         {
+        //             return new SubscriptionResponse { Success = false, Message = response.Content };
+        //         }
 
-                _localCache.TryRemove(licenseId, out _);
-                await cache.RemoveAsync($"license_status_{licenseId}");
+        //         _localCache.TryRemove(licenseId, out _);
+        //         await cache.RemoveAsync($"license_status_{licenseId}");
 
-                // After a successful POST, we don't manually assign "Professional" anymore.
-                // We invalidate the cache and return success. The next GET / Licences/{userId}/Tools/{toolId}
-                // or GetDetailedLicenseStatusAsync will reflect the new state from the server.
+        //         // After a successful POST, we don't manually assign "Professional" anymore.
+        //         // We invalidate the cache and return success. The next GET / Licences/{userId}/Tools/{toolId}
+        //         // or GetDetailedLicenseStatusAsync will reflect the new state from the server.
 
-                logger.LogInformation("[LICENSE SUBSCRIPTION] Request sent for {LicenseId}. Cleared cache to trigger sync.", licenseId);
+        //         logger.LogInformation("[LICENSE SUBSCRIPTION] Request sent for {LicenseId}. Cleared cache to trigger sync.", licenseId);
 
-                return new SubscriptionResponse
-                {
-                    Success = true,
-                    Message = "Subscription request processed. Status will update on next check.",
-                    RawResponse = response.Content
-                };
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "[LICENSE SUBSCRIPTION] GenerateSubscriptionRequestAsync exception for {LicenseId}", licenseId);
-                return new SubscriptionResponse { Success = false, Message = ex.Message };
-            }
-        }
+        //         return new SubscriptionResponse
+        //         {
+        //             Success = true,
+        //             Message = "Subscription request processed. Status will update on next check.",
+        //             RawResponse = response.Content
+        //         };
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         logger.LogError(ex, "[LICENSE SUBSCRIPTION] GenerateSubscriptionRequestAsync exception for {LicenseId}", licenseId);
+        //         return new SubscriptionResponse { Success = false, Message = ex.Message };
+        //     }
+        // }
 
         private async Task<DetailedLicenseStatus?> FetchQuotaFromSubscriptionRequestAsync(string licenseId, string toolId)
         {

@@ -56,7 +56,7 @@ builder.Services.AddSingleton<LicenseAuthService>();// License auth (token cachi
 builder.Services.AddSingleton<LicenseApiClient>();// License API wrapper
 builder.Services.AddEndpointsApiExplorer();// This is for endpoints api explorer
 builder.Services.AddSwaggerGen();// This is for swagger gen
-builder.Services.AddOpenApi();// This is for open api
+//builder.Services.AddOpenApi();// This is for open api
 
 // Configure Response Compression
 builder.Services.AddResponseCompression(options =>
@@ -292,8 +292,7 @@ app.MapFolderEndpoints();
 app.MapMessageEndpoints();
 app.MapConversionEndpoints();
 app.MapSessionEndpoints();
-app.MapHowItWorksEndpoints();
-app.MapReviewEndpoints();
+
 
 app.MapControllers(); // Register attribute-routed API controllers like BlogsController
 
