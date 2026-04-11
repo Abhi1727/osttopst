@@ -9,6 +9,35 @@ using PstConverter.Extensions;
 
 namespace PstConverter.Endpoints;
 
+internal static class DownloadCleanup
+{
+    private static readonly TimeSpan DeleteDelay = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Fires a background task that deletes <paramref name="filePath"/> after 30 seconds.
+    /// Safe to call even if the file does not exist.
+    /// </summary>
+    public static void ScheduleDelete(string filePath, ILogger logger)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(DeleteDelay);
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    logger.LogInformation("[DownloadCleanup] Deleted converted output: {File}", Path.GetFileName(filePath));
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("[DownloadCleanup] Could not delete {File}: {Msg}", Path.GetFileName(filePath), ex.Message);
+            }
+        });
+    }
+}
+
 public static class ConversionEndpoints
 {
     /// <summary>
@@ -143,6 +172,10 @@ public static class ConversionEndpoints
 
                 // Use a more standard filename for the export
                 var exportFileName = string.IsNullOrEmpty(sessionId) ? "export.zip" : $"export_{sessionId}.zip";
+
+                // Schedule deletion of the export ZIP 30 seconds after the download starts
+                DownloadCleanup.ScheduleDelete(filePath, logger);
+
                 return Results.File(filePath, "application/zip", exportFileName, enableRangeProcessing: true);
             }
             catch (InvalidOperationException ex)
@@ -294,6 +327,9 @@ public static class ConversionEndpoints
                     return Results.Accepted();
                 }
 
+                // Schedule deletion of the converted PST 30 seconds after the download starts
+                DownloadCleanup.ScheduleDelete(filePath, logger);
+
                 return Results.File(filePath, "application/vnd.ms-outlook", fileName, enableRangeProcessing: true);
             }
             catch (FileNotFoundException)
@@ -326,7 +362,8 @@ public static class ConversionEndpoints
                                                                 LicenseApiClient licenseClient,
                                                                 AppDbContext db,
                                                                 ClaimsPrincipal user,
-                                                                IConfiguration config) =>
+                                                                IConfiguration config,
+                                                                ILogger<Program> logger) =>
         {
             var userId = user.GetInternalUserId();
             var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
@@ -359,6 +396,10 @@ public static class ConversionEndpoints
                         var contentType = fileName.EndsWith(".pst", StringComparison.OrdinalIgnoreCase) 
                             ? "application/vnd.ms-outlook" 
                             : "application/octet-stream";
+
+                        // Schedule deletion of split PST file 30 seconds after download starts
+                        DownloadCleanup.ScheduleDelete(filePath, logger);
+
                         return Results.File(filePath, contentType, fileName, enableRangeProcessing: true);
                     }
                 }

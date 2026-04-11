@@ -634,17 +634,23 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 var itemName = $"{sessionInfo.OriginalFileName}{sessionInfo.Size}";
 
                 // 1. Check Module Status
-                var moduleStatus = await _licenseClient.GetModuleVersion(backgroundUserId);
-                if (moduleStatus != ModuleLicenseType.Active)
+                // Demo/trial users do not have a paid module subscription, so GetModuleVersion
+                // returns NotSubscribed for them. Only block Professional users who have an
+                // inactive module — demo conversions are allowed but limited by exportLimit.
+                if (!isDemo)
                 {
-                    _logger.LogWarning("[PstService] License status {Status} for {User}. Aborting.", moduleStatus, backgroundUserId);
-                    var sessionUpdateResult = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
-                    if (sessionUpdateResult != null)
+                    var moduleStatus = await _licenseClient.GetModuleVersion(backgroundUserId);
+                    if (moduleStatus != ModuleLicenseType.Active)
                     {
-                        sessionUpdateResult.Status = "LicenseActiveRequired";
-                        await scopedDb.SaveChangesAsync();
+                        _logger.LogWarning("[PstService] License status {Status} for {User}. Aborting.", moduleStatus, backgroundUserId);
+                        var sessionUpdateResult = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
+                        if (sessionUpdateResult != null)
+                        {
+                            sessionUpdateResult.Status = "LicenseActiveRequired";
+                            await scopedDb.SaveChangesAsync();
+                        }
+                        return;
                     }
-                    return;
                 }
 
                 // 2. Check License Item Status
@@ -1404,7 +1410,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             using (var archive = new ZipArchive(fs, ZipArchiveMode.Create, true))
             {
                 var archiveLock = new object();
-                await ExportFolderRecursive(resId, pst, folder, "", format, archive, archiveLock, filter, false, -1, CancellationToken.None, null);
+                await ExportFolderRecursive(resId, pst, folder, "", format, archive, archiveLock, filter, false, -1, CancellationToken.None);
             }
             return true;
         }, password);
@@ -1697,14 +1703,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <summary>
     /// Recursively exports folder contents and subfolders into a ZIP archive.
     /// </summary>
-    private async Task ExportFolderRecursive(string licenseId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, object archiveLock, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token, BatchStorageTracker? tracker = null)
+    private async Task ExportFolderRecursive(string licenseId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, object archiveLock, MessageDateFilter? filter, bool excludeEmpty, int limit, CancellationToken token)
     {
-        var internalTracker = tracker ?? new BatchStorageTracker(licenseId, _licenseClient);
         var limitReached = false;
-        await ExportFolderRecursiveInternal(licenseId, pst, folder, path, format, archive, archiveLock, filter, excludeEmpty, limit, () => limitReached = true, token, internalTracker);
-
-        // Only flush if we created the tracker locally
-        if (tracker == null) await internalTracker.FlushAsync();
+        await ExportFolderRecursiveInternal(licenseId, pst, folder, path, format, archive, archiveLock, filter, excludeEmpty, limit, () => limitReached = true, token);
 
         if (limitReached)
         {
@@ -1712,7 +1714,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
     }
 
-    private async Task ExportFolderRecursiveInternal(string licenseId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, object archiveLock, MessageDateFilter? filter, bool excludeEmpty, int limit, Action onLimitHit, CancellationToken token, BatchStorageTracker? tracker = null)
+    private async Task ExportFolderRecursiveInternal(string licenseId, PersonalStorage pst, FolderInfo folder, string path, ExportFormat format, ZipArchive archive, object archiveLock, MessageDateFilter? filter, bool excludeEmpty, int limit, Action onLimitHit, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
 
@@ -1733,13 +1735,20 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             if (excludeEmpty)
             {
                 bool hasMatchingSubfolder = false;
-                foreach (var sub in folder.GetSubFolders())
+                try
                 {
-                    if (HasMatchingContentRecursive(sub, mailQuery))
+                    foreach (var sub in folder.GetSubFolders())
                     {
-                        hasMatchingSubfolder = true;
-                        break;
+                        if (HasMatchingContentRecursive(sub, mailQuery))
+                        {
+                            hasMatchingSubfolder = true;
+                            break;
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Failed to iterate subfolders in {Path} during exclude check: {Message}", path, ex.Message);
                 }
                 if (!hasMatchingSubfolder) return;
             }
@@ -1750,7 +1759,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             }
         }
 
-        if (!string.IsNullOrEmpty(path)) archive.CreateEntry(path + "/");
+        if (!string.IsNullOrEmpty(path))
+        {
+            try
+            {
+                lock(archiveLock) { archive.CreateEntry(path + "/"); }
+            }
+            catch (Exception ex) { _logger.LogWarning("Failed to create dir entry {Path}: {Message}", path, ex.Message); }
+        }
 
         // REMOVED upfront folder scan that caused double-counting and performance loss
 
@@ -1793,34 +1809,30 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                     ? msg.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong()
                                     : 0;
 
-                                // Strict validation: Terminate gracefully if limit hit
-                                if (tracker != null)
-                                {
-                                    if (!await tracker.UpdateAsync(msgSize))
-                                    {
-                                        limitHitLocal = true;
-                                        onLimitHit();
-                                        limitCts.Cancel();
-                                        return;
-                                    }
-                                }
-                                // else if (!await _licenseClient.UpdateStorageAsync(licenseId, msgSize))
-                                // {
-                                //     limitHitLocal = true;
-                                //     onLimitHit();
-                                //     limitCts.Cancel();
-                                //     return;
-                                // }
+                                // Storage update logic is handled fully at the top of the execution.
+                                // We don't deduct size individually since the whole OST size was charged to the user.
 
                                 var entryName = string.IsNullOrEmpty(path)
                                     ? $"{SanitizeFileName(msg.Subject ?? "msg")}_{currentExportCount}{GetFileExtension(format)}"
                                     : $"{path}/{SanitizeFileName(msg.Subject ?? "msg")}_{currentExportCount}{GetFileExtension(format)}";
 
-                                lock (archiveLock)
+                                try
                                 {
-                                    var entry = archive.CreateEntry(entryName, CompressionLevel.NoCompression);
-                                    using var es = entry.Open();
-                                    SaveMessageToStream(msg, es, format);
+                                    // Use a MemoryStream to protect the ZIP from being corrupted if SaveMessageToStream throws
+                                    using var memoryStream = new MemoryStream();
+                                    SaveMessageToStream(msg, memoryStream, format);
+                                    memoryStream.Position = 0;
+
+                                    lock (archiveLock)
+                                    {
+                                        var entry = archive.CreateEntry(entryName, CompressionLevel.NoCompression);
+                                        using var es = entry.Open();
+                                        memoryStream.CopyTo(es);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogError(ex, "Failed to process and ZIP message {EntryId}", msgInfo.EntryIdString);
                                 }
                             }
                         }
@@ -1845,9 +1857,17 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         if (limitHitLocal) return;
 
-        foreach (var sub in folder.GetSubFolders())
+        try
         {
-            await ExportFolderRecursiveInternal(licenseId, pst, sub, string.IsNullOrEmpty(path) ? sub.DisplayName : $"{path}/{sub.DisplayName}", format, archive, archiveLock, filter, excludeEmpty, limit, onLimitHit, token, tracker);
+            foreach (var sub in folder.GetSubFolders())
+            {
+                var sanitizedFolderName = SanitizeFileName(sub.DisplayName ?? "folder");
+                await ExportFolderRecursiveInternal(licenseId, pst, sub, string.IsNullOrEmpty(path) ? sanitizedFolderName : $"{path}/{sanitizedFolderName}", format, archive, archiveLock, filter, excludeEmpty, limit, onLimitHit, token);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Failed to process subfolders for {Path}: {Message}", path, ex.Message);
         }
     }
     /// <summary>
@@ -1896,13 +1916,19 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
         else
         {
-            if (folder.ContentCount > 0) return true;
+            try { if (folder.ContentCount > 0) return true; }
+            catch { }
         }
 
-        foreach (var sub in folder.GetSubFolders())
+        try
         {
-            if (HasMatchingContentRecursive(sub, query)) return true;
+            foreach (var sub in folder.GetSubFolders())
+            {
+                if (HasMatchingContentRecursive(sub, query)) return true;
+            }
         }
+        catch { }
+
         return false;
     }
 

@@ -90,6 +90,11 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
             }
             foreach (var file in directoryInfo.GetFiles())
             {
+                // Skip .ost files — they are long-lived source files deleted only when their session expires.
+                // They are protected for up to 6 hours from their LastAccessedAt in the DB.
+                if (file.Extension.Equals(".ost", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 if (now - file.LastWriteTime > orphanFileTimeout)
                 {
                     try
@@ -154,21 +159,26 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
             {
                 await pool.RemoveAsync(session.SessionId);
 
-                // Also explicitly delete files if they match session ID (redundant but safe)
-                // The directory cleanup above handles files by LastWriteTime, which might be different from LastAccessedAt in DB.
-                // It's safer to rely on DB for session validity.
-
-                var pstPath = Path.Combine(_uploadDir, $"{session.SessionId}.pst");
+                // Delete the original OST source file when the session expires (6-hour mark)
                 var ostPath = Path.Combine(_uploadDir, $"{session.SessionId}.ost");
-
-                // Converted files
-                var convertedPst = Path.Combine(_uploadDir, $"{session.SessionId}_converted.pst");
-                var convertedOst = Path.Combine(_uploadDir, $"{session.SessionId}_converted.ost");
-
-                await TryDeleteWithRetryAsync(pstPath);
                 await TryDeleteWithRetryAsync(ostPath);
-                await TryDeleteWithRetryAsync(convertedPst);
-                await TryDeleteWithRetryAsync(convertedOst);
+
+                // Original PST input file (if the user uploaded a PST for viewing)
+                var pstInputPath = Path.Combine(_uploadDir, $"{session.SessionId}.pst");
+                await TryDeleteWithRetryAsync(pstInputPath);
+
+                // Converted PST output files (pattern: {sessionId}_converted_*.pst)
+                foreach (var convertedFile in Directory.GetFiles(_uploadDir, $"{session.SessionId}_converted*.pst"))
+                    await TryDeleteWithRetryAsync(convertedFile);
+
+                // Export ZIP files
+                foreach (var zipFile in Directory.GetFiles(_uploadDir, $"export_{session.SessionId}_*.zip"))
+                    await TryDeleteWithRetryAsync(zipFile);
+
+                // Split PST temp directory
+                var splitDir = Path.Combine(_uploadDir, $"split_{session.SessionId}");
+                if (Directory.Exists(splitDir))
+                    try { Directory.Delete(splitDir, true); } catch { }
             }
             db.ConversionSessions.RemoveRange(oldSessions);
             await db.SaveChangesAsync(stoppingToken);
