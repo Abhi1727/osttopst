@@ -74,7 +74,11 @@ public static class ConversionEndpoints
             // Get comprehensive license status (handles caches, tiers, and limits)
             var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
             
-            if (!status.CanConvert)
+            // Allow export to start even if license is expired/limited.
+            // Under significantly limited states, we fallback to Demo limits (partial export).
+            bool isActuallyDemo = status.Tier == LicenseTier.Demo || !status.CanConvert;
+
+            if (!status.CanConvert && status.Tier != LicenseTier.DemoExpired && status.Tier != LicenseTier.Professional)
             {
                 return Results.Json(new { error = status.Tier }, statusCode: StatusCodes.Status403Forbidden);
             }
@@ -150,7 +154,7 @@ public static class ConversionEndpoints
                 var (filePath, isReady) = await pstService.ExportAllAsync(sessionId,
                                                                            userId,
                                                                            exportFormat,
-                                                                           status.Tier == LicenseTier.Demo,
+                                                                           isActuallyDemo,
                                                                            folderId,
                                                                            selectedIds,
                                                                            filter,
@@ -245,8 +249,11 @@ public static class ConversionEndpoints
                 // Get comprehensive license status (handles caches, tiers, and limits)
                 var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
                 
-                if (!status.CanConvert)
+                // Allow conversion to start even if license is expired/limited.
+                // PstService.ConvertOstToPstAsync now handles this by falling back to Demo limits (partial conversion).
+                if (!status.CanConvert && status.Tier != LicenseTier.DemoExpired && status.Tier != LicenseTier.Demo && status.Tier != LicenseTier.Professional)
                 {
+                    // Only block if it's completely unrecognized or blocked for other reasons
                     return Results.Json(new { error = status.Tier }, statusCode: StatusCodes.Status403Forbidden);
                 }
 
@@ -301,7 +308,7 @@ public static class ConversionEndpoints
 
                 var (filePath, fileName, isReady) = await pstService.ConvertOstToPstAsync(sessionId,
                                                                                            userId, 
-                                                                                           status.Tier == LicenseTier.Demo,
+                                                                                           status.Tier == LicenseTier.Demo || !status.CanConvert,
                                                                                            excludeEmptyFolders ?? true, 
                                                                                           userEmail, 
                                                                                            deduplicate ?? false, 

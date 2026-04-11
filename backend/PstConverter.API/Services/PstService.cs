@@ -550,7 +550,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId, itemName);
         if (!licenseStatus.CanConvert)
         {
-            throw new Exception("License limit exceeded");
+            // If license is expired or limited, fallback to Demo limits to allow "converting what it can"
+            _logger.LogWarning("[PstService] License limit reached or expired for {User}. Falling back to Demo limits for partial conversion.", licenseId);
+            isDemo = true;
         }
         int exportLimit = -1;
         if (isDemo)
@@ -712,6 +714,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 // Especially important if the user was browsing the OST/PST in the UI just before converting.
                 await _pool.RemoveAsync(sessionId);
 
+                bool fastPathSuccess = false;
+
                 // HYPER FAST PATH: Direct OST to PST conversion (Native implementation)
                 if (!deduplicate && !excludeEmptyFolders && exportLimit == -1)
                 {
@@ -752,6 +756,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                             sessionInfo.IsPaid = true;
                             await scopedDb.SaveChangesAsync();
                         }
+                        fastPathSuccess = true;
                         return;
                     }
                     catch (OperationCanceledException) { return; }
@@ -776,19 +781,31 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     }
 
                     // Pool was already removed at the start of the method to ensure clean file access for MergeWith.
-
-                    using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
-                    destStorage.MergeWith([srcPath]);
-
-                    if (splitSizeMb > 0)
+                    try
                     {
-                        var tempDir = Path.Combine(_uploadDir, $"split_{sessionId}");
-                        if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-                        Directory.CreateDirectory(tempDir);
-                        destStorage.SplitInto(splitSizeMb.Value * 1024 * 1024, tempDir);
+                        using var destStorage = PersonalStorage.Create(outputPath, FileFormatVersion.Unicode);
+                        destStorage.MergeWith([srcPath]);
+
+                        if (splitSizeMb > 0)
+                        {
+                            var tempDir = Path.Combine(_uploadDir, $"split_{sessionId}");
+                            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+                            Directory.CreateDirectory(tempDir);
+                            destStorage.SplitInto(splitSizeMb.Value * 1024 * 1024, tempDir);
+                        }
+                        
+                        // If we reach here, fast path succeeded.
+                        fastPathSuccess = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning("[PstService] Fast path MergeWith failed for session {SessionId}, falling back to manual copy: {Message}", sessionId, ex.Message);
+                        if (File.Exists(outputPath)) TryDelete(outputPath);
+                        // Fall through to manual copy block below
                     }
                 }
-                else
+
+                if (!fastPathSuccess)
                 {
                     await _pool.AccessAsync(sessionId, srcPath, async srcStorage =>
                     {
@@ -976,9 +993,14 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                 if (!seenHashes.Add(dedupKey)) continue;
                             }
 
-                            var msgSize = msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE)
-                                ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong()
-                                : 0;
+                            long msgSize = 0;
+                            try
+                            {
+                                msgSize = msg.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE)
+                                    ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong()
+                                    : 0;
+                            }
+                            catch { /* ignore property read errors */ }
 
                             if (tracker != null)
                             {
