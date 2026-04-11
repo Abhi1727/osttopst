@@ -260,6 +260,20 @@ const UploadPhase = ({ onSessionReady }) => {
     fetchLicense();
   }, [isSignedIn, getToken, user]);
 
+  // Prevent page refresh during active operations
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (uploading) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [uploading]);
+
   const rawTier = licenseStatus?.tier ?? licenseStatus?.Tier;
   const tierStr = String(rawTier ?? "").toLowerCase();
   const isProfessional = tierStr === "3" || tierStr === "professional";
@@ -267,9 +281,18 @@ const UploadPhase = ({ onSessionReady }) => {
   const handleFile = useCallback(
     async (file) => {
       if (!file) return;
+
+      // 1. Basic extension check
       const ext = file.name.split(".").pop().toLowerCase();
       if (!["ost", "pst"].includes(ext)) {
         toast.error("Only .ost and .pst files are supported.");
+        return;
+      }
+
+      // 2. Integrity check (Magic Number & Size)
+      const integrity = await fileService.validateFileIntegrity(file);
+      if (!integrity.valid) {
+        toast.error(integrity.error);
         return;
       }
 
@@ -293,6 +316,7 @@ const UploadPhase = ({ onSessionReady }) => {
           null,
           null,
           null,
+          "Viewer",
         );
         onSessionReady({
           sessionId: result.sessionId,
@@ -484,6 +508,21 @@ const PreviewPhase = ({ session, onReset, getToken }) => {
   const [maxOpenDepth, setMaxOpenDepth] = useState(0);
   const [sortBy] = useState("date");
   const [sortOrder] = useState("desc");
+  const [hasError, setHasError] = useState(false);
+
+  // Prevent page refresh during active operations
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (loading || loadingMessages || loadingDetail) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [loading, loadingMessages, loadingDetail]);
 
   const totalMessageCount = useMemo(() => {
     const sum = (list) =>
@@ -494,22 +533,25 @@ const PreviewPhase = ({ session, onReset, getToken }) => {
     return sum(folders);
   }, [folders]);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const freshToken = await getToken();
-        const data = await fileService.getFolders(session.sessionId, freshToken, true);
-        setFolders(data || []);
-      } catch (err) {
-        toast.error("Failed to load folders");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setHasError(false);
+      const freshToken = await getToken();
+      const data = await fileService.getFolders(session.sessionId, freshToken, true);
+      setFolders(data || []);
+    } catch (err) {
+      setHasError(true);
+      toast.error("Failed to index file structure. Please try again.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, [session.sessionId, getToken]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleFolderSelect = async (folder) => {
     setSelectedFolder(folder);
@@ -555,8 +597,9 @@ const PreviewPhase = ({ session, onReset, getToken }) => {
   };
 
   const filteredMessages = useMemo(() => {
-    if (!searchQuery) return messages;
-    const q = searchQuery.toLowerCase();
+    const trimmed = searchQuery.trim();
+    if (!trimmed || trimmed.length < 2) return messages;
+    const q = trimmed.toLowerCase();
     return messages.filter(
       (m) =>
         m.subject?.toLowerCase().includes(q) ||
@@ -671,6 +714,25 @@ const PreviewPhase = ({ session, onReset, getToken }) => {
                   <span className="text-[10px] font-black uppercase tracking-widest">
                     Indexing data...
                   </span>
+                </div>
+              ) : hasError ? (
+                <div className="flex flex-col items-center py-20 px-6 text-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center border border-red-100 shadow-sm">
+                    <X size={20} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <h4 className="text-sm font-black text-slate-900 tracking-tight">Indexing Failed</h4>
+                    <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                      We encountered an issue reading the file structure.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={load}
+                    className="mt-4 h-9 px-4 rounded-xl text-[11px] font-black uppercase tracking-widest border-slate-200 hover:bg-slate-50 hover:border-brand-300 transition-all active:scale-95"
+                  >
+                    Retry Indexing
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-6">

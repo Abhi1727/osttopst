@@ -11,4 +11,5 @@ public class ChunkedUploadMetadata
     public long TotalSize { get; set; }
     public List<int> ReceivedChunks { get; set; } = [];
     public DateTime CreatedAt { get; set; }
+    public string Purpose { get; set; } = "Conversion";
 }

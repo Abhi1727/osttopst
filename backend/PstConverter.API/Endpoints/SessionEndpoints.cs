@@ -23,9 +23,9 @@ public static class SessionEndpoints
         groupAuth.MapGet("/recent", async (AppDbContext db, ClaimsPrincipal user, IConfiguration config) =>
         {
             var userId = user.GetInternalUserId();
-            // Get last 10 successful sessions for this user
+            // Get last 10 successful sessions for this user, filtering out Viewer sessions
             var sessions = await db.ConversionSessions
-                .Where(s => s.UserId == userId)
+                .Where(s => s.UserId == userId && s.Purpose != "Viewer")
                 .OrderByDescending(s => s.CreatedAt)
                 .Take(10)
                 .ToListAsync();

@@ -41,4 +41,7 @@ public class ConversionSession
 
     public string? SplitFilesJson { get; set; }
     public string? ErrorMessage { get; set; }
+
+    [MaxLength(50)]
+    public string Purpose { get; set; } = "Conversion"; // "Conversion" or "Viewer"
 }

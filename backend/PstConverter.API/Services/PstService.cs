@@ -184,7 +184,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <returns>A unique upload ID for the chunked session.</returns>
     
 
-    public async Task<string> InitChunkedUploadAsync(string originalFileName, string userId, int totalChunks, long totalSize, string? userEmail = null)
+    public async Task<string> InitChunkedUploadAsync(string originalFileName, string userId, int totalChunks, long totalSize, string? userEmail = null, string purpose = "Conversion")
     {
         var uploadId = Guid.NewGuid().ToString("N");
         var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
@@ -199,7 +199,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             TotalChunks = totalChunks,
             TotalSize = totalSize,
             ReceivedChunks = [],
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.Now,
+            Purpose = purpose
         };
 
         var metaPath = Path.Combine(chunkDir, "_metadata.json");
@@ -348,7 +349,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             CreatedAt = DateTime.Now,
             Status = "Assembling",
             Password = null,
-            Email = metadata.UserEmail ?? userEmail ?? metadata.UserId
+            Email = metadata.UserEmail ?? userEmail ?? metadata.UserId,
+            Purpose = metadata.Purpose ?? "Conversion"
         };
         _db.ConversionSessions.Add(session);
         await _db.SaveChangesAsync();

@@ -62,6 +62,20 @@ const HeroUpload = ({ onSessionReady }) => {
     return () => window.removeEventListener("license-refresh", fetchLicense);
   }, [isSignedIn, getToken, user]);
 
+  // Prevent page refresh during active operations
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (uploading) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [uploading]);
+
   const rawTier = licenseStatus?.tier ?? licenseStatus?.Tier;
   const tierStr = String(rawTier ?? "").toLowerCase();
   const isProfessional = tierStr === "3" || tierStr === "professional";
@@ -69,11 +83,21 @@ const HeroUpload = ({ onSessionReady }) => {
   const handleFile = useCallback(
     async (file) => {
       if (!file) return;
+
+      // 1. Basic extension check
       const ext = file.name.split(".").pop().toLowerCase();
       if (!["ost", "pst"].includes(ext)) {
         toast.error("Only .ost and .pst files are supported.");
         return;
       }
+
+      // 2. Integrity check (Magic Number & Size)
+      const integrity = await fileService.validateFileIntegrity(file);
+      if (!integrity.valid) {
+        toast.error(integrity.error);
+        return;
+      }
+
       const MAX_SIZE = isProfessional 
         ? 5 * 1024 * 1024 * 1024 // 5 GB
         : 500 * 1024 * 1024;     // 500 MB
@@ -91,6 +115,7 @@ const HeroUpload = ({ onSessionReady }) => {
           null,
           null,
           null,
+          "Viewer",
         );
         onSessionReady({
           sessionId: result.sessionId,

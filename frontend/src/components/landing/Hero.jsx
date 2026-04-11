@@ -100,6 +100,20 @@ const Hero = ({ onUploadComplete, onRestore }) => {
     return () => window.removeEventListener("license-refresh", fetchLicense);
   }, [isSignedIn, getToken]);
 
+  // Prevent page refresh during active operations
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (uploading || isDownloading) {
+        e.preventDefault();
+        e.returnValue = ""; // Required for modern browsers to show the generic dialog
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [uploading, isDownloading]);
+
   const showTrialExpiredToast = () => {
     toast.error(
       <span>
@@ -136,6 +150,13 @@ const Hero = ({ onUploadComplete, onRestore }) => {
       }
 
       const selectedFile = acceptedFiles[0];
+
+      // Integrity check (Magic Number & Size)
+      const integrity = await fileService.validateFileIntegrity(selectedFile);
+      if (!integrity.valid) {
+        toast.error(integrity.error);
+        return;
+      }
       
       const MAX_SIZE = isProfessional 
         ? 5 * 1024 * 1024 * 1024 // 5 GB
@@ -167,6 +188,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
           null, // password
           controller.signal,
           user?.primaryEmailAddress?.emailAddress ?? null,
+          "Conversion",
         );
 
         // Backend returns sessionId, not _id

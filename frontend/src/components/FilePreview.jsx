@@ -357,6 +357,20 @@ const FilePreview = ({ session, onReset }) => {
     fetchLicense();
   }, [getToken, user]);
 
+  // Prevent page refresh during active operations
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isConverting) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isConverting]);
+
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(

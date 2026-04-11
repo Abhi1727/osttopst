@@ -166,11 +166,11 @@ public static class FileEndpoints
 
                 if (logger.IsEnabled(LogLevel.Information))
                 {
-                    logger.LogInformation("Init chunked upload: file={FileName}, chunks={TotalChunks}, size={TotalSize}, user={UserId}",
-                        request.FileName, request.TotalChunks, request.TotalSize, userId);
+                    logger.LogInformation("Init chunked upload: file={FileName}, chunks={TotalChunks}, size={TotalSize}, user={UserId}, purpose={Purpose}",
+                        request.FileName, request.TotalChunks, request.TotalSize, userId, request.Purpose);
                 }
 
-                var uploadId = await pstService.InitChunkedUploadAsync(request.FileName, userId, request.TotalChunks, request.TotalSize, userEmail);
+                var uploadId = await pstService.InitChunkedUploadAsync(request.FileName, userId, request.TotalChunks, request.TotalSize, userEmail, request.Purpose ?? "Conversion");
 
                 return Results.Ok(new { uploadId, totalChunks = request.TotalChunks });
             }
@@ -377,4 +377,4 @@ public static class FileEndpoints
 }
 
 // Request DTOs
-public record InitUploadRequest(string FileName, int TotalChunks, long TotalSize, string? Password = null, string? Email = null);
+public record InitUploadRequest(string FileName, int TotalChunks, long TotalSize, string? Password = null, string? Email = null, string? Purpose = "Conversion");

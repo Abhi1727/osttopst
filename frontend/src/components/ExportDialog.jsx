@@ -169,6 +169,20 @@ const ExportDialog = ({ open, session, onClose, options = {} }) => {
     };
   }, []);
 
+  // Prevent page refresh during active operations
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isExporting || isConverting) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isExporting, isConverting]);
+
   if (!open || !session) return null;
 
   const handleCancel = async () => {

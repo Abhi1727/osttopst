@@ -154,6 +154,7 @@ async function chunkedUpload(
   password = null,
   signal = null,
   email = null,
+  purpose = "Conversion",
 ) {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   let uploadId = null;
@@ -185,6 +186,7 @@ async function chunkedUpload(
       TotalSize: file.size,
       Password: password || null,
       Email: email || null,
+      Purpose: purpose || "Conversion",
     }),
   });
 
@@ -340,6 +342,7 @@ function singleUpload(
   password = null,
   signal = null,
   email = null,
+  purpose = "Conversion",
 ) {
   return new Promise((resolve, reject) => {
     // Wrap in async function to handle token resolution
@@ -417,6 +420,7 @@ function singleUpload(
         formData.append("file", file);
         if (password) formData.append("password", password);
         if (email) formData.append("email", email);
+        if (purpose) formData.append("purpose", purpose);
         xhr.send(formData);
       } catch (err) {
         reject(err);
@@ -444,6 +448,7 @@ export const fileService = {
     password = null,
     signal = null,
     email = null,
+    purpose = "Conversion",
   ) {
     // Normalize onProgress to handle both old-style (percent) and new-style ({ phase, percent, detail })
     const progressHandler = (info) => {
@@ -469,6 +474,7 @@ export const fileService = {
         password,
         signal,
         email,
+        purpose,
       );
     } else {
       // Small file → single request (faster for small files)
@@ -479,6 +485,7 @@ export const fileService = {
         password,
         signal,
         email,
+        purpose,
       );
     }
   },
@@ -583,5 +590,36 @@ export const fileService = {
       null, // signal
       { email },
     );
+  },
+
+  /**
+   * Validate file integrity by checking magic number (!BDN) and file size.
+   */
+  async validateFileIntegrity(file) {
+    if (!file) return { valid: false, error: "No file selected." };
+    if (file.size === 0) return { valid: false, error: "The selected file is empty." };
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const header = new Uint8Array(e.target.result);
+        const magic = Array.from(header)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("")
+          .toUpperCase();
+
+        if (magic === "2142444E") {
+          resolve({ valid: true });
+        } else {
+          resolve({
+            valid: false,
+            error: "Invalid file format. The uploaded file is not a genuine OST or PST archive.",
+          });
+        }
+      };
+      reader.onerror = () =>
+        resolve({ valid: false, error: "Failed to read file integrity." });
+      reader.readAsArrayBuffer(file.slice(0, 4));
+    });
   },
 };
