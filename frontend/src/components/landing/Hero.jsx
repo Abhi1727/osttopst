@@ -300,7 +300,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
             <br />Online - Fast & Secure
           </h1>
           <p className="mb-6 text-base text-slate-600 font-medium max-w-sm md:max-w-lg leading-relaxed">
-            Instantly convert Outlook OST files to PST format in your browser.
+            Instantly convert Outlook OST files to {currentFormat} format in your browser.
             Preview and export your data safely without any software installation.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-2 gap-y-4 gap-x-8 max-w-lg mt-4 md:mt-6">

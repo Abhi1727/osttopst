@@ -1,13 +1,17 @@
-import React from "react";
+import { useLocation } from "react-router-dom";
 
 const Glossary = () => {
+  const location = useLocation();
+  const isPdf = location.pathname === "/ost-to-pdf";
+  const currentFormat = isPdf ? "PDF" : "PST";
+
   return (
     <section className="min-h-screen flex items-center py-16 md:py-20 bg-[#f0f7ff]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-8 md:space-y-12">
           <div className="text-center space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold">
-              Understanding <span className="text-brand-500">OST and PST</span>
+              Understanding <span className="text-brand-500">OST and {currentFormat}</span>
             </h2>
             <p className="text-slate-600 max-w-3xl mx-auto text-base md:text-lg leading-relaxed font-medium">
               A quick guide to Outlook's primary data storage formats.
@@ -54,41 +58,46 @@ const Glossary = () => {
                 </div>
               </div>
             </div>
-            {/* PST Card */}
+            {/* Second Card (PST/PDF) */}
             <div className="bg-white p-6 sm:p-8 md:p-14 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 space-y-6 sm:space-y-8">
               <div className="text-center space-y-2">
                 <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800">
-                  PST
+                  {currentFormat}
                 </h3>
                 <p className="text-lg sm:text-xl text-slate-600 font-medium">
-                  (Personal Storage Table)
+                  ({isPdf ? "Portable Document Format" : "Personal Storage Table"})
                 </p>
               </div>
 
               <div className="space-y-4 sm:space-y-6 text-slate-700">
                 <p className="leading-relaxed text-sm sm:text-base md:text-lg font-medium">
-                  A PST file is also called an <strong>"Outlook Data File"</strong> which is
-                  simply an archived version of the email messages, as well as
-                  appointments, contacts, and to-dos that could be saved onto
-                  one’s computer independently from any email server account (it
-                  can be created as needed).
+                  {isPdf ? (
+                    <>
+                      A PDF file is also known as <strong>Portable Document Format</strong>. This file type is utilized to present documents in a consistent layout across all devices and platforms, instead of software or any functioning system.
+                    </>
+                  ) : (
+                    <>
+                      A PST file is also called an <strong>"Outlook Data File"</strong> which is
+                      simply an archived version of the email messages, as well as
+                      appointments, contacts, and to-dos that could be saved onto
+                      one’s computer independently from any email server account (it
+                      can be created as needed).
+                    </>
+                  )}
                 </p>
                 <div className="space-y-3 sm:space-y-4 pt-2">
                   <p className="text-sm sm:text-base md:text-lg">
-                    <strong className="text-slate-900">Purpose:</strong> Stores
-                    emails and other data as a personal archive.
+                    <strong className="text-slate-900">Purpose:</strong> {isPdf ? "Protects the document format for sharing, archiving, and printing." : "Stores emails and other data as a personal archive."}
                   </p>
                   <p className="text-sm sm:text-base md:text-lg">
-                    <strong className="text-slate-900">Server:</strong> Not
-                    linked to the server account.
+                    <strong className="text-slate-900">Server:</strong> {isPdf ? "Not rely on any server, an independent format." : "Not linked to the server account."}
                   </p>
                   <p className="text-sm sm:text-base md:text-lg">
                     <strong className="text-slate-900">Adaptability:</strong>{" "}
-                    Can be smoothly shifted and opened on another system.
+                    {isPdf ? "It is portable and can be opened on any device" : "Can be smoothly shifted and opened on another system."}
                   </p>
                   <p className="text-sm sm:text-base md:text-lg">
-                    <strong className="text-slate-900">Usage:</strong> Utilized
-                    for backup, storage, as well as for the migration.
+                    <strong className="text-slate-900">Usage:</strong> {isPdf ? "Use for safe and secure document sharing, invoices, and others." : "Utilized for backup, storage, as well as for the migration."}
                   </p>
                 </div>
               </div>

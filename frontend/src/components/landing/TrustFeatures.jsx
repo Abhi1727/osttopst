@@ -1,4 +1,4 @@
-import React from "react";
+import { useLocation } from "react-router-dom";
 import {
   ShieldCheck,
   Box,
@@ -27,7 +27,10 @@ const TrustFeatureCard = ({ icon: Icon, title, description }) => (
 );
 
 const TrustFeatures = () => {
-  const features = [
+  const location = useLocation();
+  const isPdf = location.pathname === "/ost-to-pdf";
+
+  const defaultFeatures = [
     {
       icon: ShieldCheck,
       title: "SSL Security",
@@ -89,6 +92,66 @@ const TrustFeatures = () => {
       description: "Users can easily migrate PST files directly to Gmail, Outlook and Yahoo accounts.",
     },
   ];
+
+  const pdfFeatures = [
+    {
+      icon: ShieldCheck,
+      title: "SSL Security",
+      description: "Protect all of your data with end-to-end SSL encryption from unauthorized access.",
+    },
+    {
+      icon: Box,
+      title: "No Outlook Needed",
+      description: "Manage your documents using our online system without needing any desktop software.",
+    },
+    {
+      icon: Cloud,
+      title: "Cloud Infrastructure",
+      description: "Enjoy rapid-speed processing on an established cloud infrastructure with zero pause in operations.",
+    },
+    {
+      icon: FileText,
+      title: "Free File Conversion",
+      description: "Automatically convert your files into any required format with our advanced conversion engine.",
+    },
+    {
+      icon: Trash2,
+      title: "Privacy Guaranteed",
+      description: "Files are automatically deleted from our servers after 2 hours.",
+    },
+    {
+      icon: Zap,
+      title: "Fast Processing",
+      description: "Cloud-based high-speed engines process large files in minutes.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Full Data Integrity",
+      description: "Maintains folder hierarchy, attachments, and rich-text formatting.",
+    },
+    {
+      icon: Box,
+      title: "User Friendly UI",
+      description: "Our Tool UI is user-friendly, making file management effortless to navigate.",
+    },
+    {
+      icon: Cloud,
+      title: "Supports Outlook 2021 & Earlier",
+      description: "Compatible with all versions of Outlook 2021 and below. We have no restrictions on using Outlook.",
+    },
+    {
+      icon: Box,
+      title: "Batch Conversion",
+      description: "Convert multiple OST files simultaneously to save time and effort.",
+    },
+    {
+      icon: CloudUpload,
+      title: "Direct Migration",
+      description: "Users can easily migrate PDF files directly to Gmail, Outlook, and Yahoo accounts.",
+    },
+  ];
+
+  const features = isPdf ? pdfFeatures : defaultFeatures;
 
   return (
     <section className="bg-[#f0f9ff] py-24">

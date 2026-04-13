@@ -40,6 +40,27 @@ const DetailStepCard = ({ number, title, description }) => (
 const HowItWorks = () => {
   const location = useLocation();
 
+  const formatMap = {
+    "/ost-to-pdf": "PDF",
+    "/ost-to-json": "JSON",
+    "/ost-to-mbox": "MBOX",
+    "/ost-to-eml": "EML",
+    "/ost-to-msg": "MSG",
+    "/ost-to-html": "HTML",
+    "/ost-to-mhtml": "MHTML",
+    "/ost-to-doc": "DOC",
+    "/ost-to-docx": "DOCX",
+    "/ost-to-txt": "TXT",
+    "/ost-to-rtf": "RTF",
+    "/ost-to-csv": "CSV",
+    "/ost-to-xml": "XML",
+    "/ost-to-vcf": "VCF",
+    "/ost-to-ics": "ICS",
+    "/ost-to-xps": "XPS",
+    "/ost-to-tiff": "TIFF",
+  };
+  const currentFormat = formatMap[location.pathname] || "PST";
+
   React.useEffect(() => {
     if (location.hash === "#how-it-works") {
       const el = document.getElementById("how-it-works");
@@ -51,6 +72,8 @@ const HowItWorks = () => {
     }
   }, [location.hash]);
 
+  const isPdf = currentFormat === "PDF";
+
   return (
     <section
       id="how-it-works"
@@ -61,7 +84,7 @@ const HowItWorks = () => {
         <div className="mb-16 md:mb-24">
           <div className="text-center mb-10 md:mb-12">
             <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-              How to Convert<span className="text-brand-600"> OST to PST</span>{" "}
+              How to convert<span className="text-brand-600"> OST to {currentFormat}</span>{" "}
               File?
             </h2>
           </div>
@@ -90,7 +113,7 @@ const HowItWorks = () => {
             />
             <IconStepCard
               number={3}
-              title="Download PST File"
+              title={`Download ${currentFormat} File`}
               icon={Download}
             />
           </div>
@@ -100,7 +123,9 @@ const HowItWorks = () => {
         <div className="border-t border-slate-200/50 pt-16 md:pt-24">
           <div className="text-center mb-12 md:mb-16 space-y-4 px-2">
             <p className="text-slate-600 text-base md:text-lg font-medium max-w-3xl mx-auto leading-relaxed">
-             The process of converting from OST to PST is simple & user friendly; it does not require any kind of technical knowledge for conversion
+              {isPdf 
+                ? "The process of converting from an OST file to PDF is simple & user friendly; it does not require any kind of technical knowledge for conversion."
+                : `The process of converting from OST to ${currentFormat} is simple & user friendly; it does not require any kind of technical knowledge for conversion`}
             </p>
           </div>
 
@@ -109,29 +134,41 @@ const HowItWorks = () => {
               number={1}
               title="Upload Your OST File"
               description={
-                <>
-                  Simply drag and drop your file or click{" "}
-                  <strong>Browse</strong> to find the file on your computer. We
-                  currently support files up to 5 GB in size in our Professional
-                  Plan.
-                </>
+                isPdf ? (
+                  <>
+                    Simply drag and drop your file or click <strong>"Browse"</strong> to find the file on your computer. We currently support files up to 5 GB in size in our professional plans.
+                  </>
+                ) : (
+                  <>
+                    Simply drag and drop your file or click{" "}
+                    <strong>Browse</strong> to find the file on your computer. We
+                    currently support files up to 5 GB in size in our Professional
+                    Plan.
+                  </>
+                )
               } 
-              />
+            />
             <DetailStepCard
               number={2}
-              title="Preview Your PST File"
-              description="When uploading gets finished, you can preview and then download your OST file into multiple formats or either download your PST file directly to your computer"
+              title={isPdf ? "Preview your OST File" : `Preview Your ${currentFormat} File`}
+              description={isPdf 
+                ? "When uploading is finished, you can preview and then download your OST file into multiple formats, or download your PDF file directly to your computer."
+                : `When uploading gets finished, you can preview and then download your OST file into multiple formats or either download your ${currentFormat} file directly to your computer`}
             />
             <DetailStepCard
               number={3}
-              title="PST Conversion Begins"
-              description="When your .ost file is uploaded, by clicking on either download or export option. It begins the conversion process in the selected format, and the download starts automatically."
+              title={isPdf ? "PDF Conversion Begins" : `${currentFormat} Conversion Begins`}
+              description={isPdf
+                ? "When your .ost file is uploaded, by clicking on either the download or export OST Emails to PDF option. It begins the conversion process in the selected format, and the download starts automatically."
+                : `When your .ost file is uploaded, by clicking on either download or export option. It begins the conversion process in the selected format, and the download starts automatically.`}
             />
            
             <DetailStepCard
               number={4}
               title="Import into Outlook"
-              description="To use any edition of Microsoft Outlook to open PST, do file Menu Open & Export Import/Export. Once the PST is opened the emails, calendar appointments and contacts will be available from within it."
+              description={isPdf
+                ? "To use any edition of Microsoft Outlook to open a PDF, do File Menu → Open & Export → Import/Export. Once the PDF is opened, the emails, calendar appointments, and contacts will be available from within it."
+                : `To use any edition of Microsoft Outlook to open ${currentFormat}, do file Menu Open & Export Import/Export. Once the ${currentFormat} is opened the emails, calendar appointments and contacts will be available from within it.`}
             />
           </div>
         </div>
