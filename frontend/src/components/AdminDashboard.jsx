@@ -42,7 +42,7 @@ const AdminDashboard = () => {
   });
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState(null); // File to upload
-  const [thumbnailPreview, setThumbnailPreview] = useState(null); // Preview image removed per user request
+  const [thumbnailPreview, setThumbnailPreview] = useState(null); // Preview image base64
   const [isManualThumbnail, setIsManualThumbnail] = useState(false); // Track if user manually uploaded
 
   // Load posts on mount from API
@@ -276,16 +276,30 @@ const AdminDashboard = () => {
 
       if (thumbnailFile) {
         formData.append("thumbnail", thumbnailFile);
-      } else {
-        formData.append("defaultImage", thumbnailPreview); // fallback to migration image string
+      } else if (thumbnailPreview) {
+        formData.append("defaultImage", thumbnailPreview); // fallback to extracted or placeholder image string
       }
+
+      console.log("Publishing Blog Payload Details:", {
+        id: formData.get("id"),
+        title: formData.get("title"),
+        hasThumbnail: !!thumbnailFile,
+        thumbnailName: thumbnailFile?.name,
+        defaultImage: formData.get("defaultImage")?.substring(0, 50) + "...",
+      });
 
       const response = await fetch("/api/blogs", {
         method: "POST",
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Failed to save blog to server");
+      console.log("Publish Server Response Status:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Publish Error Details:", errorData);
+        throw new Error(errorData.message || "Failed to save blog to server");
+      }
 
       const result = await response.json();
 
@@ -533,8 +547,25 @@ const AdminDashboard = () => {
                   Thumbnail Image
                 </label>
                 <div className="flex items-center gap-6">
-                  <div className="w-32 h-20 rounded-xl overflow-hidden bg-brand-50 border border-brand-100 shadow-sm shrink-0 flex items-center justify-center">
-                    <ImageIcon className="w-8 h-8 text-brand-500/30" />
+                  <div className="w-32 h-20 rounded-xl overflow-hidden bg-brand-50 border border-brand-100 shadow-sm shrink-0 flex items-center justify-center relative group/preview">
+                    {thumbnailPreview ? (
+                      <>
+                        <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-full object-cover" />
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setThumbnailPreview(null);
+                            setThumbnailFile(null);
+                            setIsManualThumbnail(false);
+                          }}
+                          className="absolute inset-0 bg-black/40 opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold"
+                        >
+                          Remove
+                        </button>
+                      </>
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-brand-500/30" />
+                    )}
                   </div>
                   <div className="flex-1">
                     <input
@@ -775,7 +806,11 @@ const AdminDashboard = () => {
                   className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow group flex flex-col"
                 >
                   <div className="h-40 overflow-hidden relative bg-brand-50 flex items-center justify-center border-b border-slate-100">
-                    <Newspaper className="w-12 h-12 text-brand-500/30" />
+                    {post.image && post.image !== "null" ? (
+                      <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <Newspaper className="w-12 h-12 text-brand-500/30" />
+                    )}
                     <div className="absolute top-4 left-4">
                       <span className="bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-black px-2.5 py-1 rounded-md shadow-sm uppercase tracking-wider">
                         {post.category}

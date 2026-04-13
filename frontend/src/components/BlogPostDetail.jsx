@@ -12,7 +12,7 @@ import {
   Newspaper,
   BookOpen
 } from "lucide-react";
-// fallback image removed per user request for no images
+// Blog images are now rendered properly
 
 const formatTitle = (rawTitle) => {
   if (!rawTitle) return "";
@@ -84,9 +84,10 @@ const BlogPostDetail = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(post.content, "text/html");
 
-    // 1. Remove redundancy
-    const firstImg = doc.querySelector("img");
-    if (firstImg) firstImg.remove();
+    // 1. Remove redundancy if content starts with an image that matches the thumbnail
+    // For now, we'll keep the content as is unless it's clearly a duplicate of the header image
+    
+    setProcessedContent(doc.body.innerHTML);
 
     setProcessedContent(doc.body.innerHTML);
   }, [post?.content]);
@@ -138,10 +139,14 @@ const BlogPostDetail = () => {
           </div>
         </div>
 
-        {/* Decorative Header (No Image) */}
+        {/* Primary Blog Image */}
         <div className="w-full mb-8">
-          <div className="aspect-[16/9] md:aspect-[2/1] rounded-2xl overflow-hidden shadow-sm bg-brand-50 border-2 border-slate-50 flex items-center justify-center">
-            <BookOpen className="w-16 h-16 text-brand-500/20" />
+          <div className="aspect-[16/9] md:aspect-[2/1] rounded-2xl overflow-hidden shadow-xl bg-brand-50 border-2 border-slate-50 flex items-center justify-center">
+            {post.image && post.image !== "null" ? (
+              <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+            ) : (
+              <BookOpen className="w-16 h-16 text-brand-500/20" />
+            )}
           </div>
         </div>
 
@@ -311,7 +316,11 @@ const BlogPostDetail = () => {
                   className="group cursor-pointer flex flex-col gap-4"
                 >
                   <div className="aspect-[16/10] overflow-hidden rounded-xl bg-brand-50 shadow-sm hover:shadow-md transition-shadow flex items-center justify-center border border-brand-100">
-                    <Newspaper className="w-10 h-10 text-brand-500/20" />
+                    {blog.image && blog.image !== "null" ? (
+                      <img src={blog.image} alt={blog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <Newspaper className="w-10 h-10 text-brand-500/20" />
+                    )}
                   </div>
                   <div>
                     <h4 className="text-[18px] md:text-[20px] font-extrabold text-black tracking-tight leading-[1.3] group-hover:text-brand-600 transition-colors">

@@ -15,22 +15,40 @@ namespace PstConverter.Controllers
 
         public BlogsController(IWebHostEnvironment env)
         {
-            // Calculate path to frontend/public from backend/PstConverter.API
-            // Need to go: PstConverter.API -> backend -> repo root -> frontend/public
-            var backendDir = Directory.GetParent(env.ContentRootPath)?.FullName ?? ""; // -> backend folder
-            var repoRoot = Directory.GetParent(backendDir)?.FullName ?? "";             // -> repo root
-            _frontendPublicPath = Path.Combine(repoRoot, "frontend", "public");
+            // Robust path calculation: Find repo root by looking for 'frontend' directory upwards 
+            // starting from the content root path.
+            var root = env.ContentRootPath;
+            Console.WriteLine($"[BlogsController] ContentRootPath: {root}");
+            
+            // Go up until we find the directory containing 'frontend' folder
+            while (!string.IsNullOrEmpty(root) && !Directory.Exists(Path.Combine(root, "frontend")))
+            {
+                var parent = Directory.GetParent(root);
+                if (parent == null) break;
+                root = parent.FullName;
+            }
+
+            Console.WriteLine($"[BlogsController] Resolved Repo Root: {root}");
+
+            _frontendPublicPath = Path.Combine(root, "frontend", "public");
             _blogsDirectory = Path.Combine(_frontendPublicPath, "blogs");
             _blogsJsonPath = Path.Combine(_blogsDirectory, "blogs.json");
+
+            Console.WriteLine($"[BlogsController] Static Assets Path: {_frontendPublicPath}");
+            Console.WriteLine($"[BlogsController] Blogs JSON Path: {_blogsJsonPath}");
 
             // Ensure directories exist
             if (!Directory.Exists(_blogsDirectory))
             {
+                Console.WriteLine($"[BlogsController] Creating directory: {_blogsDirectory}");
                 Directory.CreateDirectory(_blogsDirectory);
             }
-            if (!Directory.Exists(Path.Combine(_blogsDirectory, "media")))
+            
+            var mediaDir = Path.Combine(_blogsDirectory, "media");
+            if (!Directory.Exists(mediaDir))
             {
-                Directory.CreateDirectory(Path.Combine(_blogsDirectory, "media"));
+                Console.WriteLine($"[BlogsController] Creating media directory: {mediaDir}");
+                Directory.CreateDirectory(mediaDir);
             }
         }
 
@@ -59,6 +77,8 @@ namespace PstConverter.Controllers
         {
             try
             {
+                Console.WriteLine("\n[BlogsController] CREATE BLOG REQUEST RECEIVED");
+                
                 // 1. Read Metadata from FormData
                 var title = formData["title"].ToString();
                 var summary = formData["summary"].ToString();
@@ -68,6 +88,8 @@ namespace PstConverter.Controllers
                 var date = formData["date"].ToString();
                 var readTime = formData["readTime"].ToString();
                 
+                Console.WriteLine($"[BlogsController] Title: {title}");
+
                 // SEO Fields
                 var altText = formData["altText"].ToString();
                 var metaTitle = formData["metaTitle"].ToString();
@@ -78,6 +100,7 @@ namespace PstConverter.Controllers
 
                 // Ensure ID is a long for timestamp parsing
                 long id = string.IsNullOrEmpty(formData["id"]) ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : long.Parse(formData["id"]!);
+                Console.WriteLine($"[BlogsController] ID: {id}");
 
                 // Generate slug if empty
                 if (string.IsNullOrWhiteSpace(slug))
@@ -92,7 +115,6 @@ namespace PstConverter.Controllers
                         .Replace(";", "")
                         .Trim('-');
                     
-                    // Add partial timestamp to ensure uniqueness if needed, but for now just title-based
                     if (string.IsNullOrWhiteSpace(slug)) slug = id.ToString();
                 }
 
@@ -102,8 +124,9 @@ namespace PstConverter.Controllers
 
                 if (thumbnailFile != null && thumbnailFile.Length > 0)
                 {
+                    Console.WriteLine($"[BlogsController] Found file upload: {thumbnailFile.FileName} ({thumbnailFile.Length} bytes)");
                     var fileExtension = Path.GetExtension(thumbnailFile.FileName);
-                    var newFileName = $"thumb_{id}{fileExtension}";
+                    var newFileName = $"thumb_{id}{fileExtension ?? ".png"}";
                     var savePath = Path.Combine(_blogsDirectory, "media", newFileName);
 
                     using (var stream = new FileStream(savePath, FileMode.Create))
@@ -111,13 +134,15 @@ namespace PstConverter.Controllers
                         await thumbnailFile.CopyToAsync(stream);
                     }
                     thumbnailRelativePath = $"/blogs/media/{newFileName}";
+                    Console.WriteLine($"[BlogsController] Saved file to: {savePath}");
                 }
                 else
                 {
                     var defaultImage = formData["defaultImage"].ToString();
+                    Console.WriteLine($"[BlogsController] No file upload. DefaultImage length: {defaultImage?.Length ?? 0}");
+                    
                     if (!string.IsNullOrEmpty(defaultImage) && defaultImage.StartsWith("data:image/"))
                     {
-                        // Handle base64 image (auto-extracted or manually pasted if supported)
                         try
                         {
                             var commaIndex = defaultImage.IndexOf(',');
@@ -140,24 +165,35 @@ namespace PstConverter.Controllers
 
                                 await System.IO.File.WriteAllBytesAsync(savePath, bytes);
                                 thumbnailRelativePath = $"/blogs/media/{newFileName}";
+                                Console.WriteLine($"[BlogsController] Saved base64 image to: {savePath}");
                             }
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            // Fallback if base64 parsing fails
-                            thumbnailRelativePath = "/assets/blog/blog_email_migration_1772432378369.png";
+                            Console.WriteLine($"[BlogsController] Base64 decoding failed: {ex.Message}");
+                            thumbnailRelativePath = "/blogs/media/default.png";
                         }
                     }
                     else
                     {
-                        // Fallback to a default string if provided, else use the migration image
-                        thumbnailRelativePath = string.IsNullOrEmpty(defaultImage)
-                            ? "/assets/blog/blog_email_migration_1772432378369.png"
+                        thumbnailRelativePath = (string.IsNullOrEmpty(defaultImage) || defaultImage == "null")
+                            ? "/blogs/media/default.png"
                             : defaultImage;
+                        Console.WriteLine($"[BlogsController] Using fallback path: {thumbnailRelativePath}");
                     }
                 }
 
-                // 3. Construct new Blog Object
+                // 3. Update JSON Database
+                List<object> blogs = new();
+                if (System.IO.File.Exists(_blogsJsonPath))
+                {
+                    var existingJson = await System.IO.File.ReadAllTextAsync(_blogsJsonPath);
+                    if (!string.IsNullOrWhiteSpace(existingJson))
+                    {
+                        blogs = JsonSerializer.Deserialize<List<object>>(existingJson) ?? new List<object>();
+                    }
+                }
+
                 var newBlog = new
                 {
                     id,
@@ -177,27 +213,17 @@ namespace PstConverter.Controllers
                     focusKeywords
                 };
 
-                // 4. Update JSON File
-                List<object>? existingBlogs = [];
-                if (System.IO.File.Exists(_blogsJsonPath))
-                {
-                    var existingJson = await System.IO.File.ReadAllTextAsync(_blogsJsonPath);
-                    if (!string.IsNullOrWhiteSpace(existingJson))
-                    {
-                        existingBlogs = JsonSerializer.Deserialize<List<object>>(existingJson) ?? [];
-                    }
-                }
+                blogs.Insert(0, newBlog);
+                var updatedJson = JsonSerializer.Serialize(blogs, _jsonOptions);
+                await System.IO.File.WriteAllTextAsync(_blogsJsonPath, updatedJson);
 
-                existingBlogs.Insert(0, newBlog); // Add to beginning (latest first)
-
-                var newJson = JsonSerializer.Serialize(existingBlogs, _jsonOptions);
-                await System.IO.File.WriteAllTextAsync(_blogsJsonPath, newJson);
-
+                Console.WriteLine($"[BlogsController] SUCCESS: Blog '{title}' saved to {_blogsJsonPath}");
                 return Ok(new { message = "Blog published successfully!", blog = newBlog });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Failed to publish blog", details = ex.Message });
+                Console.WriteLine($"[BlogsController] ERROR in CreateBlog: {ex.Message}");
+                return StatusCode(500, new { message = "Error saving blog", details = ex.Message });
             }
         }
 
