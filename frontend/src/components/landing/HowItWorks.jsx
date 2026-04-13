@@ -100,9 +100,7 @@ const HowItWorks = () => {
         <div className="border-t border-slate-200/50 pt-16 md:pt-24">
           <div className="text-center mb-12 md:mb-16 space-y-4 px-2">
             <p className="text-slate-600 text-base md:text-lg font-medium max-w-3xl mx-auto leading-relaxed">
-              The process of converting from OST to PST is simple, even if you
-              do not have a technical background. This service is designed for
-              the average computer user.
+             The process of converting from OST to PST is simple & user friendly; it does not require any kind of technical knowledge for conversion
             </p>
           </div>
 
@@ -117,18 +115,19 @@ const HowItWorks = () => {
                   currently support files up to 5 GB in size in our Professional
                   Plan.
                 </>
-              }
-            />
+              } 
+              />
             <DetailStepCard
               number={2}
-              title="Automatic Conversion Begins"
-              description="When your .ost file is uploaded, it instantly begins the conversion process(your file will first be repaired if the ost file is corrupt) and then will be converted to a PST file."
+              title="Preview Your PST File"
+              description="When uploading gets finished, you can preview and then download your OST file into multiple formats or either download your PST file directly to your computer"
             />
             <DetailStepCard
               number={3}
-              title="Preview & Your PST File"
-              description="When finished, you can preview what you have converted and then download your PST file directly to your computer."
+              title="PST Conversion Begins"
+              description="When your .ost file is uploaded, by clicking on either download or export option. It begins the conversion process in the selected format, and the download starts automatically."
             />
+           
             <DetailStepCard
               number={4}
               title="Import into Outlook"

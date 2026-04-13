@@ -28,15 +28,15 @@ const LandingFaq = () => {
 
   const faqs = [
     {
-      question: " How to convert OST to PST without using Outlook?",
+      question: "How to convert OST to PST without using Outlook?",
       answer: "The process is simple with our tool. Upload your .ost file using the box above. The cloud engine processes the file online, with no need for Outlook installed. When it gets finished, install the PST file and import it into any desktop.",
     },
     {
-      question: " Is OST to PST a free tool?",
-      answer: " Yes, osttopst.us is free for standard file sizes. There are no extra costs, registration, or watermarks. Upgraded plans are available for priority processing and larger files, but the free service remains simple and accessible.",
+      question: "Is our tool the best free OST to PST converter?",
+      answer: "Yes, OST to PST is free for standard file sizes. There are no extra costs, registration, or watermarks. Upgraded plans are available for priority processing and larger files, but the free service remains simple and accessible.",
     },
     {
-      question: "Who uses the OST to PST Converter",
+      question: "Who uses the OST to PST Converter?",
       answer: "The tool named OST to PST converter is applied by IT administrators, businesses, and individual users of Microsoft Outlook for those who are required to access or recover emails from the OST files. This tool is useful when the Outlook profile gets deleted, and the file becomes inaccessible.",
     },
     {
@@ -62,7 +62,7 @@ const LandingFaq = () => {
     },
     {
       question: "What is the difference between our free OST to PST converter and premium plans?",
-      answer: "Our free tool, which is an OST to PST, covers features such as converting OST files up to 500 MB with data.But if your OST file size limit exceeds more than 500 MB then you can buy our premium plan which includes features such as batch conversion, extensive file size limits, and complete support.",
+      answer: "Our free tool, which is an OST to PST, covers features such as converting OST files up to 500 MB with data. If your OST file exceeds then buy our Premium plan includes features such as batch conversion, extensive file size limits, and complete support.",
     },
   ];
 

@@ -329,20 +329,20 @@ const Pricing = () => {
 
   const faqs = [
     {
-      question: "When do I get my license?",
-      answer: "Licenses are delivered instantly via email after your payment is successfully processed. Please check your inbox (and spam folder) within 5 minutes.",
+      question: "When will I receive my license?",
+      answer: "After the payment is completed, you will receive your license in 5 minutes on your email.",
     },
     {
-      question: "Can I upgrade my plan at any time?",
-      answer: "Yes, you can upgrade your plan at any time through your user dashboard. You'll only need to pay the difference between your current plan and the new one.",
+      question: "Can we upgrade the plan?",
+      answer: "Yes, with the help of the dashboard, you can have an upgrade plan. You just need to make the payment for the updated one and the current plan.",
     },
     {
-      question: "What are the payment methods?",
-      answer: "We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and more. All transactions are processed through secure, encrypted payment gateways.",
+      question: "What are the payment methods are you offering?",
+      answer: "We accept all credit cards, PayPal, and other payment methods. All the payments are safe and secure.",
     },
     {
-      question: "Is there a money-back guarantee?",
-      answer: "Yes, all our paid licenses come with a 30-day money-back guarantee if the software fails to meet the technical conversion requirements.",
+      question: "Is there any refund policy?",
+      answer: "Yes, within 30 days, you will receive your refund safely and securely if our software does not meet your expectations.",
     },
   ];
 

@@ -80,7 +80,7 @@ const TechnicalAdvantages = () => {
             <AdvantageCard
               icon={Wrench}
               title="Repairing Corruption"
-              description="OST files can suffer from 'dirty shutdowns.' We utilize professional-grade tools to fix header errors during the conversion process."
+              description="OST files can suffer from 'unexpected shutdowns.' We utilize professional-grade tools to fix header errors during the conversion process."
             />
             <AdvantageCard
               icon={Copy}

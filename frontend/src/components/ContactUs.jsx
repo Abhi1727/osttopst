@@ -93,23 +93,23 @@ const ContactUs = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <SupportCard
             icon={Ticket}
-            title="Submit a Ticket"
-            description="Detailed technical assistance for specific issues. Average response time: 24h."
+            title="Submit Ticket"
+            description="For any query related to our tool, you need to generate a ticket."
             linkText="Open Ticket"
             linkUrl="#"
           />
           <SupportCard
             icon={MessageSquare}
-            title="Live Chat"
-            description="Immediate help from our support specialists. Best for quick troubleshooting."
+            title="Chat Live"
+            description="You can chat live with our team and resolve your queries."
             linkText="Start Chat"
             linkUrl="#"
             badge="Online"
           />
           <SupportCard
             icon={Book}
-            title="Knowledge Base"
-            description="Self-service portal with 500+ articles, videos, and step-by-step guides."
+            title="Resource Centre"
+            description="We provide all the blogs, articles, and videos related to the tool for your knowledge."
             linkText="Browse Docs"
             linkUrl="#"
           />
@@ -120,11 +120,10 @@ const ContactUs = () => {
       <div className="max-w-6xl mx-auto px-4 pb-20">
         <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-100">
           <div className="text-center mb-12">
-            <h2 className="mb-4">
-              How does our Support Process Work?
-            </h2>
+            <h2 className="mb-4">How does our Support Process Work?</h2>
             <p className="text-slate-500 max-w-2xl mx-auto">
-              We follow a streamlined 4-step process to ensure your issues are resolved quickly and efficiently.
+              We offer a four-step process to guide you through our contact
+              support.{" "}
             </p>
           </div>
 
@@ -132,22 +131,22 @@ const ContactUs = () => {
             {[
               {
                 step: "01",
-                title: "Submit Ticket",
+                title: "Raise a Ticket",
                 desc: "First, submit your problem or ticket.",
               },
               {
                 step: "02",
-                title: "Analysis",
+                title: "Analysing your Query",
                 desc: "Second, our technical team analyzes the issue.",
               },
               {
                 step: "03",
-                title: "Troubleshooting",
+                title: "Repairing Guide",
                 desc: "Third, you will get a detailed troubleshooting guide.",
               },
               {
                 step: "04",
-                title: "Live Support",
+                title: "Schedule Live Chat",
                 desc: "If required, we schedule an online support session.",
               },
             ].map((item, index) => (
@@ -175,9 +174,7 @@ const ContactUs = () => {
           {/* Left Column: Info */}
           <div className="space-y-8">
             <div>
-              <h2 className="mb-4">
-                Contact Us Directly
-              </h2>
+              <h2 className="mb-4">Contact Us Directly</h2>
               <p className="text-slate-500 leading-relaxed">
                 Can't find what you're looking for? Send us a message and our
                 team will get back to you as soon as possible. We offer premium
@@ -208,7 +205,9 @@ const ContactUs = () => {
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                     Office
                   </p>
-                  <p className="font-bold text-slate-800">30N Gould St Ste R, Sheridan, WY 82802</p>
+                  <p className="font-bold text-slate-800">
+                    30N Gould St Ste R, Sheridan, WY 82802
+                  </p>
                 </div>
               </div>
             </div>

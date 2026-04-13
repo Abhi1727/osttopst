@@ -81,6 +81,32 @@ function App() {
     }
   }, [location.pathname, location.hash, navigationType]);
 
+  // Handle Canonical Tags
+  useEffect(() => {
+    const baseUrl = "https://www.osttopst.us";
+    let path = location.pathname;
+    
+    // Remove trailing slash if any (except for root)
+    if (path.length > 1 && path.endsWith('/')) {
+        path = path.slice(0, -1);
+    }
+
+    // Skip blog posts since BlogPostDetail.jsx manages its own canonical tag
+    if (path.startsWith('/blogs/') && path !== '/blogs') {
+       return; 
+    }
+
+    const canonicalUrl = `${baseUrl}${path}`;
+
+    let link = document.querySelector("link[rel='canonical']");
+    if (!link) {
+      link = document.createElement("link");
+      link.setAttribute("rel", "canonical");
+      document.head.appendChild(link);
+    }
+    link.setAttribute("href", canonicalUrl);
+  }, [location.pathname]);
+
   return (
     <ErrorBoundary>
       <Toaster position="top-right" />

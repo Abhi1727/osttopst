@@ -19,7 +19,7 @@ const Faq = () => {
     {
       id: "gen-1",
       category: "General",
-      question: "What is an OST file?",
+      question: "What is OST file in Outlook?",
       answer:
         "An OST file, which stands for Offline Outlook Data File, is a setup mirror or a 'cache' of what’s currently on the mail server. It permits you to work offline and syncs modifications once you're back online.",
     },
@@ -82,9 +82,9 @@ const Faq = () => {
     {
       id: "tech-2",
       category: "Technical",
-      question: "Does ScanPst work on OST files?",
+      question: "Does scanpst.exe work on OST files?",
       answer:
-        "The Inbox Repair Tool (scanpst.exe) is primarily designed for PST files. While it may run on OST files, it often fails to resolve complex sync issues or 'orphaned' file problems, where a dedicated converter is more efficient.",
+        " Yes, scanpst.exe works on OST files. It is provided by Microsoft Outlook to repair the corrupted and damaged OST files.",
     },
     {
       id: "tech-3",
@@ -96,7 +96,7 @@ const Faq = () => {
     {
       id: "tech-4",
       category: "Technical",
-      question: "How can I convert my emails to PST files",
+      question: "How can I convert my emails to PST files?",
       answer:
         "The Emails can be saved to PST files via the Export feature in Outlook or a conversion service.",
     },
@@ -131,9 +131,9 @@ const Faq = () => {
     {
       id: "bill-1",
       category: "Billing",
-      question: "Will I receive an official invoice for my purchase?",
+      question: "Will I receive an invoice for my purchase?",
       answer:
-        "Yes, an official PDF invoice is generated automatically and sent to your registered email address spontaneously after the transaction is completed. You can also request custom billing information to be included in the invoice.",
+        " Yes, an official PDF invoice is created automatically and sent to your registered email address spontaneously after the transaction is completed. You can even request billing details to be included in the invoice.",
     },
     {
       id: "bill-2",

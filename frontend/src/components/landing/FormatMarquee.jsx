@@ -37,7 +37,7 @@ const FORMATS = [
     ext: "HTML",
     bg: "bg-emerald-600",
     description:
-      "Observe and share emails as web pages that open simply in any browser with structured formatting.",
+      "View and share emails as web pages that open simply in any browser with structured formatting.",
   },
   {
     ext: "MBox",
@@ -79,7 +79,7 @@ const FORMATS = [
     ext: "TXT",
     bg: "bg-slate-500",
     description:
-      "Save emails as normal plain text files for fast access, lightweight storage, and easy readability.",
+      "Save your emails as normal plain text files for fast access, lightweight storage, and easy readability.",
   },
   {
     ext: "RTF",
@@ -91,7 +91,7 @@ const FORMATS = [
     ext: "EMLX",
     bg: "bg-zinc-700",
     description:
-      "Convert emails for unforgettable use in Apple Mail without overlooking structure and attachments. ",
+      "Convert emails for a seamless experience in Apple Mail without overlooking structure and attachments.",
   },
   {
     ext: "OLM",

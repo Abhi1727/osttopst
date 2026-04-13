@@ -1200,7 +1200,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 {
                     EntryId = msgInfo.EntryIdString,
                     Subject = msgInfo.Subject ?? "(No Subject)",
-                    From = msgInfo.SenderRepresentativeName ?? "",
+                    From = !string.IsNullOrEmpty(msgInfo.SenderRepresentativeName) ? msgInfo.SenderRepresentativeName :
+                           (msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_SENDER_NAME) ? msgInfo.Properties[MapiPropertyTag.PR_SENDER_NAME].GetString() :
+                           (msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_SENDER_EMAIL_ADDRESS) ? msgInfo.Properties[MapiPropertyTag.PR_SENDER_EMAIL_ADDRESS].GetString() : "")),
                     To = msgInfo.DisplayTo ?? "",
                     Date = date,
                     Size = msgInfo.Properties.ContainsKey(MapiPropertyTag.PR_MESSAGE_SIZE) ? msgInfo.Properties[MapiPropertyTag.PR_MESSAGE_SIZE].GetLong() : 0,
@@ -1253,7 +1255,9 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             {
                 EntryId = entryId,
                 Subject = msg.Subject ?? "(No Subject)",
-                From = msg.SenderEmailAddress ?? "",
+                From = !string.IsNullOrEmpty(msg.SenderName) && !string.IsNullOrEmpty(msg.SenderEmailAddress) && msg.SenderName != msg.SenderEmailAddress
+                    ? $"{msg.SenderName} <{msg.SenderEmailAddress}>"
+                    : (!string.IsNullOrEmpty(msg.SenderName) ? msg.SenderName : (msg.SenderEmailAddress ?? "")),
                 To = msg.DisplayTo ?? "",
                 Cc = msg.DisplayCc ?? "",
                 Date = msg.DeliveryTime,
