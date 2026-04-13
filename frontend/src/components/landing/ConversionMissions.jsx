@@ -10,6 +10,8 @@ import {
 const ConversionMissions = () => {
   const location = useLocation();
   const isPdf = location.pathname === "/ost-to-pdf";
+  const isJson = location.pathname === "/ost-to-json";
+
 
   const defaultAudiences = [
     {
@@ -57,7 +59,7 @@ const ConversionMissions = () => {
     },
   ];
 
-  const audiences = isPdf ? pdfAudiences : defaultAudiences;
+  const audiences = (isPdf || isJson) ? pdfAudiences : defaultAudiences;
 
   return (
     <section className="py-16 px-4 md:px-6 lg:px-12 bg-[#f0f9ff]">
