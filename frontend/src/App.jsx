@@ -39,7 +39,7 @@ function App() {
 
   const navigate = useNavigate();
 
-  // Ensure light theme is always applied
+  // Ensure light theme is always applied.
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove("dark");

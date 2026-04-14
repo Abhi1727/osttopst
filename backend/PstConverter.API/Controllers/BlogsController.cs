@@ -176,7 +176,7 @@ namespace PstConverter.Controllers
                     }
                     else
                     {
-                        thumbnailRelativePath = (string.IsNullOrEmpty(defaultImage) || defaultImage == "null")
+                        thumbnailRelativePath = (string.IsNullOrEmpty(defaultImage) || defaultImage == "null" || defaultImage.Trim().ToLower() == "null")
                             ? "/blogs/media/default.png"
                             : defaultImage;
                         Console.WriteLine($"[BlogsController] Using fallback path: {thumbnailRelativePath}");
