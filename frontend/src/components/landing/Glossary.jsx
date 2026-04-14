@@ -9,9 +9,9 @@ const Glossary = () => {
   const currentFormat = isPdf ? "PDF" : isJson ? "JSON" : isMbox ? "MBOX" : isEml ? "EML" : "PST";
 
   return (
-    <section className="min-h-screen flex items-center py-16 md:py-20 bg-[#f0f7ff]">
+    <section className="min-h-screen flex items-center py-10 md:py-12 bg-[#f0f7ff]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="space-y-8 md:space-y-12">
+        <div className="space-y-6 md:space-y-10">
           <div className="text-center space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold">
               Understanding <span className="text-brand-500">OST and {currentFormat}</span>

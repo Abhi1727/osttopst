@@ -94,10 +94,10 @@ const ReviewSection = () => {
   };
 
   return (
-    <section className="py-16 md:py-24 px-4 bg-[#f0f9ff]">
+    <section className="py-10 md:py-12 px-4 bg-[#f0f9ff]">
       <div className="max-w-5xl mx-auto">
         {/* Title */}
-        <h2 className="text-brand-600 text-lg sm:text-xl md:text-2xl font-bold mb-8 md:mb-12 ml-2 text-center md:text-left">
+        <h2 className="text-brand-600 text-lg sm:text-xl md:text-2xl font-bold mb-6 md:mb-8 ml-2 text-center md:text-left">
           What customers are saying about
         </h2>
 

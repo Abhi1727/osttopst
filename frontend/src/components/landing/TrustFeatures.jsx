@@ -272,9 +272,9 @@ const TrustFeatures = () => {
   const features = isPdf ? pdfFeatures : isMbox ? mboxFeatures : isEml ? emlFeatures : defaultFeatures;
 
   return (
-    <section className="bg-[#f0f9ff] py-24">
+    <section className="bg-[#f0f9ff] py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 space-y-4">
+        <div className="text-center mb-10 space-y-4">
           {/* <h2 className=" text-3xl md:text-4xl font-extrabold tracking-tight">
             Our Professional <span className="text-[#0EA5E9]">Capabilities</span>
           </h2> */}

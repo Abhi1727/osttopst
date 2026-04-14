@@ -78,11 +78,11 @@ const HowItWorks = () => {
   return (
     <section
       id="how-it-works"
-      className="bg-[#f0f9ff] py-24 scroll-mt-20 overflow-hidden"
+      className="bg-[#f0f9ff] py-12 scroll-mt-20 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* UPPER SECTION: 3 Steps + Video */}
-        <div className="mb-16 md:mb-24">
+        <div className="mb-10 md:mb-12">
           <div className="text-center mb-10 md:mb-12">
             <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
               How to convert<span className="text-brand-600"> OST to {currentFormat}</span>{" "}
@@ -121,7 +121,7 @@ const HowItWorks = () => {
         </div>
 
         {/* LOWER SECTION: 4 Detailed Steps */}
-        <div className="border-t border-slate-200/50 pt-16 md:pt-24">
+        <div className="border-t border-slate-200/50 pt-10 md:pt-12">
           <div className="text-center mb-12 md:mb-16 space-y-4 px-2">
             <p className="text-slate-600 text-base md:text-lg font-medium max-w-3xl mx-auto leading-relaxed">
               {isPdf 

@@ -254,10 +254,10 @@ const TechnicalAdvantages = () => {
     ? "OST to EML free converter software"
     : "free OST to PST converter software";
   return (
-    <section className="min-h-screen flex items-center py-16 md:py-24 px-4 md:px-6 lg:px-12 bg-[#f0f7ff]">
-      <div className="max-w-7xl mx-auto space-y-24">
+    <section className="min-h-screen flex items-center py-10 md:py-12 px-4 md:px-6 lg:px-12 bg-[#f0f7ff]">
+      <div className="max-w-7xl mx-auto space-y-12">
         {/* Technical Advantages */}
-        <div className="space-y-10 md:space-y-16">
+        <div className="space-y-8 md:space-y-10">
           <div className="text-center space-y-4 px-2">
             <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold">
               Technical <span className="text-brand-500">Advantages</span> We Offer

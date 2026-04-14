@@ -28,30 +28,30 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
         </div>
       </div>
 
-      <Suspense fallback={<div className="h-40" />}>
-        <div className="relative z-[0] -mt-8 sm:-mt-10 mb-8">
+      <Suspense fallback={<div className="h-10" />}>
+        <div className="relative z-[0] -mt-8 sm:-mt-10">
           <FormatMarquee />
         </div>
       </Suspense>
-      <Suspense fallback={<div className="h-40" />}>
+      <Suspense fallback={<div className="h-10" />}>
         <HowItWorks />
       </Suspense>
-      <Suspense fallback={<div className="h-40" />}>
+      <Suspense fallback={<div className="h-10" />}>
         <TrustFeatures />
       </Suspense>
-      <Suspense fallback={<div className="h-40" />}>
+      <Suspense fallback={<div className="h-10" />}>
         <TechnicalAdvantages />
       </Suspense>
-      <Suspense fallback={<div className="h-40" />}>
+      <Suspense fallback={<div className="h-10" />}>
         <Glossary />
       </Suspense>
-      <Suspense fallback={<div className="h-40" />}>
+      <Suspense fallback={<div className="h-10" />}>
         <ConversionMissions />
       </Suspense>
-      <Suspense fallback={<div className="h-32" />}>
+      <Suspense fallback={<div className="h-10" />}>
         <LandingFaq />
       </Suspense>
-      <Suspense fallback={<div className="h-40" />}>
+      <Suspense fallback={<div className="h-10" />}>
         <ReviewSection />
       </Suspense>
     </div>
