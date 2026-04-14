@@ -78,19 +78,19 @@ const HowItWorks = () => {
   return (
     <section
       id="how-it-works"
-      className="bg-[#f0f9ff] py-6 scroll-mt-20 overflow-hidden"
+      className="bg-brand-50 py-1 md:py-2 scroll-mt-20 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* UPPER SECTION: 3 Steps + Video */}
-        <div className="mb-10 md:mb-12">
-          <div className="text-center mb-10 md:mb-12">
+        <div className="mb-4 md:mb-6">
+          <div className="text-center mb-2 md:mb-4">
             <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
               How to convert<span className="text-brand-600"> OST to {currentFormat}</span>{" "}
               File?
             </h2>
           </div>
 
-          <div className="mb-12 md:mb-16 flex justify-center">
+          <div className="mb-6 md:mb-8 flex justify-center">
             <div className="bg-black w-full max-w-4xl aspect-video md:aspect-[21/9] rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center justify-center gap-4 md:gap-6 cursor-pointer hover:scale-[1.01] transition-all duration-300 shadow-xl group p-4 text-center">
               <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full border-2 sm:border-4 border-white flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white fill-white ml-1 md:ml-2" />
@@ -121,14 +121,14 @@ const HowItWorks = () => {
         </div>
 
         {/* LOWER SECTION: 4 Detailed Steps */}
-        <div className="border-t border-slate-200/50 pt-10 md:pt-12">
-          <div className="text-center mb-12 md:mb-16 space-y-4 px-2">
+        <div className="border-t border-slate-200/50 pt-4 md:pt-5">
+          <div className="text-center mb-4 md:mb-5 space-y-2 px-2">
             <p className="text-slate-600 text-base md:text-lg font-medium max-w-3xl mx-auto leading-relaxed">
               {isPdf 
                 ? "The process of converting from an OST file to PDF is simple & user friendly; it does not require any kind of technical knowledge for conversion."
                 : isJson
                 ? "The process of converting from OST to JSON is simple & user friendly; it does not require any kind of technical knowledge for conversion."
-                : `The process of converting from OST to ${currentFormat} is simple & user friendly; it does not require any kind of technical knowledge for conversion`}
+                : `The process of converting from OST to ${currentFormat} is simple & user friendly; it does not require any kind of technical knowledge for conversion.`}
             </p>
           </div>
 

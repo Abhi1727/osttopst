@@ -9,12 +9,18 @@ const FaqItem = ({ number, question, answer, isOpen, onClick }) => (
       className="w-full flex items-start sm:items-center justify-between p-5 sm:p-6 md:p-8 text-left hover:bg-slate-50 transition-colors gap-3 sm:gap-4"
     >
       <span className="text-slate-800 font-bold text-base sm:text-lg md:text-xl flex items-start sm:items-center gap-2 sm:gap-4">
-        <span className="text-slate-400 font-medium mt-0.5 sm:mt-0">{number}.</span>
+        <span className="text-slate-400 font-medium mt-0.5 sm:mt-0">
+          {number}.
+        </span>
         <span>{question}</span>
       </span>
-      <ChevronDown className={`w-5 h-5 sm:w-6 sm:h-6 text-slate-400 shrink-0 mt-1 sm:mt-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+      <ChevronDown
+        className={`w-5 h-5 sm:w-6 sm:h-6 text-slate-400 shrink-0 mt-1 sm:mt-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+      />
     </button>
-    <div className={`transition-all duration-300 ease-in-out ${isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"} overflow-hidden`}>
+    <div
+      className={`transition-all duration-300 ease-in-out ${isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"} overflow-hidden`}
+    >
       <div className="p-5 sm:p-6 md:p-8 pt-0 text-slate-600 font-medium leading-relaxed text-sm sm:text-base md:text-lg max-w-4xl">
         {answer}
       </div>
@@ -32,126 +38,155 @@ const LandingFaq = () => {
   const defaultFaqs = [
     {
       question: "How to convert OST to PST without using Outlook?",
-      answer: "The process is simple with our tool. Upload your .ost file using the box above. The cloud engine processes the file online, with no need for Outlook installed. When it gets finished, install the PST file and import it into any desktop.",
+      answer:
+        "The process is simple with our tool. Upload your .ost file using the box above. The cloud engine processes the file online, with no need for Outlook installed. When it gets finished, install the PST file and import it into any desktop.",
     },
     {
       question: "Is our tool the best free OST to PST converter?",
-      answer: "Yes, OST to PST is free for standard file sizes. There are no extra costs, registration, or watermarks. Upgraded plans are available for priority processing and larger files, but the free service remains simple and accessible.",
+      answer:
+        "Yes, OST to PST is free for standard file sizes. There are no extra costs, registration, or watermarks. Upgraded plans are available for priority processing and larger files, but the free service remains simple and accessible.",
     },
     {
       question: "Who uses the OST to PST Converter?",
-      answer: "The tool named OST to PST converter is applied by IT administrators, businesses, and individual users of Microsoft Outlook for those who are required to access or recover emails from the OST files. This tool is useful when the Outlook profile gets deleted, and the file becomes inaccessible.",
+      answer:
+        "The tool named OST to PST converter is applied by IT administrators, businesses, and individual users of Microsoft Outlook for those who are required to access or recover emails from the OST files. This tool is useful when the Outlook profile gets deleted, and the file becomes inaccessible.",
     },
     {
       question: " How to import .ost files in Outlook?",
-      answer: " To import an .ost file into Microsoft Outlook, you must convert it to a .PST file. As Outlook does not permit directly importing of the OST files. After the conversion is completed, open Outlook, visit the file, open and export it, then open the data file. After this, choose the PST file to access the emails.",
+      answer:
+        " To import an .ost file into Microsoft Outlook, you must convert it to a .PST file. As Outlook does not permit directly importing of the OST files. After the conversion is completed, open Outlook, visit the file, open and export it, then open the data file. After this, choose the PST file to access the emails.",
     },
     {
       question: " Is my OST file data secure while converting?",
-      answer: "Yes, all file data transfers are secured with TLS 1.3 SSL encryption. The uploaded OST files and convertible PST files are automatically and permanently deleted from the servers within the duration of 2 hours of conversion. Also, we do not access, analyze, or share your email data, so that your data remains secure.",
+      answer:
+        "Yes, all file data transfers are secured with TLS 1.3 SSL encryption. The uploaded OST files and convertible PST files are automatically and permanently deleted from the servers within the duration of 2 hours of conversion. Also, we do not access, analyze, or share your email data, so that your data remains secure.",
     },
     {
       question: "Can I convert a damaged or orphaned OST file to PST?",
-      answer: "Yes, our osttopst.us conversion engine has expert-grade repair algorithms for damaged OST files. It spontaneously repairs some common types of OST file damage, such as header corruption due to sudden shutdowns, folder table damage, and sync issues. Even partially damaged OST files can be successfully recovered and converted into PST files.",
+      answer:
+        "Yes, our osttopst.us conversion engine has expert-grade repair algorithms for damaged OST files. It spontaneously repairs some common types of OST file damage, such as header corruption due to sudden shutdowns, folder table damage, and sync issues. Even partially damaged OST files can be successfully recovered and converted into PST files.",
     },
     {
       question: "What is the maximum OST file size that can be converted?",
-      answer:"If we talk about the maximum OST file size is totally depend upon the entire data which are generated by the Outlook mailbox.",
+      answer:
+        "If we talk about the maximum OST file size is totally depend upon the entire data which are generated by the Outlook mailbox.",
       //answer: "The free OST PST converter manages files up to 50 GB. For enterprise mailboxes, if your file is larger than 50 GB, then our Premium plans help with larger files with priority cloud processing queues.",
     },
     {
       question: "Will the converted PST file work with my version of Outlook?",
-      answer: "Yes, absolutely our free OST to PST file converter generates a Unicode-format PST compatible with Outlook 2007, 2010, 2013, 2016, 2019, 2021, and Microsoft 365. Also, the ANSI-format output for legacy Outlook 97-2003 is also accessible on request of the users.",
+      answer:
+        "Yes, absolutely our free OST to PST file converter generates a Unicode-format PST compatible with Outlook 2007, 2010, 2013, 2016, 2019, 2021, and Microsoft 365. Also, the ANSI-format output for legacy Outlook 97-2003 is also accessible on request of the users.",
     },
     {
-      question: "What is the difference between our free OST to PST converter and premium plans?",
-      answer: "Our free tool, which is an OST to PST, covers features such as converting OST files up to 500 MB with data. If your OST file exceeds then buy our Premium plan includes features such as batch conversion, extensive file size limits, and complete support.",
+      question:
+        "What is the difference between our free OST to PST converter and premium plans?",
+      answer:
+        "Our free tool, which is an OST to PST, covers features such as converting OST files up to 500 MB with data. If your OST file exceeds then buy our Premium plan includes features such as batch conversion, extensive file size limits, and complete support.",
     },
   ];
 
   const mboxFaqs = [
     {
       question: "How to convert OST to MBOX without using Outlook?",
-      answer: "The process is simple with our tool. Upload your .ost file using the upload box above. The cloud engine processes the file online with no need for Outlook installed. When finished, download the MBOX file and import it into any compatible email client such as Thunderbird, Apple Mail, or Gmail.",
+      answer:
+        "The process is simple with our tool. Upload your .ost file using the upload box above. The cloud engine processes the file online with no need for Outlook installed. When finished, download the MBOX file and import it into any compatible email client such as Thunderbird, Apple Mail, or Gmail.",
     },
     {
       question: "Is our OST to MBOX converter free to use?",
-      answer: "Yes, OST to MBOX conversion is free for standard file sizes up to 500 MB. There are no hidden costs, registration fees, or watermarks. Upgraded plans are available for priority processing and larger files up to 5 GB, but the free service remains simple and accessible.",
+      answer:
+        "Yes, OST to MBOX conversion is free for standard file sizes up to 500 MB. There are no hidden costs, registration fees, or watermarks. Upgraded plans are available for priority processing and larger files up to 5 GB, but the free service remains simple and accessible.",
     },
     {
       question: "Who uses the OST to MBOX Converter?",
-      answer: "The OST to MBOX converter is used by IT administrators, businesses, and individual Outlook users who need to migrate email data to MBOX-compatible clients like Thunderbird, Apple Mail, or Gmail. It is also useful when recovering from a corrupted Exchange profile or migrating between email platforms.",
+      answer:
+        "The OST to MBOX converter is used by IT administrators, businesses, and individual Outlook users who need to migrate email data to MBOX-compatible clients like Thunderbird, Apple Mail, or Gmail. It is also useful when recovering from a corrupted Exchange profile or migrating between email platforms.",
     },
     {
       question: "How can I import an MBOX file into Thunderbird or Gmail?",
-      answer: "For Thunderbird, install the ImportExportTools NG add-on, then go to Tools → ImportExportTools NG → Import MBOX file. For Gmail, use Google Workspace Migration for Microsoft Outlook (GWMMO) or a third-party import tool that accepts MBOX format.",
+      answer:
+        "For Thunderbird, install the ImportExportTools NG add-on, then go to Tools → ImportExportTools NG → Import MBOX file. For Gmail, use Google Workspace Migration for Microsoft Outlook (GWMMO) or a third-party import tool that accepts MBOX format.",
     },
     {
       question: "Is my OST file data secure while converting to MBOX?",
-      answer: "Yes, all file data transfers are secured with TLS 1.3 SSL encryption. The uploaded OST files and converted MBOX files are automatically and permanently deleted from the servers within 2 hours of conversion. We do not access, analyze, or share your email data.",
+      answer:
+        "Yes, all file data transfers are secured with TLS 1.3 SSL encryption. The uploaded OST files and converted MBOX files are automatically and permanently deleted from the servers within 2 hours of conversion. We do not access, analyze, or share your email data.",
     },
     {
       question: "Can I convert a damaged or orphaned OST file to MBOX?",
-      answer: "Yes, our conversion engine includes expert-grade repair algorithms for damaged OST files. It automatically handles common OST corruption types such as header corruption from sudden shutdowns, folder table damage, and sync issues. Even partially damaged OST files can often be successfully recovered and converted to MBOX.",
+      answer:
+        "Yes, our conversion engine includes expert-grade repair algorithms for damaged OST files. It automatically handles common OST corruption types such as header corruption from sudden shutdowns, folder table damage, and sync issues. Even partially damaged OST files can often be successfully recovered and converted to MBOX.",
     },
     {
       question: "What is the maximum OST file size I can convert to MBOX?",
-      answer: "Free plan users can convert OST files up to 500 MB. Professional plan users can convert files up to 5 GB. For enterprise-grade mailboxes beyond these limits, please contact our support team for a custom solution.",
+      answer:
+        "Free plan users can convert OST files up to 500 MB. Professional plan users can convert files up to 5 GB. For enterprise-grade mailboxes beyond these limits, please contact our support team for a custom solution.",
     },
     {
       question: "Will the converted MBOX file work with all email clients?",
-      answer: "Yes, our converter produces a standard MBOX file compatible with Thunderbird, Apple Mail, Evolution, The Bat!, Eudora, and other MBOX-compliant email clients. The folder hierarchy, attachments, and rich-text formatting are fully preserved during conversion.",
+      answer:
+        "Yes, our converter produces a standard MBOX file compatible with Thunderbird, Apple Mail, Evolution, The Bat!, Eudora, and other MBOX-compliant email clients. The folder hierarchy, attachments, and rich-text formatting are fully preserved during conversion.",
     },
   ];
 
   const emlFaqs = [
     {
       question: "How to convert OST to EML without using Outlook?",
-      answer: "The process is simple with our tool. Upload your .ost file using the box above. The cloud engine processes the file online, with no need for Outlook installed. When it gets finished, download the EML file or ZIP containing multiple EML files.",
+      answer:
+        "The process is simple with our tool. Upload your .ost file using the box above. The cloud engine processes the file online, with no need for Outlook installed. When it gets finished, download the EML file or ZIP containing multiple EML files.",
     },
     {
       question: "Is our OST to EML converter free to use?",
-      answer: "Yes, OST to EML conversion is free for standard file sizes up to 500 MB. There are no extra costs, registration, or watermarks. Professional plans are available for larger files up to 5 GB and priority processing.",
+      answer:
+        "Yes, OST to EML conversion is free for standard file sizes up to 500 MB. There are no extra costs, registration, or watermarks. Professional plans are available for larger files up to 5 GB and priority processing.",
     },
     {
       question: "Who uses the OST to EML Converter?",
-      answer: "This tool is used by Outlook users who need to access emails from OST files when the Exchange server is down, IT administrators managing bulk migrations, and data migration specialists who need to extract data into a portable format.",
+      answer:
+        "This tool is used by Outlook users who need to access emails from OST files when the Exchange server is down, IT administrators managing bulk migrations, and data migration specialists who need to extract data into a portable format.",
     },
     {
       question: "How to import .eml files in Outlook?",
-      answer: "To use any edition of Microsoft Outlook to open a EML, do File Menu → Open & Export → Import/Export. Once the EML is opened, the emails, calendar appointments, and contacts will be available from within it.",
+      answer:
+        "To use any edition of Microsoft Outlook to open a EML, do File Menu → Open & Export → Import/Export. Once the EML is opened, the emails, calendar appointments, and contacts will be available from within it.",
     },
     {
       question: "Is my OST file data secure while converting to EML?",
-      answer: "Yes, all data transfers are secured with SSL encryption. The uploaded OST files and converted EML files are automatically deleted from our servers within 2 hours. We do not store or share your email data.",
+      answer:
+        "Yes, all data transfers are secured with SSL encryption. The uploaded OST files and converted EML files are automatically deleted from our servers within 2 hours. We do not store or share your email data.",
     },
     {
       question: "Can I convert a damaged or orphaned OST file to EML?",
-      answer: "Yes, our software has built-in repair functionality. It repairs the actual file structures throughout the conversion process, including header errors and 'unexpected shutdown' issues, ensuring maximum recoverability.",
+      answer:
+        "Yes, our software has built-in repair functionality. It repairs the actual file structures throughout the conversion process, including header errors and 'unexpected shutdown' issues, ensuring maximum recoverability.",
     },
     {
       question: "What is the maximum OST file size I can convert to EML?",
-      answer: "The maximum OST file size depends on the data generated by the Outlook mailbox. Our free plan supports up to 500 MB, while our professional plans support files up to 5 GB.",
+      answer:
+        "The maximum OST file size depends on the data generated by the Outlook mailbox. Our free plan supports up to 500 MB, while our professional plans support files up to 5 GB.",
     },
     {
       question: "Will the converted EML file work with my version of Outlook?",
-      answer: "Yes, our converter is engineered to handle variants from Outlook 2007+ (Unicode) and legacy ANSI formats. The resulting EML files are compatible with all versions of Outlook and other major email clients.",
+      answer:
+        "Yes, our converter is engineered to handle variants from Outlook 2007+ (Unicode) and legacy ANSI formats. The resulting EML files are compatible with all versions of Outlook and other major email clients.",
     },
   ];
 
   const faqs = isMbox ? mboxFaqs : isEml ? emlFaqs : defaultFaqs;
 
   return (
-    <section className="bg-[#f0f9ff] py-4 md:py-6 px-4 md:px-6 lg:px-12">
-      <div className="max-w-4xl mx-auto space-y-12 md:space-y-16">
-        <div className="space-y-6 md:space-y-8">
+    <section className="bg-brand-50 py-1 md:py-2 px-4 md:px-6 lg:px-12">
+      <div className="max-w-4xl mx-auto space-y-8 md:space-y-10">
+        <div className="space-y-4 md:space-y-6">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center">
             Frequently Asked <span className="text-brand-500">Questions</span>
           </h2>
-          
+
           <div className="space-y-4 mt-6">
             {faqs.map((faq, index) => (
-              <div key={index} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+              <div
+                key={index}
+                className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow"
+              >
                 <FaqItem
                   number={index + 1}
                   question={faq.question}
@@ -165,7 +200,7 @@ const LandingFaq = () => {
         </div>
 
         {/* Dark Support Banner */}
-        <div className="bg-black rounded-[2rem] md:rounded-[2.5rem] p-8 sm:p-10 md:p-14 text-white space-y-6 md:space-y-8 shadow-2xl overflow-hidden relative">
+        <div className="bg-black rounded-[2rem] md:rounded-[2.5rem] p-8 md:p-10 text-white space-y-4 md:space-y-6 shadow-2xl overflow-hidden relative">
           <div className="space-y-2 md:space-y-3 text-center sm:text-left">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white">
               Couldn't find what you needed?
@@ -176,7 +211,7 @@ const LandingFaq = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
-            <button 
+            <button
               className="w-full sm:w-auto bg-white text-black font-bold h-12 sm:h-14 px-8 rounded-xl sm:rounded-2xl hover:bg-slate-100 transition-all text-base sm:text-lg"
               onClick={() => navigate("/contact-us")}
             >

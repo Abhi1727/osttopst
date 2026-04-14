@@ -94,7 +94,7 @@ const ReviewSection = () => {
   };
 
   return (
-    <section className="py-6 md:py-8 px-4 bg-[#f0f9ff]">
+    <section className="py-1 md:py-2 px-4 bg-brand-50">
       <div className="max-w-5xl mx-auto">
         {/* Title */}
         <h2 className="text-brand-600 text-lg sm:text-xl md:text-2xl font-bold mb-6 md:mb-8 ml-2 text-center md:text-left">
@@ -253,7 +253,10 @@ const ReviewSection = () => {
                         type="text"
                         value={newReview.userName}
                         onChange={(e) =>
-                          setNewReview({ ...newReview, userName: e.target.value })
+                          setNewReview({
+                            ...newReview,
+                            userName: e.target.value,
+                          })
                         }
                         className="w-full bg-slate-50/50 border-2 border-slate-50 rounded-2xl px-6 py-3 sm:py-4 text-slate-800 placeholder:text-slate-500 focus:bg-white focus:border-black focus:ring-4 focus:ring-black/5 outline-none transition-all text-base font-medium"
                         placeholder="Your Name"
@@ -265,7 +268,10 @@ const ReviewSection = () => {
                         type="text"
                         value={newReview.headline}
                         onChange={(e) =>
-                          setNewReview({ ...newReview, headline: e.target.value })
+                          setNewReview({
+                            ...newReview,
+                            headline: e.target.value,
+                          })
                         }
                         className="w-full bg-slate-50/50 border-2 border-slate-50 rounded-2xl px-6 py-3 sm:py-4 text-slate-800 placeholder:text-slate-500 focus:bg-white focus:border-black focus:ring-4 focus:ring-black/5 outline-none transition-all text-base font-medium"
                         placeholder="Headline"
@@ -296,7 +302,9 @@ const ReviewSection = () => {
                     <Loader2 className="w-6 h-6 animate-spin" />
                   ) : (
                     <>
-                      <span className="relative z-10 text-lg">Submit Review</span>
+                      <span className="relative z-10 text-lg">
+                        Submit Review
+                      </span>
                       <Send className="w-5 h-5 relative z-10 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                     </>
                   )}

@@ -300,24 +300,24 @@ const Hero = ({ onUploadComplete, onRestore }) => {
   };
 
   return (
-    <section className="relative pt-0 pb-8 lg:pb-4 px-3 md:px-5 lg:px-8 w-full min-h-[500px] lg:min-h-[450px] flex items-center">
+    <section className="relative py-2 md:py-4 px-3 md:px-5 lg:px-8 w-full flex items-center">
       <div className="max-w-[1440px] mx-auto relative z-10 w-full lg:grid lg:grid-cols-[1fr_1.3fr] lg:gap-10 items-center">
         {/* Left Column: Heading & Benefits */}
-        <div className="text-left py-4 md:py-8 lg:py-4 flex flex-col md:items-center lg:items-start md:text-center lg:text-left">
-          <h1 className="mb-3 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 tracking-tighter leading-tight">
+        <div className="text-left flex flex-col md:items-center lg:items-start md:text-center lg:text-left">
+          <h1 className="mb-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 tracking-tighter leading-tight">
             Convert{" "}
             <span className="text-brand-500 font-bold uppercase">
-              &nbsp; OST &nbsp; TO &nbsp; {currentFormat}
+              OST TO {currentFormat}
             </span>{" "}
             <br />
             Online - Fast & Secure
           </h1>
-          <p className="mb-6 text-base text-slate-600 font-medium max-w-sm md:max-w-lg leading-relaxed">
+          <p className="mb-2 text-base text-slate-600 font-medium max-w-sm md:max-w-lg leading-relaxed">
             Instantly convert Outlook OST files to {currentFormat} format in
             your browser. Preview and export your data safely without any
             software installation.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-2 gap-y-4 gap-x-8 max-w-lg mt-4 md:mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 gap-y-3 gap-x-8 max-w-lg mt-1 md:mt-2">
             <div className="flex items-center gap-2">
               <Shield size={20} className="text-slate-900 shrink-0" />
               <span className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
@@ -343,14 +343,14 @@ const Hero = ({ onUploadComplete, onRestore }) => {
               </span>
             </div>
           </div>
-          <div className="mt-6 text-sm text-slate-500 font-medium">
+          <div className="mt-4 text-sm text-slate-500 font-medium">
             Trusted by 500,000+ users worldwide · Works with all Outlook
             versions
           </div>
         </div>
 
         {/* Right Column: Upload Card */}
-        <div className="flex justify-center w-full pt-0 pb-4 md:pb-8 lg:pb-4">
+        <div className="flex justify-center w-full">
           <div className="w-full max-w-[950px] bg-white rounded-[24px] sm:rounded-[32px] px-6 py-6 sm:px-10 sm:py-8 md:py-10 lg:px-10 lg:py-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center text-center relative overflow-hidden transition-all">
             {(!uploading || completedSession) && (
               <div

@@ -112,9 +112,9 @@ const FormatMarquee = () => {
   const displayedFormats = showAll ? FORMATS : FORMATS.slice(0, 12);
 
   return (
-    <section className="py-12 bg-brand-50">
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12">
-        <div className="mb-8">
+    <section className="py-1 md:py-2 bg-brand-50">
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <div className="mb-6 text-center lg:text-left">
           <h2 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tight leading-relaxed">
             Convert OST files to{" "}
             <span className="text-brand-600">16+ Popular Formats</span>{" "}
@@ -148,7 +148,7 @@ const FormatMarquee = () => {
         </div>
 
         {FORMATS.length > 12 && (
-          <div className="mt-10 flex justify-center">
+          <div className="mt-2 flex justify-center">
             <Button
               onClick={() => setShowAll(!showAll)}
               className="h-12 md:h-14 px-8 md:px-12 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl flex items-center gap-3 shadow-xl transition-all active:scale-95 group overflow-hidden"

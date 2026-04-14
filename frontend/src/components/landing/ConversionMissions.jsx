@@ -12,7 +12,6 @@ const ConversionMissions = () => {
   const isPdf = location.pathname === "/ost-to-pdf";
   const isJson = location.pathname === "/ost-to-json";
 
-
   const defaultAudiences = [
     {
       title: "Data Migration Specialists",
@@ -59,10 +58,10 @@ const ConversionMissions = () => {
     },
   ];
 
-  const audiences = (isPdf || isJson) ? pdfAudiences : defaultAudiences;
+  const audiences = isPdf || isJson ? pdfAudiences : defaultAudiences;
 
   return (
-    <section className="py-6 px-4 md:px-6 lg:px-12 bg-[#f0f9ff]">
+    <section className="py-1 md:py-2 px-4 md:px-6 lg:px-12 bg-brand-50">
       <div className="max-w-6xl mx-auto space-y-10">
         <div className="text-center space-y-4">
           <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
