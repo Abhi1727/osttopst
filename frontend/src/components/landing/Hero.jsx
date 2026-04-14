@@ -120,13 +120,17 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         Your trial has expired.{" "}
         <Link
           to="/pricing"
-          style={{ color: "#3b82f6", fontWeight: 700, textDecoration: "underline" }}
+          style={{
+            color: "#3b82f6",
+            fontWeight: 700,
+            textDecoration: "underline",
+          }}
         >
           Buy a plan
         </Link>{" "}
         to continue uploading files.
       </span>,
-      { duration: 6000 }
+      { duration: 6000 },
     );
   };
 
@@ -157,10 +161,10 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         toast.error(integrity.error);
         return;
       }
-      
-      const MAX_SIZE = isProfessional 
+
+      const MAX_SIZE = isProfessional
         ? 5 * 1024 * 1024 * 1024 // 5 GB
-        : 500 * 1024 * 1024;     // 500 MB
+        : 500 * 1024 * 1024; // 500 MB
 
       if (selectedFile.size > MAX_SIZE) {
         setShowOversizedFileModal(true);
@@ -216,7 +220,15 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         setUploading(false);
       }
     },
-    [isSignedIn, getToken, uploading, clerk, onUploadComplete, licenseStatus, isProfessional],
+    [
+      isSignedIn,
+      getToken,
+      uploading,
+      clerk,
+      onUploadComplete,
+      licenseStatus,
+      isProfessional,
+    ],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -234,14 +246,14 @@ const Hero = ({ onUploadComplete, onRestore }) => {
     if (!completedSession) return;
     setIsDownloading(true);
     setFinishedDownload(false);
-  
+
     const controller = new AbortController();
     setAbortController(controller);
-  
+
     try {
       const sessionId = completedSession.sessionId || completedSession._id;
       const userEmail = user?.primaryEmailAddress?.emailAddress ?? null;
-  
+
       if (currentFormat === "PST") {
         await conversionService.convertToPst(
           sessionId,
@@ -259,7 +271,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
           getToken,
           undefined,
           controller.signal,
-          { email: userEmail }
+          { email: userEmail },
         );
       }
 
@@ -268,10 +280,10 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         completedSession.originalFileName ||
         completedSession.fileName ||
         "converted";
-      
+
       const ext = currentFormat === "PST" ? ".pst" : ".zip";
       const savedName = name.replace(/\.(ost|pst)$/i, "") + ext;
-      
+
       toast.success(`Started downloading: ${savedName}`);
       window.dispatchEvent(new Event("license-refresh"));
       setFinishedDownload(true);
@@ -295,13 +307,15 @@ const Hero = ({ onUploadComplete, onRestore }) => {
           <h1 className="mb-3 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 tracking-tighter leading-tight">
             Convert{" "}
             <span className="text-brand-500 font-bold uppercase">
-             &nbsp; OST &nbsp; TO &nbsp; {currentFormat}
+              &nbsp; OST &nbsp; TO &nbsp; {currentFormat}
             </span>{" "}
-            <br />Online - Fast & Secure
+            <br />
+            Online - Fast & Secure
           </h1>
           <p className="mb-6 text-base text-slate-600 font-medium max-w-sm md:max-w-lg leading-relaxed">
-            Instantly convert Outlook OST files to {currentFormat} format in your browser.
-            Preview and export your data safely without any software installation.
+            Instantly convert Outlook OST files to {currentFormat} format in
+            your browser. Preview and export your data safely without any
+            software installation.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-2 gap-y-4 gap-x-8 max-w-lg mt-4 md:mt-6">
             <div className="flex items-center gap-2">
@@ -330,7 +344,8 @@ const Hero = ({ onUploadComplete, onRestore }) => {
             </div>
           </div>
           <div className="mt-6 text-sm text-slate-500 font-medium">
-            Trusted by 500,000+ users worldwide · Works with all Outlook versions
+            Trusted by 500,000+ users worldwide · Works with all Outlook
+            versions
           </div>
         </div>
 
@@ -362,7 +377,10 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                         e.stopPropagation();
                         if (!isSignedIn) {
                           clerk.openSignIn();
-                        } else if (licenseStatus && licenseStatus.canConvert === false) {
+                        } else if (
+                          licenseStatus &&
+                          licenseStatus.canConvert === false
+                        ) {
                           showTrialExpiredToast();
                         } else {
                           open();
@@ -422,14 +440,18 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                           ) : (
                             <ArrowRight className="w-4 h-4" />
                           )}
-                          {isDownloading ? "Preparing..." : `Download ${currentFormat}`}
+                          {isDownloading
+                            ? "Preparing..."
+                            : `Download ${currentFormat}`}
                         </Button>
                       </div>
                     </div>
                   ) : (
                     <div className=" flex flex-col gap-3">
                       <p className="text-xs font-bold sm:text-sm  font-bold tracking-tight">
-                        Supports .ost files · Max {isProfessional ? "5GB" : "500MB"} · Unlimited with desktop app
+                        Supports .ost files · Max{" "}
+                        {isProfessional ? "5GB" : "500MB"} · Unlimited with
+                        desktop app
                       </p>
                       <p className="text-xs sm:text-sm md:text-base text-slate-900 font-medium sm:whitespace-nowrap px-2">
                         Agreed to{" "}

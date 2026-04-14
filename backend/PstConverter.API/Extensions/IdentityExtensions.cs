@@ -21,7 +21,10 @@ public static class IdentityExtensions
 
         if (!string.IsNullOrEmpty(email)) return email.ToLowerInvariant();
 
-        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? configDefault ?? "unauthenticated";
+        var userId = user.FindFirstValue("sub") 
+                  ?? user.FindFirstValue(ClaimTypes.NameIdentifier) 
+                  ?? configDefault 
+                  ?? "unauthenticated";
         
         // Final fallback: Log what's happening so we can see why it failed.
         if (userId.StartsWith("user_"))

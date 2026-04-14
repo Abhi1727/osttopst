@@ -113,8 +113,8 @@ const Footer = () => {
              &copy; {currentYear} OSTtoPST. All rights reserved.
           </div>
 
-          <div className="flex items-center gap-6 text-sm font-bold text-slate-400">
-             <span className="flex items-center gap-1.5 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all cursor-crosshair">
+          <div className="flex items-center gap-6 text-sm font-bold">
+             <span className="flex items-center gap-1.5  opacity-100 hover:opacity-100 transition-all cursor-crosshair">
                 Built with Privacy First
              </span>
           </div>

@@ -110,18 +110,18 @@ const ConversionHistory = ({ onRestore }) => {
   if (sessions.length === 0) {
     console.log("[ConversionHistory] No sessions found, returning null");
     return (
-      <div className="text-center p-12 rounded-3xl border border-zinc-100 shadow-sm mt-4 md:mt-8">
-        <History className="w-12 h-12 text-zinc-200 mx-auto mb-4" />
-        <h3 className="font-bold text-zinc-900">No Recent Conversions</h3>
-        <p className="text-zinc-500 text-sm">
-          Upload a file to start your first conversion.
+      <div className="text-center py-8 px-6 rounded-3xl border border-zinc-200/50 bg-white/40 backdrop-blur-sm shadow-sm w-full mx-auto">
+        <History className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
+        <h3 className="font-bold text-zinc-900 text-sm">No Recent Conversions</h3>
+        <p className="text-zinc-500 text-xs">
+          Upload an OST file to see your history here.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-3xl border border-zinc-100 shadow-sm overflow-hidden mt-4 md:mt-8">
+    <div className="rounded-3xl border border-zinc-100 bg-white shadow-sm overflow-hidden w-full mx-auto">
       <div className="p-6 border-b border-zinc-50 bg-zinc-50/50 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <History className="w-5 h-5 text-brand-600" />

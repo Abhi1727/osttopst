@@ -87,6 +87,7 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
     .AddJwtBearer(options =>
     {
         options.Authority = clerkConfig["Authority"];
+        options.MapInboundClaims = false; // Prevent claim renaming to URI schemas
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -114,7 +115,7 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                 if (logger.IsEnabled(LogLevel.Information))
                 {
-                    logger.LogInformation("Token validated successfully for user: {User}", context.Principal?.Identity?.Name);
+                    logger.LogInformation("Token validated successfully for user: {User}", context.Principal?.Identity?.Name ?? "unknown");
                 }
                 return Task.CompletedTask;
             }
@@ -272,6 +273,7 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
     var licenseId = email
                  ?? user.FindFirstValue(ClaimTypes.Email)
                  ?? user.FindFirstValue("email")
+                 ?? user.FindFirstValue("sub")
                  ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
                  ?? "anonymous";
 

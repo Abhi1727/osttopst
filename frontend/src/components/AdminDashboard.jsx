@@ -31,7 +31,7 @@ const AdminDashboard = () => {
   const [publishedPosts, setPublishedPosts] = useState([]);
   const [blogMetadata, setBlogMetadata] = useState({
     title: "",
-    category: "Data Migration",
+    category: "Email Conversion Guides",
     excerpt: "",
     altText: "",
     metaTitle: "",
@@ -191,7 +191,7 @@ const AdminDashboard = () => {
 
       setBlogMetadata({
         title: title,
-        category: "Data Migration",
+        category: "Email Conversion Guides",
         excerpt:
           excerpt ||
           "A deep dive into the technical details extracted from our latest research document...",
@@ -314,7 +314,7 @@ const AdminDashboard = () => {
       setUploadStatus("idle");
       setBlogMetadata({
         title: "",
-        category: "Data Migration",
+        category: "Email Conversion Guides",
         excerpt: "",
         altText: "",
         metaTitle: "",
@@ -356,9 +356,9 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen pt-24 pb-20">
+    <div className="bg-slate-50 min-h-screen pt-4 pb-20">
       <div className="container mx-auto px-4 max-w-6xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
             <h1 className="font-black text-slate-900 tracking-tight mb-2">
               SEO <span className="text-brand-600">Admin Panel</span>
@@ -531,12 +531,12 @@ const AdminDashboard = () => {
                     className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:bg-white focus:border-brand-500/30 transition-all text-slate-700 font-medium"
                   />
                   <datalist id="categories">
-                    <option value="Data Migration" />
-                    <option value="Security" />
+                    <option value="Email Conversion Guides" />
+                    <option value="Outlook and OST File Issues" />
+                    <option value="How -To Tutorials" />
+                    <option value="File Formats & Comparisons" />
+                    <option value="Troubleshooting & Fixes" />
                     <option value="Best Practices" />
-                    <option value="Cloud Solutions" />
-                    <option value="Productivity" />
-                    <option value="Troubleshooting" />
                   </datalist>
                 </div>
               </div>

@@ -118,7 +118,7 @@ const PricingCard = ({
   } ${isActive && !recommended ? "ring-2 ring-brand-500" : ""}`}>
 
     {/* Popular badge */}
-    {recommended && (
+    {recommended && !isActive && (
       <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-[11px] font-black px-4 py-1 rounded-full uppercase tracking-[0.15em] shadow-md whitespace-nowrap">
         Most Popular
       </div>
@@ -126,7 +126,7 @@ const PricingCard = ({
 
     {/* Current plan badge */}
     {isActive && (
-      <div className={`absolute -top-3.5 right-4 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md ${
+      <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md ${
         recommended ? "bg-white text-brand-600" : "bg-brand-500 text-white"
       }`}>
         Current Plan
@@ -326,6 +326,7 @@ const Pricing = () => {
 
   const tierLower = String(status?.tier ?? status?.Tier ?? "").toLowerCase();
   const isProfessional = tierLower === "professional" || tierLower === "3";
+  const isDesktop = tierLower === "desktop" || tierLower === "2";
 
   const faqs = [
     {
@@ -412,6 +413,7 @@ const Pricing = () => {
             price={98}
             description="For power users needing maximum local storage and speed."
             isLoading={purchasingPlan === 2}
+            isActive={isDesktop}
             onClick={() => handlePurchase(2, 98, 2)}
             ctaText="Get Desktop"
             features={[
@@ -557,7 +559,7 @@ const Pricing = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="mb-4">
-              Why is our <span className="text-brand-600">Pricing better?</span>
+              Why is our <span className="text-brand-600">Pricing better</span>?
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto">
               We offer premium enterprise features at a fraction of the cost of

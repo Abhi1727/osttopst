@@ -24,7 +24,7 @@ const IconStepCard = ({ number, title, description, icon: Icon }) => (
 const DetailStepCard = ({ number, title, description }) => (
   <div className="bg-white p-5 md:p-6 rounded-[1.5rem] border border-slate-200/50 shadow-sm flex flex-col items-center text-center space-y-3 h-full">
     <div className="text-slate-800 text-xl md:text-2xl font-normal opacity-80">
-      {number}
+      Step {number}
     </div>
     <div className="space-y-2 md:space-y-3">
       <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">
@@ -158,7 +158,7 @@ const HowItWorks = () => {
                 ? "When uploading is finished, you can preview and then download your OST file into multiple formats, or download your PDF file directly to your computer."
                 : isJson
                 ? "When uploading is finished, you can preview and then download your OST file into multiple formats, or download your OST file to JSON format directly to your computer."
-                : `When uploading gets finished, you can preview and then download your OST file into multiple formats or either download your ${currentFormat} file directly to your computer`}
+                : `When uploading gets finished, you can preview and then download your OST file into multiple formats or either download your ${currentFormat} file directly to your computer.`}
             />
             <DetailStepCard
               number={3}

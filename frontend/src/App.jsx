@@ -119,7 +119,7 @@ function App() {
         className={`flex flex-col professional-gradient ${
           location.pathname === "/preview"
             ? "h-screen overflow-hidden bg-[#1a1a1a]"
-            : "min-h-screen pt-16 md:pt-20"
+            : "min-h-screen pt-14 md:pt-16"
         }`}
       >
         <main

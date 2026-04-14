@@ -18,12 +18,12 @@ import { useNavigate } from "react-router-dom";
 
 const CATEGORIES = [
   "All Posts",
-  "Data Migration",
-  "Security",
+  "Email Conversion Guides",
+  "Outlook and OST File Issues",
+  "How -To Tutorials",
+  "File Formats & Comparisons",
+  "Troubleshooting & Fixes",
   "Best Practices",
-  "Cloud Solutions",
-  "Productivity",
-  "Troubleshooting",
 ];
 
 const CategoryPill = ({ label, active, onClick }) => (

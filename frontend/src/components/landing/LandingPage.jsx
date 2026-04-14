@@ -16,12 +16,12 @@ const LandingFaq = lazy(() => import("./LandingFaq"));
 const LandingPage = ({ onUploadComplete, onRestore }) => {
   return (
     <div className="font-sans">
-      {/* First Screen Wrapper */}
-      <div className="min-h-[calc(100vh-76px)] flex flex-col bg-[#f0f9ff]/50 relative">
-        <div className="flex-1 flex flex-col justify-center">
+      {/* First Screen Wrapper - Hero & History Block */}
+      <div className="flex flex-col bg-[#f0f9ff]/60 relative border-b border-brand-100/50">
+        <div>
           <Hero onUploadComplete={onUploadComplete} />
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-8 z-10 min-h-[100px]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-10 z-10">
           <SignedIn>
             <ConversionHistory onRestore={onRestore} />
           </SignedIn>
@@ -29,7 +29,7 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
       </div>
 
       <Suspense fallback={<div className="h-10" />}>
-        <div className="relative z-[0] -mt-8 sm:-mt-10">
+        <div className="relative z-[0]">
           <FormatMarquee />
         </div>
       </Suspense>
