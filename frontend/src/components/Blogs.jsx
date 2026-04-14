@@ -147,7 +147,7 @@ const Blogs = () => {
   };
 
   return (
-    <div className="bg-white pt-12 pb-0">
+    <div className="bg-white pt-4 pb-0">
       {/* Hero Section */}
       <div className="container mx-auto px-4 text-center mb-16 max-w-4xl relative">
         <button
@@ -164,8 +164,7 @@ const Blogs = () => {
           Blog & <span className="text-brand-600">Resources</span>
         </h1>
         <p className="text-lg text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
-          Expert insights, tips, and guides on OST to PST conversion, email data
-          management, and Outlook best practices.
+          Stay informed with expert blogs, guides, and some smart tips to make your OST to PST Conversion and data management smooth.
         </p>
 
         {/* Search Bar */}

@@ -36,7 +36,7 @@ const Section = ({ title, icon: Icon, children }) => (
 
 const PrivacyPolicy = () => {
   return (
-    <div className="bg-slate-50 min-h-screen font-sans flex flex-col pt-20">
+    <div className="bg-slate-50 min-h-screen font-sans flex flex-col pt-4">
       {/* Header Section */}
       <header className="bg-gradient-to-b from-brand-50 to-slate-50 pt-8 pb-8 px-4 text-center relative overflow-hidden">
         <div className="max-w-4xl mx-auto">

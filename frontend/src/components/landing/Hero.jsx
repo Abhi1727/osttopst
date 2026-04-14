@@ -300,7 +300,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
   };
 
   return (
-    <section className="relative pt-6 pb-8 lg:pb-4 px-3 md:px-5 lg:px-8 w-full min-h-[650px] lg:min-h-[600px] flex items-center">
+    <section className="relative pt-0 pb-8 lg:pb-4 px-3 md:px-5 lg:px-8 w-full min-h-[500px] lg:min-h-[450px] flex items-center">
       <div className="max-w-[1440px] mx-auto relative z-10 w-full lg:grid lg:grid-cols-[1fr_1.3fr] lg:gap-10 items-center">
         {/* Left Column: Heading & Benefits */}
         <div className="text-left py-4 md:py-8 lg:py-4 flex flex-col md:items-center lg:items-start md:text-center lg:text-left">
@@ -350,8 +350,8 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         </div>
 
         {/* Right Column: Upload Card */}
-        <div className="flex justify-center w-full py-4 md:py-8 lg:py-4">
-          <div className="w-full max-w-[950px] bg-white rounded-[24px] sm:rounded-[32px] px-6 py-8 sm:px-10 sm:py-12 md:py-16 lg:px-10 lg:py-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center text-center relative overflow-hidden transition-all">
+        <div className="flex justify-center w-full pt-0 pb-4 md:pb-8 lg:pb-4">
+          <div className="w-full max-w-[950px] bg-white rounded-[24px] sm:rounded-[32px] px-6 py-6 sm:px-10 sm:py-8 md:py-10 lg:px-10 lg:py-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center text-center relative overflow-hidden transition-all">
             {(!uploading || completedSession) && (
               <div
                 {...getRootProps()}

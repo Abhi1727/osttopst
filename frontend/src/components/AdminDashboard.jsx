@@ -356,9 +356,9 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen pt-4 pb-20">
+    <div className="bg-slate-50 min-h-screen pt-0 pb-20">
       <div className="container mx-auto px-4 max-w-6xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
           <div>
             <h1 className="font-black text-slate-900 tracking-tight mb-2">
               SEO <span className="text-brand-600">Admin Panel</span>

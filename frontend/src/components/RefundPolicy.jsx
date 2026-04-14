@@ -34,7 +34,7 @@ const RefundPolicy = () => {
   return (
     <div className="bg-[#fcfdfe] min-h-screen font-sans flex flex-col selection:bg-brand-100 selection:text-brand-900">
       {/* Premium Header */}
-      <header className="relative bg-white pt-24 pb-20 px-4 text-center overflow-hidden border-b border-slate-100">
+      <header className="relative bg-white pt-4 pb-20 px-4 text-center overflow-hidden border-b border-slate-100">
         {/* Background decorative elements */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none overflow-hidden text-brand-500/5 select-none" style={{ fontSize: '30rem', fontWeight: '900', lineHeight: '1' }}>
           REFUND

@@ -24,9 +24,9 @@ const Section = ({ title, icon: Icon, children, delay }) => (
 
 const TermsConditions = () => {
   return (
-    <div className="bg-[#fcfdfe] min-h-screen font-sans flex flex-col selection:bg-brand-100 selection:text-brand-900">
+    <div className="bg-slate-50 min-h-screen font-sans flex flex-col pt-4 selection:bg-brand-100 selection:text-brand-900">
       {/* Premium Header */}
-      <header className="relative bg-white pt-20 pb-16 px-4 text-center overflow-hidden border-b border-slate-100">
+      <header className="relative bg-white pt-4 pb-20 px-4 text-center overflow-hidden border-b border-slate-100">
         {/* Background decorative elements */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none overflow-hidden">
           <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[60%] bg-brand-50/30 rounded-full blur-[120px]" />
