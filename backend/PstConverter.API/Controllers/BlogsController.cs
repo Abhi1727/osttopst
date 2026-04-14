@@ -1,5 +1,8 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.Text.Json;
+
 
 namespace PstConverter.Controllers
 {
@@ -7,14 +10,15 @@ namespace PstConverter.Controllers
     [Route("api/[controller]")]
     public class BlogsController : ControllerBase
     {
-        // Path relative to the backend executing directory pointing to the frontend's public folder
+        private readonly IConfiguration _configuration;
         private readonly string _frontendPublicPath;
         private readonly string _blogsDirectory;
         private readonly string _blogsJsonPath;
         private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
-        public BlogsController(IWebHostEnvironment env)
+        public BlogsController(IWebHostEnvironment env, IConfiguration configuration)
         {
+            _configuration = configuration;
             // Robust path calculation: Find repo root by looking for 'frontend' directory upwards 
             // starting from the content root path.
             var root = env.ContentRootPath;
@@ -52,7 +56,22 @@ namespace PstConverter.Controllers
             }
         }
 
+        private bool IsAdmin()
+        {
+            string[] adminEmails = _configuration.GetSection("Clerk:AdminEmails").Get<string[]>() ?? [];
+
+            
+            // Clerk might put the email in various claims depending on JWT template.
+            // We check 'email', 'emails', or the 'sub-as-name' fallback.
+            var userEmail = User.FindFirstValue(ClaimTypes.Email) 
+                         ?? User.FindFirstValue("email") 
+                         ?? User.Identity?.Name; // Fallback to 'sub' if mapped to Name
+
+            return !string.IsNullOrEmpty(userEmail) && adminEmails.Contains(userEmail, StringComparer.OrdinalIgnoreCase);
+        }
+
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetBlogs()
         {
             try
@@ -73,8 +92,13 @@ namespace PstConverter.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateBlog([FromForm] IFormCollection formData)
         {
+            if (!IsAdmin())
+            {
+                return Forbid("You do not have permission to perform this action.");
+            }
             try
             {
                 Console.WriteLine("\n[BlogsController] CREATE BLOG REQUEST RECEIVED");
@@ -148,8 +172,9 @@ namespace PstConverter.Controllers
                             var commaIndex = defaultImage.IndexOf(',');
                             if (commaIndex >= 0)
                             {
-                                var base64Data = defaultImage.Substring(commaIndex + 1);
-                                var contentType = defaultImage.Substring(5, commaIndex - 5).Split(';')[0];
+                                var base64Data = defaultImage[(commaIndex + 1)..];
+                                var contentType = defaultImage[5..commaIndex].Split(';')[0];
+
                                 var extension = contentType switch
                                 {
                                     "image/jpeg" => ".jpg",
@@ -176,7 +201,8 @@ namespace PstConverter.Controllers
                     }
                     else
                     {
-                        thumbnailRelativePath = (string.IsNullOrEmpty(defaultImage) || defaultImage == "null" || defaultImage.Trim().ToLower() == "null")
+                        thumbnailRelativePath = (string.IsNullOrEmpty(defaultImage) || defaultImage == "null" || string.Equals(defaultImage.Trim(), "null", StringComparison.OrdinalIgnoreCase))
+
                             ? "/blogs/media/default.png"
                             : defaultImage;
                         Console.WriteLine($"[BlogsController] Using fallback path: {thumbnailRelativePath}");
@@ -184,7 +210,8 @@ namespace PstConverter.Controllers
                 }
 
                 // 3. Update JSON Database
-                List<object> blogs = new();
+                List<object> blogs = [];
+
                 if (System.IO.File.Exists(_blogsJsonPath))
                 {
                     var existingJson = await System.IO.File.ReadAllTextAsync(_blogsJsonPath);
@@ -228,8 +255,13 @@ namespace PstConverter.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteBlog(long id)
         {
+            if (!IsAdmin())
+            {
+                return Forbid("You do not have permission to perform this action.");
+            }
             try
             {
                 if (!System.IO.File.Exists(_blogsJsonPath))

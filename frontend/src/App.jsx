@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { SignedIn } from "@clerk/clerk-react";
+import { SignedIn, useUser } from "@clerk/clerk-react";
+import { ADMIN_EMAILS } from "@/config/admin";
 import {
   Routes,
   Route,
@@ -24,6 +25,20 @@ const ContactUs = lazy(() => import("./components/ContactUs"));
 const Blogs = lazy(() => import("./components/Blogs"));
 const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
 const BlogPostDetail = lazy(() => import("./components/BlogPostDetail"));
+
+// Admin Guard Component
+const AdminGuard = ({ children }) => {
+  const { user, isLoaded } = useUser();
+  
+  if (!isLoaded) return null; // Wait for user to load
+  
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
+};
 const Pricing = lazy(() => import("./components/Pricing"));
 const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./components/TermsConditions"));
@@ -153,7 +168,9 @@ function App() {
                 path="/admin/blogs"
                 element={
                   <SignedIn>
-                    <AdminDashboard />
+                    <AdminGuard>
+                      <AdminDashboard />
+                    </AdminGuard>
                   </SignedIn>
                 }
               />

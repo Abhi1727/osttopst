@@ -150,16 +150,6 @@ const Blogs = () => {
     <div className="bg-white pt-4 pb-0">
       {/* Hero Section */}
       <div className="container mx-auto px-4 text-center mb-16 max-w-4xl relative">
-        <button
-          onClick={() => navigate("/admin/blogs")}
-          className="absolute -top-12 right-4 md:-right-12 bg-brand-50 text-brand-600 hover:bg-brand-100 p-3 rounded-2xl transition-all group flex items-center gap-2 border border-brand-100 shadow-sm"
-          title="Admin Dashboard"
-        >
-          <ShieldCheck className="w-5 h-5" />
-          <span className="text-xs font-bold uppercase tracking-wider hidden group-hover:block">
-            Admin
-          </span>
-        </button>
         <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
           Blog & <span className="text-brand-600">Resources</span>
         </h1>

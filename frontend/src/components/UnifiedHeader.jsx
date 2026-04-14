@@ -13,6 +13,7 @@ import {
   SignedOut,
   SignInButton,
   UserButton,
+  useUser,
 } from "@clerk/clerk-react";
 import {
   Sheet,
@@ -24,10 +25,13 @@ import {
 
 import SessionGuardModal from "./SessionGuardModal";
 import { useState, useEffect, useRef } from "react";
+import { ADMIN_EMAILS } from "@/config/admin";
+
 
 const UnifiedHeader = ({ session, onReset }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useUser();
   const [isGuardOpen, setIsGuardOpen] = useState(false);
   const [pendingPath, setPendingPath] = useState("/");
   const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false);
@@ -220,6 +224,15 @@ const UnifiedHeader = ({ session, onReset }) => {
 
           <SignedIn>
             <div className="flex items-center gap-3 ml-2">
+              {user?.primaryEmailAddress?.emailAddress && ADMIN_EMAILS.includes(user.primaryEmailAddress.emailAddress) && (
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavigation("/admin/blogs")}
+                  className="h-8 px-3 text-xs font-bold text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-full flex items-center gap-1.5"
+                >
+                  Dashboard
+                </Button>
+              )}
               <LicenseBadge />
               <UserButton
                 appearance={{
@@ -329,6 +342,20 @@ const UnifiedHeader = ({ session, onReset }) => {
               </div>
 
               <div className="mt-auto pb-8 flex flex-col gap-3 px-6 shrink-0 border-t border-slate-100 pt-6">
+                <SignedIn>
+                  {user?.primaryEmailAddress?.emailAddress && ADMIN_EMAILS.includes(user.primaryEmailAddress.emailAddress) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        handleNavigation("/admin/blogs");
+                      }}
+                      className="w-full h-11 text-sm font-bold border-brand-500 text-brand-600 rounded-full mb-2"
+                    >
+                      Admin Dashboard
+                    </Button>
+                  )}
+                </SignedIn>
+
                 <SignedOut>
                   <SignInButton mode="modal">
                     <Button
