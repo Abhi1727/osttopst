@@ -326,22 +326,28 @@ const TechnicalAdvantages = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <AdvantageCard
-              icon={Wrench}
-              title="Repairing Corruption"
-              description="OST files can suffer from 'unexpected shutdowns.' We utilize professional-grade tools to fix header errors during the conversion process."
-            />
-            <AdvantageCard
-              icon={Copy}
-              title="Deduplication"
-              description={`We eliminate duplicate emails along the way, resulting in a final ${currentFormat} file that is smaller, cleaner, and more efficient.`}
-            />
-            <AdvantageCard
-              icon={ShieldCheck}
-              title="Enterprise Security"
-              description="We ensure a secure, encrypted pipeline for data transfer, avoiding the risks associated with dubious 'free' converters."
-            />
+          <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+            <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.33%-2rem)] xl:w-[calc(25%-2rem)]">
+              <AdvantageCard
+                icon={Wrench}
+                title="Repairing Corruption"
+                description="OST files can suffer from 'unexpected shutdowns.' We utilize professional-grade tools to fix header errors during the conversion process."
+              />
+            </div>
+            <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.33%-2rem)] xl:w-[calc(25%-2rem)]">
+              <AdvantageCard
+                icon={Copy}
+                title="Deduplication"
+                description={`We eliminate duplicate emails along the way, resulting in a final ${currentFormat} file that is smaller, cleaner, and more efficient.`}
+              />
+            </div>
+            <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.33%-2rem)] xl:w-[calc(25%-2rem)]">
+              <AdvantageCard
+                icon={ShieldCheck}
+                title="Enterprise Security"
+                description="We ensure a secure, encrypted pipeline for data transfer, avoiding the risks associated with dubious 'free' converters."
+              />
+            </div>
           </div>
         </div>
 
@@ -357,14 +363,15 @@ const TechnicalAdvantages = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="flex flex-wrap justify-center gap-6 md:gap-8">
             {whyReasons.map((reason, index) => (
-              <AdvantageCard
-                key={index}
-                icon={reason.icon}
-                title={reason.title}
-                description={reason.description}
-              />
+              <div key={index} className="w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.33%-2rem)] xl:w-[calc(25%-2rem)]">
+                <AdvantageCard
+                  icon={reason.icon}
+                  title={reason.title}
+                  description={reason.description}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -413,15 +420,15 @@ const TechnicalAdvantages = () => {
 };
 
 const AdvantageCard = ({ icon: Icon, title, description }) => (
-  <div className="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center text-center space-y-5 md:space-y-6 hover:shadow-lg transition-all transform hover:-translate-y-1 h-full">
+  <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center text-center space-y-4 hover:shadow-lg transition-all transform hover:-translate-y-1 h-full">
     <div className="text-slate-700">
       <Icon className="w-8 h-8 md:w-10 md:h-10" strokeWidth={1.5} />
     </div>
-    <div className="space-y-3 md:space-y-4">
-      <h3 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">
+    <div className="space-y-2 md:space-y-3">
+      <h3 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">
         {title}
       </h3>
-      <p className="text-slate-500 text-sm md:text-base font-medium leading-relaxed max-w-[280px]">
+      <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-[280px]">
         {description}
       </p>
     </div>

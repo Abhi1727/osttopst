@@ -11,15 +11,15 @@ import {
 } from "lucide-react";
 
 const TrustFeatureCard = ({ icon: Icon, title, description }) => (
-  <div className="bg-white p-5 md:p-6 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
-    <div className="text-slate-900">
-      <Icon className="w-10 h-10 md:w-12 md:h-12 stroke-[1.2]" />
+  <div className="bg-white p-4 md:p-6 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col items-center text-center space-y-3 hover:shadow-md transition-shadow h-full">
+    <div className="text-[#0EA5E9]">
+      <Icon className="w-8 h-8 md:w-10 md:h-10 stroke-[1.5]" />
     </div>
-    <div className="space-y-4">
-      <h3 className="text-xl md:text-2xl font-bold text-slate-900 leading-tight">
+    <div className="space-y-2">
+      <h3 className="text-lg md:text-xl font-bold text-slate-900 leading-tight">
         {title}
       </h3>
-      <p className="text-slate-500 font-medium leading-relaxed text-sm md:text-base">
+      <p className="text-slate-500 font-medium leading-relaxed text-xs md:text-sm">
         {description}
       </p>
     </div>
@@ -338,9 +338,11 @@ const TrustFeatures = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        <div className="flex flex-wrap justify-center gap-4 md:gap-6">
           {features.map((feature, index) => (
-            <TrustFeatureCard key={index} {...feature} />
+            <div key={index} className="w-full sm:w-[calc(50%-1rem)] md:w-[calc(33.33%-1rem)] lg:w-[calc(25%-1.125rem)]">
+              <TrustFeatureCard {...feature} />
+            </div>
           ))}
         </div>
       </div>
