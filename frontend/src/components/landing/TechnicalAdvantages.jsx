@@ -254,7 +254,7 @@ const TechnicalAdvantages = () => {
     ? "OST to EML free converter software"
     : "free OST to PST converter software";
   return (
-    <section className="min-h-screen flex items-center py-10 md:py-12 px-4 md:px-6 lg:px-12 bg-[#f0f7ff]">
+    <section className="flex items-center py-4 md:py-8 px-4 md:px-6 lg:px-12 bg-[#f0f7ff]">
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Technical Advantages */}
         <div className="space-y-8 md:space-y-10">

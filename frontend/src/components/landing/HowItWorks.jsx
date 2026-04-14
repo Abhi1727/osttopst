@@ -22,7 +22,7 @@ const IconStepCard = ({ number, title, description, icon: Icon }) => (
 );
 
 const DetailStepCard = ({ number, title, description }) => (
-  <div className="bg-white p-6 sm:p-8 md:p-10 rounded-2xl md:rounded-[2rem] border border-slate-200/50 shadow-sm flex flex-col items-center text-center space-y-4 md:space-y-5 h-full">
+  <div className="bg-white p-5 md:p-6 rounded-[1.5rem] border border-slate-200/50 shadow-sm flex flex-col items-center text-center space-y-3 h-full">
     <div className="text-slate-800 text-xl md:text-2xl font-normal opacity-80">
       {number}
     </div>
@@ -78,7 +78,7 @@ const HowItWorks = () => {
   return (
     <section
       id="how-it-works"
-      className="bg-[#f0f9ff] py-12 scroll-mt-20 overflow-hidden"
+      className="bg-[#f0f9ff] py-6 scroll-mt-20 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* UPPER SECTION: 3 Steps + Video */}
@@ -132,7 +132,7 @@ const HowItWorks = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-7xl mx-auto">
             <DetailStepCard
               number={1}
               title="Upload Your OST File"

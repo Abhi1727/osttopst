@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 const TrustFeatureCard = ({ icon: Icon, title, description }) => (
-  <div className="bg-white p-8 md:p-10 rounded-[2rem] border border-slate-200/60 shadow-sm flex flex-col items-center text-center space-y-6 hover:shadow-md transition-shadow">
+  <div className="bg-white p-5 md:p-6 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
     <div className="text-slate-900">
       <Icon className="w-10 h-10 md:w-12 md:h-12 stroke-[1.2]" />
     </div>
@@ -272,7 +272,7 @@ const TrustFeatures = () => {
   const features = isPdf ? pdfFeatures : isMbox ? mboxFeatures : isEml ? emlFeatures : defaultFeatures;
 
   return (
-    <section className="bg-[#f0f9ff] py-12">
+    <section className="bg-[#f0f9ff] py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 space-y-4">
           {/* <h2 className=" text-3xl md:text-4xl font-extrabold tracking-tight">
@@ -286,7 +286,7 @@ const TrustFeatures = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {features.map((feature, index) => (
             <TrustFeatureCard key={index} {...feature} />
           ))}

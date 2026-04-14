@@ -9,7 +9,7 @@ const Glossary = () => {
   const currentFormat = isPdf ? "PDF" : isJson ? "JSON" : isMbox ? "MBOX" : isEml ? "EML" : "PST";
 
   return (
-    <section className="min-h-screen flex items-center py-10 md:py-12 bg-[#f0f7ff]">
+    <section className="flex items-center py-6 md:py-8 bg-[#f0f7ff]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-6 md:space-y-10">
           <div className="text-center space-y-4">
@@ -21,9 +21,9 @@ const Glossary = () => {
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
             {/* OST Card */}
-             <div className="bg-white p-6 sm:p-8 md:p-14 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 space-y-6 sm:space-y-8">
+             <div className="bg-white p-6 sm:p-10 lg:p-12 rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full space-y-6 sm:space-y-8 transition-all hover:shadow-md">
               <div className="text-center space-y-2">
                 <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800">
                   OST
@@ -62,7 +62,7 @@ const Glossary = () => {
               </div>
             </div>
             {/* Second Card (PST/PDF/JSON) */}
-            <div className="bg-white p-6 sm:p-8 md:p-14 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 space-y-6 sm:space-y-8">
+            <div className="bg-white p-6 sm:p-10 lg:p-12 rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full space-y-6 sm:space-y-8 transition-all hover:shadow-md">
               <div className="text-center space-y-2">
                 <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800">
                   {currentFormat}
