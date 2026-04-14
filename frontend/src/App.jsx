@@ -8,9 +8,9 @@ import {
   useNavigationType,
   Navigate,
 } from "react-router-dom";
+const UnifiedHeader = lazy(() => import("./components/UnifiedHeader"));
+const Footer = lazy(() => import("./components/landing/Footer"));
 import LandingPage from "./components/landing/LandingPage";
-import UnifiedHeader from "./components/UnifiedHeader";
-import Footer from "./components/landing/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 //import { toast } from "sonner";
@@ -111,7 +111,9 @@ function App() {
     <ErrorBoundary>
       <Toaster position="top-right" />
       {location.pathname !== "/preview" && (
-        <UnifiedHeader session={session} onReset={handleReset} />
+        <Suspense fallback={null}>
+          <UnifiedHeader session={session} onReset={handleReset} />
+        </Suspense>
       )}
       <div
         className={`flex flex-col professional-gradient ${
@@ -184,7 +186,11 @@ function App() {
             </Routes>
           </Suspense>
         </main>
-        {location.pathname !== "/preview" && <Footer />}
+        {location.pathname !== "/preview" && (
+          <Suspense fallback={null}>
+            <Footer />
+          </Suspense>
+        )}
       </div>
     </ErrorBoundary>
   );

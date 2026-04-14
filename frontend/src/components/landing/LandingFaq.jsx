@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const FaqItem = ({ number, question, answer, isOpen, onClick }) => (
   <div className="bg-white overflow-hidden">
@@ -25,8 +25,10 @@ const FaqItem = ({ number, question, answer, isOpen, onClick }) => (
 const LandingFaq = () => {
   const [openIndex, setOpenIndex] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMbox = location.pathname === "/ost-to-mbox";
 
-  const faqs = [
+  const defaultFaqs = [
     {
       question: "How to convert OST to PST without using Outlook?",
       answer: "The process is simple with our tool. Upload your .ost file using the box above. The cloud engine processes the file online, with no need for Outlook installed. When it gets finished, install the PST file and import it into any desktop.",
@@ -65,6 +67,43 @@ const LandingFaq = () => {
       answer: "Our free tool, which is an OST to PST, covers features such as converting OST files up to 500 MB with data. If your OST file exceeds then buy our Premium plan includes features such as batch conversion, extensive file size limits, and complete support.",
     },
   ];
+
+  const mboxFaqs = [
+    {
+      question: "How to convert OST to MBOX without using Outlook?",
+      answer: "The process is simple with our tool. Upload your .ost file using the upload box above. The cloud engine processes the file online with no need for Outlook installed. When finished, download the MBOX file and import it into any compatible email client such as Thunderbird, Apple Mail, or Gmail.",
+    },
+    {
+      question: "Is our OST to MBOX converter free to use?",
+      answer: "Yes, OST to MBOX conversion is free for standard file sizes up to 500 MB. There are no hidden costs, registration fees, or watermarks. Upgraded plans are available for priority processing and larger files up to 5 GB, but the free service remains simple and accessible.",
+    },
+    {
+      question: "Who uses the OST to MBOX Converter?",
+      answer: "The OST to MBOX converter is used by IT administrators, businesses, and individual Outlook users who need to migrate email data to MBOX-compatible clients like Thunderbird, Apple Mail, or Gmail. It is also useful when recovering from a corrupted Exchange profile or migrating between email platforms.",
+    },
+    {
+      question: "How can I import an MBOX file into Thunderbird or Gmail?",
+      answer: "For Thunderbird, install the ImportExportTools NG add-on, then go to Tools → ImportExportTools NG → Import MBOX file. For Gmail, use Google Workspace Migration for Microsoft Outlook (GWMMO) or a third-party import tool that accepts MBOX format.",
+    },
+    {
+      question: "Is my OST file data secure while converting to MBOX?",
+      answer: "Yes, all file data transfers are secured with TLS 1.3 SSL encryption. The uploaded OST files and converted MBOX files are automatically and permanently deleted from the servers within 2 hours of conversion. We do not access, analyze, or share your email data.",
+    },
+    {
+      question: "Can I convert a damaged or orphaned OST file to MBOX?",
+      answer: "Yes, our conversion engine includes expert-grade repair algorithms for damaged OST files. It automatically handles common OST corruption types such as header corruption from sudden shutdowns, folder table damage, and sync issues. Even partially damaged OST files can often be successfully recovered and converted to MBOX.",
+    },
+    {
+      question: "What is the maximum OST file size I can convert to MBOX?",
+      answer: "Free plan users can convert OST files up to 500 MB. Professional plan users can convert files up to 5 GB. For enterprise-grade mailboxes beyond these limits, please contact our support team for a custom solution.",
+    },
+    {
+      question: "Will the converted MBOX file work with all email clients?",
+      answer: "Yes, our converter produces a standard MBOX file compatible with Thunderbird, Apple Mail, Evolution, The Bat!, Eudora, and other MBOX-compliant email clients. The folder hierarchy, attachments, and rich-text formatting are fully preserved during conversion.",
+    },
+  ];
+
+  const faqs = isMbox ? mboxFaqs : defaultFaqs;
 
   return (
     <section className="bg-[#f0f9ff] pt-4 md:pt-8 pb-16 md:pb-24 px-4 md:px-6 lg:px-12">

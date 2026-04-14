@@ -127,15 +127,6 @@ const FormatMarquee = () => {
             {displayedFormats.map((item, index) => (
               <div
                 key={item.ext}
-                layout
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.1 } }}
-                transition={{
-                  layout: { type: "spring", stiffness: 200, damping: 25 },
-                  duration: 0.3,
-                  delay: showAll ? 0 : index * 0.03,
-                }}
                 className="flex items-start gap-4 group cursor-default"
               >
                 <div

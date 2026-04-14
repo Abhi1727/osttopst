@@ -32,12 +32,26 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
         <div className="relative z-[0] -mt-8 sm:-mt-10 mb-8">
           <FormatMarquee />
         </div>
+      </Suspense>
+      <Suspense fallback={<div className="h-40" />}>
         <HowItWorks />
+      </Suspense>
+      <Suspense fallback={<div className="h-40" />}>
         <TrustFeatures />
+      </Suspense>
+      <Suspense fallback={<div className="h-40" />}>
         <TechnicalAdvantages />
+      </Suspense>
+      <Suspense fallback={<div className="h-40" />}>
         <Glossary />
+      </Suspense>
+      <Suspense fallback={<div className="h-40" />}>
         <ConversionMissions />
+      </Suspense>
+      <Suspense fallback={<div className="h-32" />}>
         <LandingFaq />
+      </Suspense>
+      <Suspense fallback={<div className="h-40" />}>
         <ReviewSection />
       </Suspense>
     </div>

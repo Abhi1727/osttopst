@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
 import { Button } from "@/components/ui/button";
 
 class ErrorBoundary extends React.Component {

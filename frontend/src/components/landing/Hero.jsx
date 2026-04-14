@@ -25,7 +25,7 @@ import Hexagon from "lucide-react/dist/esm/icons/hexagon";
 import Shield from "lucide-react/dist/esm/icons/shield";
 // import X from "lucide-react/dist/esm/icons/x";
 import { Progress } from "@/components/ui/progress";
-import UpgradeModal from "./pricingpop";
+const UpgradeModal = lazy(() => import("./pricingpop"));
 
 const ExportDialog = lazy(() => import("../ExportDialog"));
 import licenseService from "../../services/licenseService";
@@ -475,7 +475,9 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         </Suspense>
       )}
       {showOversizedFileModal && (
-        <UpgradeModal onClose={() => setShowOversizedFileModal(false)} />
+        <Suspense fallback={null}>
+          <UpgradeModal onClose={() => setShowOversizedFileModal(false)} />
+        </Suspense>
       )}
     </section>
   );

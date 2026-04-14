@@ -10,9 +10,6 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  optimizeDeps: {
-    include: ["framer-motion"],
-  },
   build: {
     // Increase warning threshold for large chunks
     chunkSizeWarningLimit: 600,
@@ -35,7 +32,6 @@ export default defineConfig({
             "@radix-ui/react-tabs",
             "@radix-ui/react-tooltip",
           ],
-          "vendor-motion": ["framer-motion"],
           "vendor-icons": ["lucide-react"],
           "vendor-misc": ["sonner", "date-fns", "dompurify", "clsx", "tailwind-merge", "class-variance-authority"],
         },

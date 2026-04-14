@@ -4,7 +4,8 @@ const Glossary = () => {
   const location = useLocation();
   const isPdf = location.pathname === "/ost-to-pdf";
   const isJson = location.pathname === "/ost-to-json";
-  const currentFormat = isPdf ? "PDF" : isJson ? "JSON" : "PST";
+  const isMbox = location.pathname === "/ost-to-mbox";
+  const currentFormat = isPdf ? "PDF" : isJson ? "JSON" : isMbox ? "MBOX" : "PST";
 
   return (
     <section className="min-h-screen flex items-center py-16 md:py-20 bg-[#f0f7ff]">
@@ -66,7 +67,7 @@ const Glossary = () => {
                   {currentFormat}
                 </h3>
                 <p className="text-lg sm:text-xl text-slate-600 font-medium">
-                  ({isPdf ? "Portable Document Format" : isJson ? "JavaScript Object Notation" : "Personal Storage Table"})
+                  ({isPdf ? "Portable Document Format" : isJson ? "JavaScript Object Notation" : isMbox ? "Mailbox Storage File" : "Personal Storage Table"})
                 </p>
               </div>
 
@@ -80,29 +81,33 @@ const Glossary = () => {
                     <>
                       A JSON file is also known as <strong>JavaScript Object Notation</strong>. This file type is utilized to gather and exchange organized data into a light, text-based structure, which is simple for humans as well as machines to read and process.
                     </>
+                  ) : isMbox ? (
+                    <>
+                      An MBOX file is also known as a <strong>Mailbox Storage File</strong>. This file type collects several email messages into a single text file, with all messages saved consecutively. It is used by various email clients for gathering large volumes of emails effectively.
+                    </>
                   ) : (
                     <>
                       A PST file is also called an <strong>"Outlook Data File"</strong> which is
                       simply an archived version of the email messages, as well as
                       appointments, contacts, and to-dos that could be saved onto
-                      one’s computer independently from any email server account (it
+                      one's computer independently from any email server account (it
                       can be created as needed).
                     </>
                   )}
                 </p>
                 <div className="space-y-3 sm:space-y-4 pt-2">
                   <p className="text-sm sm:text-base md:text-lg">
-                    <strong className="text-slate-900">Purpose:</strong> {isPdf ? "Protects the document format for sharing, archiving, and printing." : isJson ? "Gathers and exchanges organized data between the server and applications." : "Stores emails and other data as a personal archive."}
+                    <strong className="text-slate-900">Purpose:</strong> {isPdf ? "Protects the document format for sharing, archiving, and printing." : isJson ? "Gathers and exchanges organized data between the server and applications." : isMbox ? "Gathers email message collections in one file for smooth management and backup." : "Stores emails and other data as a personal archive."}
                   </p>
                   <p className="text-sm sm:text-base md:text-lg">
-                    <strong className="text-slate-900">Server:</strong> {isPdf ? "Not rely on any server, an independent format." : isJson ? "Utilized with web servers and APIs for the transmission of data." : "Not linked to the server account."}
+                    <strong className="text-slate-900">Server:</strong> {isPdf ? "Not rely on any server, an independent format." : isJson ? "Utilized with web servers and APIs for the transmission of data." : isMbox ? "Not related to any particular server, but it is a locally stored file format that is generated from several email services." : "Not linked to the server account."}
                   </p>
                   <p className="text-sm sm:text-base md:text-lg">
                     <strong className="text-slate-900">Adaptability:</strong>{" "}
-                    {isPdf ? "It is portable and can be opened on any device" : isJson ? "It is adaptable and used on various programming languages and platforms." : "Can be smoothly shifted and opened on another system."}
+                    {isPdf ? "It is portable and can be opened on any device" : isJson ? "It is adaptable and used on various programming languages and platforms." : isMbox ? "Assisted by several email clients, but the compatibility differs a bit." : "Can be smoothly shifted and opened on another system."}
                   </p>
                   <p className="text-sm sm:text-base md:text-lg">
-                    <strong className="text-slate-900">Usage:</strong> {isPdf ? "Use for safe and secure document sharing, invoices, and others." : isJson ? "Mainly for web applications, APIs, and data exchange between the systems." : "Utilized for backup, storage, as well as for the migration."}
+                    <strong className="text-slate-900">Usage:</strong> {isPdf ? "Use for safe and secure document sharing, invoices, and others." : isJson ? "Mainly for web applications, APIs, and data exchange between the systems." : isMbox ? "Used for email archiving, migration, and backup on different email platforms." : "Utilized for backup, storage, as well as for the migration."}
                   </p>
                 </div>
               </div>

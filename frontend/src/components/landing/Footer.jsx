@@ -1,13 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { 
-  Mail, 
-  Github, 
-  Twitter, 
-  Linkedin, 
-  ShieldCheck,
-  ExternalLink
-} from "lucide-react";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import Github from "lucide-react/dist/esm/icons/github";
+import Twitter from "lucide-react/dist/esm/icons/twitter";
+import Linkedin from "lucide-react/dist/esm/icons/linkedin";
+import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
+import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
