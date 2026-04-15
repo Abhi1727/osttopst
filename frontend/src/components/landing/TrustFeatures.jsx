@@ -29,6 +29,7 @@ const TrustFeatures = () => {
   const isPdf = location.pathname === "/ost-to-pdf";
   const isMbox = location.pathname === "/ost-to-mbox";
   const isEml = location.pathname === "/ost-to-eml";
+  const isMsg = location.pathname === "/ost-to-msg";
 
   const defaultFeatures = [
     {
@@ -312,13 +313,84 @@ const TrustFeatures = () => {
     },
   ];
 
+   const msgFeatures = [
+    {
+      icon: ShieldCheck,
+      title: "SSL Security",
+      description:
+        "Protect all of your data with end-to-end SSL encryption from unauthorized access.",
+    },
+    {
+      icon: Box,
+      title: "No Outlook Needed",
+      description:
+        "Manage your documents using our online system without needing any desktop software.",
+    },
+    {
+      icon: Cloud,
+      title: "Cloud Infrastructure",
+      description:
+        "Enjoy rapid-speed processing on an established cloud infrastructure with zero pause in operations.",
+    },
+    {
+      icon: FileText,
+      title: "Free File Conversion",
+      description:
+        "Automatically convert your files into any required format with our advanced conversion engine.",
+    },
+    {
+      icon: Trash2,
+      title: "Privacy Guaranteed",
+      description:
+        "Files are automatically deleted from our servers after 2 hours.",
+    },
+    {
+      icon: Zap,
+      title: "Fast Processing",
+      description:
+        "Cloud-based high-speed engines process large files in minutes.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Full Data Integrity",
+      description:
+        "Maintains folder hierarchy, attachments, and rich-text formatting.",
+    },
+    {
+      icon: Box,
+      title: "User Friendly UI",
+      description:
+        "Our Tool UI is user-friendly, making file management effortless to navigate.",
+    },
+    {
+      icon: Cloud,
+      title: "Supports Outlook 2021 & Earlier",
+      description:
+        "Compatible with all versions of Outlook 2021 and below. We have no restrictions on using Outlook.",
+    },
+    {
+      icon: Box,
+      title: "Batch Conversion",
+      description:
+        "Convert multiple OST files simultaneously to save time and effort.",
+    },
+    {
+      icon: CloudUpload,
+      title: "Direct Migration",
+      description:
+        "Users can easily migrate MSG files directly to Gmail, Outlook, and Yahoo accounts.",
+    },
+  ];
+
   const features = isPdf
     ? pdfFeatures
     : isMbox
       ? mboxFeatures
       : isEml
         ? emlFeatures
-        : defaultFeatures;
+        : isMsg
+          ? msgFeatures
+          : defaultFeatures;
 
   return (
     <section className="bg-brand-50 py-1 md:py-2">

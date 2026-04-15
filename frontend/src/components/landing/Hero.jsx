@@ -319,9 +319,11 @@ const Hero = ({ onUploadComplete, onRestore }) => {
             Online - Fast & Secure
           </h1>
           <p className="mb-2 text-base text-slate-600 font-medium max-w-sm md:max-w-lg leading-relaxed">
-            Instantly convert Outlook OST files to {currentFormat} format in
+            {currentFormat === "MSG" 
+              ? `Our Outlook OST to MSG converter instantly converts OST files to MSG format in your browser. Preview and export the OST mailbox to MSG to safely store your data without any software installation.`
+              : `Instantly convert Outlook OST files to ${currentFormat} format in
             your browser. Preview and export your data safely without any
-            software installation.
+            software installation.`}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-2 gap-y-3 gap-x-8 max-w-lg mt-1 md:mt-2">
             <div className="flex items-center gap-2">

@@ -6,6 +6,7 @@ const Glossary = () => {
   const isJson = location.pathname === "/ost-to-json";
   const isMbox = location.pathname === "/ost-to-mbox";
   const isEml = location.pathname === "/ost-to-eml";
+  const isMsg = location.pathname === "/ost-to-msg";
   const currentFormat = isPdf
     ? "PDF"
     : isJson
@@ -14,7 +15,9 @@ const Glossary = () => {
         ? "MBOX"
         : isEml
           ? "EML"
-          : "PST";
+          : isMsg
+            ? "MSG"
+            : "PST";
 
   return (
     <section className="flex items-center py-1 md:py-2 bg-brand-50">
@@ -86,7 +89,9 @@ const Glossary = () => {
                         ? "Mailbox Storage File"
                         : isEml
                           ? "Email Message Format"
-                          : "Personal Storage Table"}
+                          : isMsg
+                            ? "Outlook Message Format"
+                            : "Personal Storage Table"}
                   )
                 </p>
               </div>
@@ -127,6 +132,10 @@ const Glossary = () => {
                       saving emails of an individual and can be viewed by
                       several email clients.
                     </>
+                  ) : isMsg ? (
+                    <>
+                      An MSG file is also known as <strong>Outlook Message Format</strong>. This file gathers one email message generated in Microsoft Outlook, containing content, attachments, formats and other related metadata. 
+                    </>
                   ) : (
                     <>
                       A PST file is also called an{" "}
@@ -149,7 +158,9 @@ const Glossary = () => {
                           ? "Gathers email message collections in one file for smooth management and backup."
                           : isEml
                             ? "Gathers one email message with all details containing attachments, data, and formats."
-                            : "Stores emails and other data as a personal archive."}
+                            : isMsg
+                              ? "Gathers email messages with overall information like sender, subject, recipient, subject, formats, and attachments."
+                              : "Stores emails and other data as a personal archive."}
                   </p>
                   <p className="text-sm sm:text-base md:text-lg">
                     <strong className="text-slate-900">Server:</strong>{" "}
@@ -161,7 +172,9 @@ const Glossary = () => {
                           ? "Not related to any particular server, but it is a locally stored file format that is generated from several email services."
                           : isEml
                             ? "Not directly linked to any server, it is a local file and can be saved from several email services."
-                            : "Not linked to the server account."}
+                            : isMsg
+                              ? "Not directly linked to any server, it is a local file and can be saved from several email services."
+                              : "Not linked to the server account."}
                   </p>
                   <p className="text-sm sm:text-base md:text-lg">
                     <strong className="text-slate-900">Adaptability:</strong>{" "}
@@ -173,7 +186,9 @@ const Glossary = () => {
                           ? "Assisted by several email clients, but the compatibility differs a bit."
                           : isEml
                             ? "It is highly adaptable and can be opened in various email clients."
-                            : "Can be smoothly shifted and opened on another system."}
+                            : isMsg
+                              ? "Supported by Microsoft Outlook, less compatible with email clients and may need viewer tools."
+                              : "Can be smoothly shifted and opened on another system."}
                   </p>
                   <p className="text-sm sm:text-base md:text-lg">
                     <strong className="text-slate-900">Usage:</strong>{" "}
@@ -185,7 +200,9 @@ const Glossary = () => {
                           ? "Used for email archiving, migration, and backup on different email platforms."
                           : isEml
                             ? "Used for saving emails, sharing content, email backup, migration between platforms."
-                            : "Utilized for backup, storage, as well as for the migration."}
+                            : isMsg
+                              ? "Use for save, share, archive and migrate individual Outlook emails while protecting the original structure."
+                              : "Utilized for backup, storage, as well as for the migration."}
                   </p>
                 </div>
               </div>

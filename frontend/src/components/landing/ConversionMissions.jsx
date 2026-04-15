@@ -6,6 +6,7 @@ const ConversionMissions = () => {
   const location = useLocation();
   const isPdf = location.pathname === "/ost-to-pdf";
   const isJson = location.pathname === "/ost-to-json";
+  const isMsg = location.pathname === "/ost-to-msg";
 
   const defaultAudiences = [
     {
@@ -53,7 +54,7 @@ const ConversionMissions = () => {
     },
   ];
 
-  const audiences = isPdf || isJson ? pdfAudiences : defaultAudiences;
+   const audiences = isPdf || isJson || isMsg ? pdfAudiences : defaultAudiences;
 
   return (
     <section className="py-1 md:py-2 px-4 md:px-6 lg:px-12 bg-brand-50">

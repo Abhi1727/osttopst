@@ -77,6 +77,7 @@ const HowItWorks = () => {
 
   const isPdf = currentFormat === "PDF";
   const isJson = currentFormat === "JSON";
+  const isMsg = currentFormat === "MSG";
 
   return (
     <section
@@ -115,9 +116,9 @@ const HowItWorks = () => {
               title="Upload the OST File"
               icon={RefreshCw}
             />
-            <IconStepCard
+             <IconStepCard
               number={3}
-              title={isJson ? "Download JSON File" : `Download ${currentFormat} File`}
+              title={isJson ? "Download JSON File" : isMsg ? "Download MSG File" : `Download ${currentFormat} File`}
               icon={Download}
             />
           </div>
@@ -126,11 +127,13 @@ const HowItWorks = () => {
         {/* LOWER SECTION: 4 Detailed Steps */}
         <div className="border-t border-slate-200/50 pt-4 md:pt-5">
           <div className="text-center mb-4 md:mb-5 space-y-2 px-2">
-            <p className="text-slate-600 text-base md:text-lg font-medium max-w-3xl mx-auto leading-relaxed">
+             <p className="text-slate-600 text-base md:text-lg font-medium max-w-3xl mx-auto leading-relaxed">
               {isPdf 
                 ? "The process of converting from an OST file to PDF is simple & user friendly; it does not require any kind of technical knowledge for conversion."
                 : isJson
                 ? "The process of converting from OST to JSON is simple & user friendly; it does not require any kind of technical knowledge for conversion."
+                : isMsg
+                ? "The process of converting from OST to MSG is simple & user friendly; it does not require any kind of technical knowledge for conversion."
                 : `The process of converting from OST to ${currentFormat} is simple & user friendly; it does not require any kind of technical knowledge for conversion.`}
             </p>
           </div>
@@ -140,7 +143,7 @@ const HowItWorks = () => {
               number={1}
               title="Upload Your OST File"
               description={
-                isPdf || isJson ? (
+                isPdf || isJson || isMsg ? (
                   <>
                     Simply drag and drop your file or click <strong>"Browse"</strong> to find the file on your computer. We currently support files up to 5 GB in size in our professional plans.
                   </>
@@ -156,19 +159,23 @@ const HowItWorks = () => {
             />
             <DetailStepCard
               number={2}
-              title={isPdf ? "Preview your OST File" : isJson ? "Preview your OST File" : `Preview Your ${currentFormat} File`}
+              title={isPdf ? "Preview your OST File" : isJson ? "Preview your OST File" : isMsg ? "Preview your OST File" : `Preview Your ${currentFormat} File`}
               description={isPdf 
                 ? "When uploading is finished, you can preview and then download your OST file into multiple formats, or download your PDF file directly to your computer."
                 : isJson
                 ? "When uploading is finished, you can preview and then download your OST file into multiple formats, or download your OST file to JSON format directly to your computer."
+                : isMsg
+                ? "When uploading is finished, you can preview and then download your OST file into multiple formats, or download your OST file to MSG format directly to your computer."
                 : `When uploading gets finished, you can preview and then download your OST file into multiple formats or either download your ${currentFormat} file directly to your computer.`}
             />
             <DetailStepCard
               number={3}
-              title={isPdf ? "PDF Conversion Begins" : isJson ? "JSON Conversion Begins" : `${currentFormat} Conversion Begins`}
+              title={isPdf ? "PDF Conversion Begins" : isJson ? "JSON Conversion Begins" : isMsg ? "MSG Conversion Begins" : `${currentFormat} Conversion Begins`}
               description={isPdf
                 ? "When your .ost file is uploaded, by clicking on either the download or export OST Emails to PDF option. It begins the conversion process in the selected format, and the download starts automatically."
                 : isJson
+                ? "When your .ost file is uploaded, by clicking on either the download or export option. It begins the conversion process in the selected format, and the download starts automatically."
+                : isMsg
                 ? "When your .ost file is uploaded, by clicking on either the download or export option. It begins the conversion process in the selected format, and the download starts automatically."
                 : `When your .ost file is uploaded, by clicking on either download or export option. It begins the conversion process in the selected format, and the download starts automatically.`}
             />
@@ -179,7 +186,9 @@ const HowItWorks = () => {
               description={isPdf
                 ? "To use any edition of Microsoft Outlook to open a PDF, do File Menu → Open & Export → Import/Export. Once the PDF is opened, the emails, calendar appointments, and contacts will be available from within it."
                 : isJson
-                ? "To use any edition of Microsoft Outlook to open a JSON, do File Menu → Open & Export → Import/Export. Once the JSON is opened, the emails, calendar appointments, and contacts will be available from within it."
+                ? "To use any edition of Microsoft Outlook to open a JSON, do File Menu → Export → Import/Export. Once the JSON is opened, the emails, calendar appointments, and contacts will be available from within it."
+                : isMsg
+                ? "To use any edition of Microsoft Outlook to open a MSG, do File Menu → Open & Export → Import/Export. Once the MSG is opened, the emails, calendar appointments, and contacts will be available from within it."
                 : `To use any edition of Microsoft Outlook to open ${currentFormat}, do file Menu Open & Export Import/Export. Once the ${currentFormat} is opened the emails, calendar appointments and contacts will be available from within it.`}
             />
           </div>
