@@ -59,15 +59,24 @@ namespace PstConverter.Controllers
         private bool IsAdmin()
         {
             string[] adminEmails = _configuration.GetSection("Clerk:AdminEmails").Get<string[]>() ?? [];
+            string[] adminUserIds = _configuration.GetSection("Clerk:AdminUserIds").Get<string[]>() ?? [];
 
-            
             // Clerk might put the email in various claims depending on JWT template.
-            // We check 'email', 'emails', or the 'sub-as-name' fallback.
-            var userEmail = User.FindFirstValue(ClaimTypes.Email) 
-                         ?? User.FindFirstValue("email") 
-                         ?? User.Identity?.Name; // Fallback to 'sub' if mapped to Name
+            // We check 'email', 'emails', or the 'sub-as-name' fallback (User ID).
+            var userInfo = User.FindFirstValue(ClaimTypes.Email)
+                          ?? User.FindFirstValue("email")
+                          ?? User.Identity?.Name; // Fallback to 'sub' if mapped to Name
 
-            return !string.IsNullOrEmpty(userEmail) && adminEmails.Contains(userEmail, StringComparer.OrdinalIgnoreCase);
+            Console.WriteLine($"[BlogsController] Checking Admin Status for Info: '{userInfo}'");
+            Console.WriteLine($"[BlogsController] Admin Emails count: {adminEmails.Length}");
+            Console.WriteLine($"[BlogsController] Admin User IDs count: {adminUserIds.Length}");
+            
+            bool isAdmin = !string.IsNullOrEmpty(userInfo) && 
+                          (adminEmails.Contains(userInfo, StringComparer.OrdinalIgnoreCase) || 
+                           adminUserIds.Contains(userInfo, StringComparer.OrdinalIgnoreCase));
+                           
+            Console.WriteLine($"[BlogsController] Final IsAdmin Result: {isAdmin}");
+            return isAdmin;
         }
 
         [HttpGet]
@@ -97,7 +106,7 @@ namespace PstConverter.Controllers
         {
             if (!IsAdmin())
             {
-                return Forbid("You do not have permission to perform this action.");
+                return StatusCode(403, new { message = "You do not have permission to perform this action." });
             }
             try
             {
@@ -140,6 +149,7 @@ namespace PstConverter.Controllers
                         .Trim('-');
                     
                     if (string.IsNullOrWhiteSpace(slug)) slug = id.ToString();
+                    else slug = $"{slug}-{id}"; // Make auto-generated slugs unique
                 }
 
                 // 2. Handle Thumbnail Processing
@@ -260,7 +270,7 @@ namespace PstConverter.Controllers
         {
             if (!IsAdmin())
             {
-                return Forbid("You do not have permission to perform this action.");
+                return StatusCode(403, new { message = "You do not have permission to perform this action." });
             }
             try
             {
@@ -284,7 +294,8 @@ namespace PstConverter.Controllers
                 {
                     if (item.TryGetProperty("id", out var idProp))
                     {
-                        // Handle both number and string ID types gracefully
+                        // Handle both number and string ID types gracefully.
+                        
                         long currentId = 0;
                         if (idProp.ValueKind == JsonValueKind.Number) currentId = idProp.GetInt64();
                         else if (idProp.ValueKind == JsonValueKind.String && long.TryParse(idProp.GetString(), out var parsedId)) currentId = parsedId;

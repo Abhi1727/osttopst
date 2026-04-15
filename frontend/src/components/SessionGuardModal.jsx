@@ -8,7 +8,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Home, Download, X } from "lucide-react";
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
+import Home from "lucide-react/dist/esm/icons/home";
+import Download from "lucide-react/dist/esm/icons/download";
+import X from "lucide-react/dist/esm/icons/x";
 
 const SessionGuardModal = ({ isOpen, onClose, onHome, onExport }) => {
   const [timeLeft, setTimeLeft] = useState(30);

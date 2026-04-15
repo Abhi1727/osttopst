@@ -1,14 +1,12 @@
 import { useLocation } from "react-router-dom";
-import {
-  ShieldCheck,
-  Box,
-  Cloud,
-  FileText,
-  Trash2,
-  Zap,
-  Scissors,
-  CloudUpload,
-} from "lucide-react";
+import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
+import Box from "lucide-react/dist/esm/icons/box";
+import Cloud from "lucide-react/dist/esm/icons/cloud";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import Zap from "lucide-react/dist/esm/icons/zap";
+import Scissors from "lucide-react/dist/esm/icons/scissors";
+import CloudUpload from "lucide-react/dist/esm/icons/cloud-upload";
 
 const TrustFeatureCard = ({ icon: Icon, title, description }) => (
   <div className="bg-white p-4 md:p-6 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col items-center text-center space-y-3 hover:shadow-md transition-shadow h-full">

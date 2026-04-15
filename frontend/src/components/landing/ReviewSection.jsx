@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Star, Send, Loader2, X } from "lucide-react";
+import Star from "lucide-react/dist/esm/icons/star";
+import Send from "lucide-react/dist/esm/icons/send";
+import Loader2 from "lucide-react/dist/esm/icons/loader-2";
+import X from "lucide-react/dist/esm/icons/x";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 

@@ -1,6 +1,9 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { UploadCloud, RefreshCw, Download, Play } from "lucide-react";
+import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud";
+import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
+import Download from "lucide-react/dist/esm/icons/download";
+import Play from "lucide-react/dist/esm/icons/play";
 
 const IconStepCard = ({ number, title, description, icon: Icon }) => (
   <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200/60 shadow-sm flex flex-col items-center text-center space-y-4 w-full h-full">

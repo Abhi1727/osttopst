@@ -101,13 +101,14 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
             OnAuthenticationFailed = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogError("Authentication failed: {Message}", context.Exception.Message);
-                try
+                logger.LogError("Authentication failed: {Message}. Exception: {Exception}", context.Exception.Message, context.Exception.ToString());
+                
+                // Log details about the failure to help identify issuer or audience mismatches
+                if (context.Exception is Microsoft.IdentityModel.Tokens.SecurityTokenInvalidIssuerException issuerEx)
                 {
-                    var logPath = @"C:\temp\debug_log.txt";
-                    File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] AUTH FAILED: {context.Exception.Message}{Environment.NewLine}");
+                    logger.LogError("Invalid Issuer: {Issuer}", issuerEx.InvalidIssuer);
                 }
-                catch { }
+                
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>

@@ -12,18 +12,20 @@ import {
   Search,
   Link2,
   Newspaper,
-  Image as ImageIcon
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 // blog image import removed per user request for no images
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 import DOMPurify from "dompurify";
+import { useAuth } from "@clerk/clerk-react";
 
 // Initialize PDF.js worker using a more stable and specific CDN path for v5
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const AdminDashboard = () => {
+  const { getToken } = useAuth();
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("idle"); // idle, success, error
@@ -132,7 +134,10 @@ const AdminDashboard = () => {
                 return { src: base64Data };
               })
               .catch((err) => {
-                console.warn("[Docx] Image conversion skipped due to error:", err);
+                console.warn(
+                  "[Docx] Image conversion skipped due to error:",
+                  err,
+                );
                 return { src: "" };
               });
           }),
@@ -141,25 +146,37 @@ const AdminDashboard = () => {
         try {
           console.log("[Docx] Attempting primary conversion with options...");
           const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-          content = DOMPurify.sanitize(result.value);
-          
-          const plainText = result.value.replace(/<[^>]*>/g, "");
+          const htmlValue = result.value || "";
+          content = DOMPurify.sanitize(htmlValue);
+
+          const plainText =
+            typeof htmlValue === "string"
+              ? htmlValue.replace(/<[^>]*>/g, "")
+              : "";
           excerpt = plainText.substring(0, 160) + "...";
           console.log("[Docx] Primary conversion successful.");
         } catch (primaryError) {
-          console.error("[Docx] Primary conversion failed (Emptiers error?):", primaryError);
+          console.error("[Docx] Primary conversion failed:", primaryError);
           console.log("[Docx] Retrying in SAFE MODE (no options)...");
-          
+
           try {
             const safeResult = await mammoth.convertToHtml({ arrayBuffer });
-            content = DOMPurify.sanitize(safeResult.value);
-            const safePlainText = safeResult.value.replace(/<[^>]*>/g, "");
+            const safeHtmlValue = safeResult.value || "";
+            content = DOMPurify.sanitize(safeHtmlValue);
+            const safePlainText =
+              typeof safeHtmlValue === "string"
+                ? safeHtmlValue.replace(/<[^>]*>/g, "")
+                : "";
             excerpt = safePlainText.substring(0, 160) + "...";
             console.log("[Docx] Safe mode conversion successful.");
-            toast.warning("Processed document in safe mode (images may be missing).");
+            toast.warning(
+              "Processed document in safe mode (images may be missing).",
+            );
           } catch (safeError) {
             console.error("[Docx] Safe mode also failed:", safeError);
-            throw new Error("Mammoth conversion failed completely: " + safeError.message);
+            throw new Error(
+              "Docx conversion failed completely: " + safeError.message,
+            );
           }
         }
       } else if (file.type === "application/pdf") {
@@ -199,7 +216,7 @@ const AdminDashboard = () => {
         metaTitle: title,
         metaDescription: excerpt?.substring(0, 160) || "",
         canonicalTag: "",
-        slug: "", 
+        slug: "",
         focusKeywords: "",
       });
       setIsSlugManuallyEdited(false);
@@ -224,11 +241,11 @@ const AdminDashboard = () => {
         .replace(/[^\w\s-]/g, "")
         .replace(/[\s_-]+/g, "-")
         .replace(/^-+|-+$/g, "");
-      
-      setBlogMetadata(prev => ({
+
+      setBlogMetadata((prev) => ({
         ...prev,
         slug: generatedSlug,
-        metaTitle: prev.metaTitle || blogMetadata.title
+        metaTitle: prev.metaTitle || blogMetadata.title,
       }));
     }
   }, [blogMetadata.title, isSlugManuallyEdited]);
@@ -288,8 +305,12 @@ const AdminDashboard = () => {
         defaultImage: formData.get("defaultImage")?.substring(0, 50) + "...",
       });
 
+      const token = await getToken();
       const response = await fetch("/api/blogs", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: formData,
       });
 
@@ -340,8 +361,12 @@ const AdminDashboard = () => {
       )
     ) {
       try {
+        const token = await getToken();
         const response = await fetch(`/api/blogs/${id}`, {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (!response.ok) throw new Error("Failed to delete blog from server");
@@ -550,8 +575,12 @@ const AdminDashboard = () => {
                   <div className="w-32 h-20 rounded-xl overflow-hidden bg-brand-50 border border-brand-100 shadow-sm shrink-0 flex items-center justify-center relative group/preview">
                     {thumbnailPreview ? (
                       <>
-                        <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-full object-cover" />
-                        <button 
+                        <img
+                          src={thumbnailPreview}
+                          alt="Thumbnail Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
                           onClick={(e) => {
                             e.preventDefault();
                             setThumbnailPreview(null);
@@ -807,7 +836,11 @@ const AdminDashboard = () => {
                 >
                   <div className="h-40 overflow-hidden relative bg-brand-50 flex items-center justify-center border-b border-slate-100">
                     {post.image && post.image !== "null" ? (
-                      <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+                      <img
+                        src={post.image}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <Newspaper className="w-12 h-12 text-brand-500/30" />
                     )}

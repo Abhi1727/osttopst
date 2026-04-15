@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from "react";
-import {
-  History,
-  Download,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  FileText,
-  Trash2,
-  RefreshCcw,
-  ExternalLink,
-  X,
-} from "lucide-react";
+import History from "lucide-react/dist/esm/icons/history";
+import Download from "lucide-react/dist/esm/icons/download";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2";
+import AlertCircle from "lucide-react/dist/esm/icons/alert-circle";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import RefreshCcw from "lucide-react/dist/esm/icons/refresh-ccw";
+import ExternalLink from "lucide-react/dist/esm/icons/external-link";
+import X from "lucide-react/dist/esm/icons/x";
 import { Button } from "@/components/ui/button";
 import { getRecentSessions, deleteSession, deleteAllSessions } from "../services/api";
 import { useAuth } from "@clerk/clerk-react";

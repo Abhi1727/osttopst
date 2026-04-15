@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const FaqItem = ({ number, question, answer, isOpen, onClick }) => (

@@ -56,7 +56,7 @@ const BlogCard = ({ post, onClick }) => (
   >
     <div className="relative aspect-video overflow-hidden m-3 rounded-2xl shadow-inner bg-brand-50 flex items-center justify-center border border-brand-100">
       {post.image && post.image !== "null" ? (
-        <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+        <img src={post.image} alt={post.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
       ) : (
         <div className="flex flex-col items-center gap-3">
           <Newspaper className="w-12 h-12 text-brand-500/40" />

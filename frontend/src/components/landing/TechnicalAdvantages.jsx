@@ -1,18 +1,16 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import {
-  Copy,
-  ShieldCheck,
-  Database,
-  Binary,
-  Lock,
-  ShieldAlert,
-  UserX,
-  UserPlus,
-  ArrowRightLeft,
-  Wrench,
-  Archive,
-} from "lucide-react";
+import Copy from "lucide-react/dist/esm/icons/copy";
+import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
+import Database from "lucide-react/dist/esm/icons/database";
+import Binary from "lucide-react/dist/esm/icons/binary";
+import Lock from "lucide-react/dist/esm/icons/lock";
+import ShieldAlert from "lucide-react/dist/esm/icons/shield-alert";
+import UserX from "lucide-react/dist/esm/icons/user-x";
+import UserPlus from "lucide-react/dist/esm/icons/user-plus";
+import ArrowRightLeft from "lucide-react/dist/esm/icons/arrow-right-left";
+import Wrench from "lucide-react/dist/esm/icons/wrench";
+import Archive from "lucide-react/dist/esm/icons/archive";
 
 const TechnicalAdvantages = () => {
   const location = useLocation();

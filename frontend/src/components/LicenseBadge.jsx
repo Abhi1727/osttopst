@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { ShieldAlert, ShieldCheck, Sparkles } from "lucide-react";
+import ShieldAlert from "lucide-react/dist/esm/icons/shield-alert";
+import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
+import Sparkles from "lucide-react/dist/esm/icons/sparkles";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import licenseService from "@/services/licenseService";
 

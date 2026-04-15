@@ -1,5 +1,6 @@
 import React from "react";
-import { X, CheckCircle } from "lucide-react";
+import X from "lucide-react/dist/esm/icons/x";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
 
 const UpgradeModal = ({ onClose }) => {
   return (

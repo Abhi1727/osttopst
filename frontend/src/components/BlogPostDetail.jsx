@@ -317,7 +317,7 @@ const BlogPostDetail = () => {
                 >
                   <div className="aspect-[16/10] overflow-hidden rounded-xl bg-brand-50 shadow-sm hover:shadow-md transition-shadow flex items-center justify-center border border-brand-100">
                     {blog.image && blog.image !== "null" ? (
-                      <img src={blog.image} alt={blog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={blog.image} alt={blog.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <Newspaper className="w-10 h-10 text-brand-500/20" />
                     )}
