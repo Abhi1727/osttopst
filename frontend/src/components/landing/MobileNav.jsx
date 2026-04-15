@@ -88,9 +88,10 @@ const MobileNav = ({
                       <SheetClose key={prod.label} asChild>
                         <button
                           onClick={() => handleNavigation(prod.path)}
-                          className="flex items-center gap-3 py-3 px-6 text-sm font-semibold rounded-xl transition-colors text-slate-700 hover:bg-brand-500 hover:text-white group w-full text-left"
+                          className="flex items-center gap-3 py-3.5 px-6 text-sm font-bold rounded-xl transition-all text-slate-700 hover:bg-brand-500 hover:text-white group w-full text-left active:scale-95"
                         >
-                          {prod.bullet} {prod.label}
+                          <div className="w-1.5 h-1.5 rounded-full bg-brand-500 group-hover:bg-white transition-colors shrink-0" />
+                          {prod.label}
                         </button>
                       </SheetClose>
                     ))}

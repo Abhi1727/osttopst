@@ -164,13 +164,13 @@ const UnifiedHeader = ({ session, onReset }) => {
 
                 {/* Dropdown Popover */}
                 <div
-                  className={`absolute top-16 left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 z-[100] ${
+                  className={`fixed top-16 left-0 right-0 px-4 transition-all duration-200 z-[100] flex justify-center ${
                     isProductsMenuOpen
                       ? "opacity-100 pointer-events-auto"
                       : "opacity-0 pointer-events-none translate-y-2"
                   }`}
                 >
-                  <div className="bg-white rounded-2xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden w-[calc(100vw-1rem)] max-w-[900px] p-4 sm:p-5 flex flex-col">
+                  <div className="bg-white rounded-2xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden w-full max-w-[900px] p-4 sm:p-5 flex flex-col">
                     <div className="px-4 py-2 mb-3 border-b border-slate-50 flex items-center justify-between gap-3">
                       <span className="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em] whitespace-nowrap">
                         Universal Conversion Suite
