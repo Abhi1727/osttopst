@@ -2,8 +2,9 @@ import React, { lazy, Suspense } from "react";
 import Hero from "./Hero";
 import { SignedIn } from "@clerk/clerk-react";
 
-import FormatMarquee from "./FormatMarquee";
-import ConversionHistory from "../ConversionHistory";
+// Lazy-load components to reduce initial JS execution and improve LCP
+const FormatMarquee = lazy(() => import("./FormatMarquee"));
+const ConversionHistory = lazy(() => import("../ConversionHistory"));
 
 // Lazy-load components below the fold for better performance
 const Glossary = lazy(() => import("./Glossary"));
@@ -24,13 +25,17 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-2 z-10">
           <SignedIn>
-            <ConversionHistory onRestore={onRestore} />
+            <Suspense fallback={<div className="h-20" />}>
+              <ConversionHistory onRestore={onRestore} />
+            </Suspense>
           </SignedIn>
         </div>
       </div>
 
       <div className="relative z-[0]">
-        <FormatMarquee />
+        <Suspense fallback={<div className="h-40" />}>
+          <FormatMarquee />
+        </Suspense>
       </div>
       <Suspense fallback={<div className="h-10" />}>
         <HowItWorks />

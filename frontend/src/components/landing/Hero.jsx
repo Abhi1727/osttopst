@@ -95,10 +95,16 @@ const Hero = ({ onUploadComplete, onRestore }) => {
         }
       }
     };
-    fetchLicense();
+
+    // Defer initial license checking to avoid blocking hydration/first paint
+    const timer = setTimeout(fetchLicense, 200);
+
     window.addEventListener("license-refresh", fetchLicense);
-    return () => window.removeEventListener("license-refresh", fetchLicense);
-  }, [isSignedIn, getToken]);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("license-refresh", fetchLicense);
+    };
+  }, [isSignedIn, getToken, user?.primaryEmailAddress?.emailAddress]);
 
   // Prevent page refresh during active operations
   useEffect(() => {

@@ -26,14 +26,14 @@ async function resolveToken(tokenOrProvider) {
  * Upload a single chunk via XHR with progress + retry logic.
  * Returns a promise that resolves when the chunk is uploaded.
  */
-function uploadChunkWithRetry(
+export const uploadChunkWithRetry = (
   uploadId,
   chunkIndex,
   chunkBlob,
   tokenOrProvider,
   retries = MAX_RETRIES,
   signal = null,
-) {
+) => {
   return new Promise((resolve, reject) => {
     let currentXhr = null;
 
@@ -141,13 +141,13 @@ function uploadChunkWithRetry(
 
     attempt(retries);
   });
-}
+};
 
 /**
  * Chunked upload: Split file → init → upload chunks sequentially → finalize.
  * onProgress receives { phase, percent, detail } for granular UI updates.
  */
-async function chunkedUpload(
+export const chunkedUpload = async (
   file,
   tokenOrProvider,
   onProgress,
@@ -155,7 +155,7 @@ async function chunkedUpload(
   signal = null,
   email = null,
   purpose = "Conversion",
-) {
+) => {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   let uploadId = null;
   let result = null;
@@ -264,9 +264,6 @@ async function chunkedUpload(
     }
 
     result = await finalRes.json();
-    // Expose sessionId to caller via onProgress or some shared state if needed,
-    // but Hero.jsx already has access to it via the result which we return.
-    // To support cancellation during polling, we can pass it back via onProgress.
     onProgress({
       phase: "finalizing",
       percent: 95,
@@ -315,7 +312,7 @@ async function chunkedUpload(
   } catch (err) {
     if (signal?.aborted && uploadId) {
       // Cleanup on server
-      await fileService.cancelChunkedUpload(uploadId, tokenOrProvider);
+      await cancelChunkedUpload(uploadId, tokenOrProvider);
     }
     throw err;
   }
@@ -330,12 +327,12 @@ async function chunkedUpload(
   await sleep(3000);
 
   return result;
-}
+};
 
 /**
  * Legacy single-file upload via XHR (for small files under threshold).
  */
-function singleUpload(
+export const singleUpload = async (
   file,
   tokenOrProvider,
   onProgress,
@@ -343,7 +340,7 @@ function singleUpload(
   signal = null,
   email = null,
   purpose = "Conversion",
-) {
+) => {
   return new Promise((resolve, reject) => {
     // Wrap in async function to handle token resolution
     const startUpload = async () => {
@@ -428,198 +425,192 @@ function singleUpload(
     };
     startUpload();
   });
-}
+};
 
-export const fileService = {
-  /**
-   * Smart upload: automatically chooses single upload for small files
-   * and chunked upload for large files.
-   *
-   * @param {File} file - The file to upload
-   * @param {string|Function} tokenOrProvider - Auth token or async function returning token
-   * @param {Function} onProgress - Progress callback receiving { phase, percent, detail }
-   * @param {string} password - Optional PST password
-   * @param {AbortSignal} signal - Optional AbortSignal for cancellation
-   */
-  async uploadFile(
-    file,
-    tokenOrProvider,
-    onProgress,
-    password = null,
-    signal = null,
-    email = null,
-    purpose = "Conversion",
-  ) {
-    // Normalize onProgress to handle both old-style (percent) and new-style ({ phase, percent, detail })
-    const progressHandler = (info) => {
-      if (typeof info === "object") {
-        onProgress(info);
+export const uploadFile = async (
+  file,
+  tokenOrProvider,
+  onProgress,
+  password = null,
+  signal = null,
+  email = null,
+  purpose = "Conversion",
+) => {
+  const progressHandler = (info) => {
+    if (typeof info === "object") {
+      onProgress(info);
+    } else {
+      onProgress({ phase: "uploading", percent: info, detail: `${info}%` });
+    }
+  };
+
+  const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+
+  console.log(
+    `[FileService] Uploading "${file.name}" (${fileSizeMB} MB), using ${file.size > SMALL_FILE_THRESHOLD ? "chunked" : "single"} mode`,
+  );
+
+  if (file.size > SMALL_FILE_THRESHOLD) {
+    return await chunkedUpload(
+      file,
+      tokenOrProvider,
+      progressHandler,
+      password,
+      signal,
+      email,
+      purpose,
+    );
+  } else {
+    return await singleUpload(
+      file,
+      tokenOrProvider,
+      progressHandler,
+      password,
+      signal,
+      email,
+      purpose,
+    );
+  }
+};
+
+export const getFolders = async (sessionId, token, excludeEmpty = true) => {
+  const response = await fetch(
+    `${API_BASE_URL}/file-details/${sessionId}/folders?excludeEmptyFolders=${excludeEmpty}`,
+    {
+      headers: getHeaders(token),
+    },
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to fetch folders");
+  }
+  return await response.json();
+};
+
+export const getMessages = async (
+  sessionId,
+  folderId,
+  token,
+  filter = {},
+  sortBy = "date",
+  sortOrder = "desc",
+) => {
+  const params = new URLSearchParams({
+    folderId,
+    sortBy,
+    sortOrder,
+  });
+  if (filter.year) params.append("year", filter.year);
+  if (filter.month) params.append("month", filter.month);
+  if (filter.startDate) params.append("startDate", filter.startDate);
+  if (filter.endDate) params.append("endDate", filter.endDate);
+
+  const response = await fetch(
+    `${API_BASE_URL}/file-details/${sessionId}/messages?${params.toString()}`,
+    {
+      headers: getHeaders(token),
+    },
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to fetch messages");
+  }
+  return await response.json();
+};
+
+export const deleteSession = async (sessionId, token) => {
+  try {
+    await fetch(`${API_BASE_URL}/file-details/${sessionId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      keepalive: true,
+    });
+  } catch (err) {
+    console.warn("[FileService] Background deletion failed:", err);
+  }
+};
+
+export const cancelChunkedUpload = async (uploadId, getToken) => {
+  try {
+    const token = await resolveToken(getToken);
+    await fetch(`${API_BASE_URL}/file-details/upload/${uploadId}`, {
+      method: "DELETE",
+      headers: getHeaders(token),
+    });
+    console.log(`[FileService] Cancelled chunked upload: ${uploadId}`);
+  } catch (err) {
+    console.warn(
+      `[FileService] Failed to cancel chunked upload ${uploadId}:`,
+      err,
+    );
+  }
+};
+
+export const getMessageDetail = async (sessionId, entryId, token) => {
+  const encodedEntryId = encodeURIComponent(entryId);
+  const response = await fetch(
+    `${API_BASE_URL}/file-details/${sessionId}/messages/detail?entryId=${encodedEntryId}`,
+    {
+      headers: getHeaders(token),
+    },
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to fetch message details");
+  }
+  return await response.json();
+};
+
+export const exportAll = async (sessionId, format, excludeEmpty, token, email = null) => {
+  return await conversionService.exportAll(
+    sessionId,
+    format,
+    excludeEmpty,
+    token,
+    null, // onProgress
+    null, // signal
+    { email },
+  );
+};
+
+export const validateFileIntegrity = async (file) => {
+  if (!file) return { valid: false, error: "No file selected." };
+  if (file.size === 0) return { valid: false, error: "The selected file is empty." };
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const header = new Uint8Array(e.target.result);
+      const magic = Array.from(header)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .toUpperCase();
+
+      if (magic === "2142444E") {
+        resolve({ valid: true });
       } else {
-        onProgress({ phase: "uploading", percent: info, detail: `${info}%` });
+        resolve({
+          valid: false,
+          error: "Invalid file format. The uploaded file is not a genuine OST or PST archive.",
+        });
       }
     };
+    reader.onerror = () =>
+      resolve({ valid: false, error: "Failed to read file integrity." });
+    reader.readAsArrayBuffer(file.slice(0, 4));
+  });
+};
 
-    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-
-    console.log(
-      `[FileService] Uploading "${file.name}" (${fileSizeMB} MB), using ${file.size > SMALL_FILE_THRESHOLD ? "chunked" : "single"} mode`,
-    );
-
-    if (file.size > SMALL_FILE_THRESHOLD) {
-      // Large file → chunked upload with retry
-      return await chunkedUpload(
-        file,
-        tokenOrProvider,
-        progressHandler,
-        password,
-        signal,
-        email,
-        purpose,
-      );
-    } else {
-      // Small file → single request (faster for small files)
-      return await singleUpload(
-        file,
-        tokenOrProvider,
-        progressHandler,
-        password,
-        signal,
-        email,
-        purpose,
-      );
-    }
-  },
-
-  async getFolders(sessionId, token, excludeEmpty = true) {
-    const response = await fetch(
-      `${API_BASE_URL}/file-details/${sessionId}/folders?excludeEmptyFolders=${excludeEmpty}`,
-      {
-        headers: getHeaders(token),
-      },
-    );
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || "Failed to fetch folders");
-    }
-    return await response.json();
-  },
-
-  async getMessages(
-    sessionId,
-    folderId,
-    token,
-    filter = {},
-    sortBy = "date",
-    sortOrder = "desc",
-  ) {
-    const params = new URLSearchParams({
-      folderId,
-      sortBy,
-      sortOrder,
-    });
-    if (filter.year) params.append("year", filter.year);
-    if (filter.month) params.append("month", filter.month);
-    if (filter.startDate) params.append("startDate", filter.startDate);
-    if (filter.endDate) params.append("endDate", filter.endDate);
-
-    const response = await fetch(
-      `${API_BASE_URL}/file-details/${sessionId}/messages?${params.toString()}`,
-      {
-        headers: getHeaders(token),
-      },
-    );
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || "Failed to fetch messages");
-    }
-    return await response.json();
-  },
-
-  async deleteSession(sessionId, token) {
-    try {
-      await fetch(`${API_BASE_URL}/file-details/${sessionId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        keepalive: true,
-      });
-    } catch (err) {
-      console.warn("[FileService] Background deletion failed:", err);
-    }
-  },
-
-  async cancelChunkedUpload(uploadId, getToken) {
-    try {
-      const token = await resolveToken(getToken);
-      await fetch(`${API_BASE_URL}/file-details/upload/${uploadId}`, {
-        method: "DELETE",
-        headers: getHeaders(token),
-      });
-      console.log(`[FileService] Cancelled chunked upload: ${uploadId}`);
-    } catch (err) {
-      console.warn(
-        `[FileService] Failed to cancel chunked upload ${uploadId}:`,
-        err,
-      );
-    }
-  },
-
-  async getMessageDetail(sessionId, entryId, token) {
-    const encodedEntryId = encodeURIComponent(entryId);
-    const response = await fetch(
-      `${API_BASE_URL}/file-details/${sessionId}/messages/detail?entryId=${encodedEntryId}`,
-      {
-        headers: getHeaders(token),
-      },
-    );
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || "Failed to fetch message details");
-    }
-    return await response.json();
-  },
-
-  async exportAll(sessionId, format, excludeEmpty, token, email = null) {
-    return await conversionService.exportAll(
-      sessionId,
-      format,
-      excludeEmpty,
-      token,
-      null, // onProgress
-      null, // signal
-      { email },
-    );
-  },
-
-  /**
-   * Validate file integrity by checking magic number (!BDN) and file size.
-   */
-  async validateFileIntegrity(file) {
-    if (!file) return { valid: false, error: "No file selected." };
-    if (file.size === 0) return { valid: false, error: "The selected file is empty." };
-
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const header = new Uint8Array(e.target.result);
-        const magic = Array.from(header)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("")
-          .toUpperCase();
-
-        if (magic === "2142444E") {
-          resolve({ valid: true });
-        } else {
-          resolve({
-            valid: false,
-            error: "Invalid file format. The uploaded file is not a genuine OST or PST archive.",
-          });
-        }
-      };
-      reader.onerror = () =>
-        resolve({ valid: false, error: "Failed to read file integrity." });
-      reader.readAsArrayBuffer(file.slice(0, 4));
-    });
-  },
+// Legacy compatibility object export (for existing code)
+export const fileService = {
+  uploadFile,
+  getFolders,
+  getMessages,
+  deleteSession,
+  cancelChunkedUpload,
+  getMessageDetail,
+  exportAll,
+  validateFileIntegrity,
 };

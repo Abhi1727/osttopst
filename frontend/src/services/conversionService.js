@@ -1,6 +1,32 @@
 import { API_BASE_URL, getHeaders } from "./api";
 
-const downloadFile = async (
+export const triggerDirectDownload = async (url, suggestedName, getToken, onProgress) => {
+  if (onProgress) {
+    onProgress({
+      phase: "downloading",
+      percent: 100,
+      detail: "Starting download in your browser...",
+    });
+  }
+
+  const downloadToken = await getToken();
+  const fullUrl = url.includes("?")
+    ? `${url}&token=${downloadToken}`
+    : `${url}?token=${downloadToken}`;
+
+  const a = document.createElement("a");
+  a.href = fullUrl;
+  a.download = suggestedName;
+  document.body.appendChild(a);
+  a.click();
+  
+  setTimeout(() => {
+    document.body.removeChild(a);
+  }, 5000);
+  return suggestedName;
+};
+
+export const downloadFile = async (
   url,
   suggestedName,
   getToken,
@@ -106,9 +132,6 @@ const downloadFile = async (
   };
 
   // 1. First trigger the conversion/export via a background-safe check
-  // We use the /check endpoint or a trigger that doesn't return the full file stream immediately if possible.
-  // However, the current API returns the file on 200. To avoid downloading twice, 
-  // we first check the session status.
   const sessionIdMatch = url.match(/\/file-details\/([^/?]+)/);
   const sessionId = sessionIdMatch ? sessionIdMatch[1] : null;
 
@@ -120,7 +143,6 @@ const downloadFile = async (
     });
   }
 
-  // If we have a sessionId, we can check if it's already ready before triggering again
   if (sessionId) {
     const initialToken = await getToken();
     try {
@@ -132,13 +154,11 @@ const downloadFile = async (
         const status = await checkRes.json();
         const s = (status.status || "").toLowerCase();
         
-        // If already ready, skip trigger and go straight to download
         if (s.startsWith("ready") || s.includes("ready") || status.isConverted) {
            console.log("[Download] Session already ready, skipping trigger.");
            if (status.splitFiles && status.splitFiles.length > 0) {
              return status.splitFiles;
            }
-           // Trigger direct download
            return triggerDirectDownload(url, suggestedName, getToken, onProgress);
         }
       }
@@ -175,45 +195,10 @@ const downloadFile = async (
     }
     throw new Error(errorMessage);
   } else {
-    // It's already 200 OK, but we just downloaded the whole thing via fetch!
-    // This is the inefficiency we want to avoid for the NEXT call, but for this one
-    // we already have the data in triggerRes. 
-    // Optimization: If it's 200, we COULD use triggerRes.blob() and save it, 
-    // but for 2GB+ files, that will crash the tab.
-    // Better: We should have used a method that doesn't download the file.
-    // Since we don't have a "trigger only" endpoint for ExportAll, we'll just 
-    // proceed to the <a> tag download which will be the second request.
-    // In the future, the backend should support a 'trigger=true' query param.
     console.log("[Download] Trigger returned 200, starting native download.");
   }
 
   return triggerDirectDownload(url, suggestedName, getToken, onProgress);
-};
-
-const triggerDirectDownload = async (url, suggestedName, getToken, onProgress) => {
-  if (onProgress) {
-    onProgress({
-      phase: "downloading",
-      percent: 100,
-      detail: "Starting download in your browser...",
-    });
-  }
-
-  const downloadToken = await getToken();
-  const fullUrl = url.includes("?")
-    ? `${url}&token=${downloadToken}`
-    : `${url}?token=${downloadToken}`;
-
-  const a = document.createElement("a");
-  a.href = fullUrl;
-  a.download = suggestedName;
-  document.body.appendChild(a);
-  a.click();
-  
-  setTimeout(() => {
-    document.body.removeChild(a);
-  }, 5000);
-  return suggestedName;
 };
 
 /**
@@ -287,84 +272,90 @@ const triggerConversion = async (sessionId, getToken, onProgress, signal, email 
   throw new Error("Timed out waiting for conversion. Please try again.");
 };
 
+export const convertToPst = async (
+  sessionId,
+  getToken,
+  excludeEmpty = false,
+  onProgress,
+  signal,
+  email = null,
+  splitSizeMb = null,
+) => {
+  let url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-pst?excludeEmptyFolders=${excludeEmpty}`;
+  if (splitSizeMb) url += `&splitSizeMb=${splitSizeMb}`;
+  if (email) url += `&email=${encodeURIComponent(email)}`;
+  return await downloadFile(
+    url,
+    "converted.pst",
+    getToken,
+    onProgress,
+    signal,
+  );
+};
+
+export const exportAll = async (
+  sessionId,
+  format,
+  excludeEmpty,
+  getToken,
+  onProgress,
+  signal,
+  options = {},
+) => {
+  const params = new URLSearchParams({
+    format,
+    excludeEmptyFolders: excludeEmpty,
+  });
+  if (options.folderId) params.append("folderId", options.folderId);
+  if (options.entryIds && options.entryIds.length > 0)
+    params.append("entryIds", options.entryIds.join(","));
+  if (options.year) params.append("year", options.year);
+  if (options.month) params.append("month", options.month);
+  if (options.startDate) params.append("startDate", options.startDate);
+  if (options.endDate) params.append("endDate", options.endDate);
+  if (options.email) params.append("email", options.email);
+
+  const url = `${API_BASE_URL}/file-details/${sessionId}/export?${params.toString()}`;
+  return await downloadFile(
+    url,
+    `export_${format.toLowerCase()}.zip`,
+    getToken,
+    onProgress,
+    signal,
+  );
+};
+
+export const cancelOperation = async (sessionId, token) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/sessions/${sessionId}/cancel`, {
+      method: "POST",
+      headers: getHeaders(token),
+    });
+    return res.ok;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const downloadSplitFile = async (sessionId, fileName, getToken, email = null) => {
+  const token = await getToken();
+  let url = `${API_BASE_URL}/file-details/${sessionId}/download/${encodeURIComponent(fileName)}?token=${token}`;
+  if (email) url += `&email=${encodeURIComponent(email)}`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+      document.body.removeChild(a);
+  }, 1000);
+};
+
+// Legacy compatibility object export (for existing code)
 export const conversionService = {
   triggerConversion,
-  async convertToPst(
-    sessionId,
-    getToken,
-    excludeEmpty = false,
-    onProgress,
-    signal,
-    email = null,
-    splitSizeMb = null,
-  ) {
-    let url = `${API_BASE_URL}/file-details/${sessionId}/convert-to-pst?excludeEmptyFolders=${excludeEmpty}`;
-    if (splitSizeMb) url += `&splitSizeMb=${splitSizeMb}`;
-    if (email) url += `&email=${encodeURIComponent(email)}`;
-    return await downloadFile(
-      url,
-      "converted.pst",
-      getToken,
-      onProgress,
-      signal,
-    );
-  },
-
-  async exportAll(
-    sessionId,
-    format,
-    excludeEmpty,
-    getToken,
-    onProgress,
-    signal,
-    options = {},
-  ) {
-    const params = new URLSearchParams({
-      format,
-      excludeEmptyFolders: excludeEmpty,
-    });
-    if (options.folderId) params.append("folderId", options.folderId);
-    if (options.entryIds && options.entryIds.length > 0)
-      params.append("entryIds", options.entryIds.join(","));
-    if (options.year) params.append("year", options.year);
-    if (options.month) params.append("month", options.month);
-    if (options.startDate) params.append("startDate", options.startDate);
-    if (options.endDate) params.append("endDate", options.endDate);
-    if (options.email) params.append("email", options.email);
-
-    const url = `${API_BASE_URL}/file-details/${sessionId}/export?${params.toString()}`;
-    return await downloadFile(
-      url,
-      `export_${format.toLowerCase()}.zip`,
-      getToken,
-      onProgress,
-      signal,
-    );
-  },
-
-  async cancelOperation(sessionId, token) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/sessions/${sessionId}/cancel`, {
-        method: "POST",
-        headers: getHeaders(token),
-      });
-      return res.ok;
-    } catch (err) {
-      return false;
-    }
-  },
-
-  async downloadSplitFile(sessionId, fileName, getToken, email = null) {
-    const token = await getToken();
-    let url = `${API_BASE_URL}/file-details/${sessionId}/download/${encodeURIComponent(fileName)}?token=${token}`;
-    if (email) url += `&email=${encodeURIComponent(email)}`;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-    }, 1000);
-  },
+  convertToPst,
+  exportAll,
+  cancelOperation,
+  downloadSplitFile,
 };

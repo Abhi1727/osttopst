@@ -1,39 +1,73 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import viteCompression from "vite-plugin-compression";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240,
+      algorithm: "gzip",
+      ext: ".gz",
+    }),
+    viteCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240,
+      algorithm: "brotliCompress",
+      ext: ".br",
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
   build: {
-    // Increase warning threshold for large chunks
-    chunkSizeWarningLimit: 600,
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ["console.log", "console.info", "console.debug"],
+      },
+      format: {
+        comments: false,
+      },
+    },
     rollupOptions: {
       output: {
-        // Split vendor code into smaller cacheable chunks
-        manualChunks: {
-          "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-clerk": ["@clerk/clerk-react"],
-          "vendor-ui": [
-            "@radix-ui/react-accordion",
-            "@radix-ui/react-avatar",
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-progress",
-            "@radix-ui/react-scroll-area",
-            "@radix-ui/react-select",
-            "@radix-ui/react-separator",
-            "@radix-ui/react-slot",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-tooltip",
-          ],
-          "vendor-icons": ["lucide-react"],
-          "vendor-misc": ["sonner", "date-fns", "dompurify", "clsx", "tailwind-merge", "class-variance-authority"],
+        manualChunks: (id) => {
+          if (id.includes("node_modules")) {
+            if (id.includes("react-router") || id.includes("@remix-run")) {
+              return "vendor-router";
+            }
+            if (
+              id.includes("react") ||
+              id.includes("react-dom") ||
+              id.includes("scheduler")
+            ) {
+              return "vendor-react-core";
+            }
+            if (id.includes("@clerk")) {
+              return "vendor-clerk";
+            }
+            if (id.includes("@radix-ui") || id.includes("radix-ui")) {
+              return "vendor-ui-radix";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (id.includes("date-fns") || id.includes("dompurify")) {
+              return "vendor-utils";
+            }
+            // Group other stable node_modules together
+            return "vendor-others";
+          }
         },
       },
     },

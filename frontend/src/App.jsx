@@ -126,7 +126,7 @@ function App() {
     <ErrorBoundary>
       <Toaster position="top-right" />
       {location.pathname !== "/preview" && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="h-16 md:h-[72px] w-full bg-white border-b border-slate-50" />}>
           <UnifiedHeader session={session} onReset={handleReset} />
         </Suspense>
       )}
