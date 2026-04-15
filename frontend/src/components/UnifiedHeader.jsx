@@ -27,7 +27,6 @@ import SessionGuardModal from "./SessionGuardModal";
 import { useState, useEffect, useRef } from "react";
 import { ADMIN_EMAILS } from "@/config/admin";
 
-
 const UnifiedHeader = ({ session, onReset }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,7 +38,10 @@ const UnifiedHeader = ({ session, onReset }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (productsMenuRef.current && !productsMenuRef.current.contains(event.target)) {
+      if (
+        productsMenuRef.current &&
+        !productsMenuRef.current.contains(event.target)
+      ) {
         setIsProductsMenuOpen(false);
       }
     };
@@ -82,7 +84,6 @@ const UnifiedHeader = ({ session, onReset }) => {
     { bullet: "•", label: "OST to MSG", path: "/ost-to-msg" },
   ];
 
-
   const handleNavItemClick = (item) => {
     setIsProductsMenuOpen(false);
     if (item.label === "How It Works" && location.pathname === "/") {
@@ -95,30 +96,29 @@ const UnifiedHeader = ({ session, onReset }) => {
     handleNavigation(item.path);
   };
 
-
   const isViewerActive = location.pathname === "/ost-viewer";
   const isConverterActive = !isViewerActive;
 
   return (
-    <header className="flex h-16 md:h-18 items-center justify-between px-4 md:px-6 lg:px-8 xl:px-14 bg-white fixed top-0 left-0 right-0 z-50 gap-2 shadow-sm border-b border-slate-100">
-      <div className="flex items-center gap-3 shrink-0">
+    <header className="flex h-16 items-center justify-between px-3 sm:px-4 md:px-6 lg:px-6 xl:px-14 bg-white fixed top-0 left-0 right-0 z-50 gap-2 shadow-sm border-b border-slate-100">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
         <div
-          className="flex items-center gap-2 md:gap-3 cursor-pointer"
+          className="flex items-center gap-2 md:gap-3 cursor-pointer min-w-0"
           onClick={() => handleNavigation("/")}
         >
-          <div className="flex items-center justify-center p-1 rounded-md bg-[#0078d4]">
+          <div className="flex items-center justify-center p-1 rounded-md bg-[#0078d4] shrink-0">
             <Mail className="w-5 h-5 text-white" />
           </div>
-          <span className="text-sm md:text-lg font-medium tracking-tight text-slate-700 whitespace-nowrap">
+          <span className="text-sm md:text-lg font-medium tracking-tight text-slate-700 whitespace-nowrap truncate max-w-[140px] sm:max-w-none">
             OSTTOPST.US
           </span>
         </div>
 
         {/* Module Switcher */}
-        <div className="hidden md:flex items-center gap-1 ml-2 bg-slate-100 rounded-full p-1">
+        <div className="hidden 2xl:flex items-center gap-1 ml-2 bg-slate-100 rounded-full p-1 shrink-0 max-w-full">
           <button
             onClick={() => handleNavigation("/")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
               isConverterActive
                 ? "bg-white text-brand-600 shadow-sm"
                 : "text-slate-400 hover:text-slate-600"
@@ -129,7 +129,7 @@ const UnifiedHeader = ({ session, onReset }) => {
           </button>
           <button
             onClick={() => handleNavigation("/ost-viewer")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
               isViewerActive
                 ? "bg-white text-brand-600 shadow-sm"
                 : "text-slate-400 hover:text-slate-600"
@@ -142,37 +142,60 @@ const UnifiedHeader = ({ session, onReset }) => {
       </div>
 
       {/* Desktop Nav - Centered */}
-      <nav className="hidden lg:flex flex-1 justify-center items-center gap-4 xl:gap-8 mx-2 relative z-[60]">
+      <nav className="hidden lg:flex flex-1 justify-center items-center gap-2 xl:gap-3 2xl:gap-6 mx-1 xl:mx-2 relative z-[60] min-w-0">
         {navItems.map((item) => {
           if (item.label === "Products") {
             return (
-              <div key={item.label} className="relative group/nav-item" ref={productsMenuRef}>
+              <div
+                key={item.label}
+                className="relative group/nav-item"
+                ref={productsMenuRef}
+              >
                 <span
                   onClick={() => setIsProductsMenuOpen(!isProductsMenuOpen)}
-                  className={`cursor-pointer inline-flex items-center gap-1 text-sm xl:text-base font-medium transition-colors whitespace-nowrap py-6 ${isProductsMenuOpen ? 'text-brand-600' : 'text-slate-500 hover:text-slate-800'}`}
+                  className={`cursor-pointer inline-flex items-center gap-1 text-xs 2xl:text-sm font-medium transition-colors whitespace-nowrap py-6 ${
+                    isProductsMenuOpen
+                      ? "text-brand-600"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
                 >
                   {item.label}
-                  <ChevronDown size={14} className={`text-brand-500 transition-transform ${isProductsMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    size={14}
+                    className={`text-brand-500 transition-transform ${
+                      isProductsMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </span>
-                
+
                 {/* Dropdown Popover */}
-                <div className={`absolute top-16 left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 z-[100] ${isProductsMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none translate-y-2'}`}>
-                  <div className="bg-white rounded-2xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden w-[900px] p-5 flex flex-col">
-                    <div className="px-4 py-2 mb-3 border-b border-slate-50 flex items-center justify-between">
-                       <span className="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em]">Universal Conversion Suite</span>
-                       <span className="text-[10px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">{productsList.length} Tools Available</span>
+                <div
+                  className={`absolute top-16 left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 z-[100] ${
+                    isProductsMenuOpen
+                      ? "opacity-100 pointer-events-auto"
+                      : "opacity-0 pointer-events-none translate-y-2"
+                  }`}
+                >
+                  <div className="bg-white rounded-2xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden w-[calc(100vw-1rem)] max-w-[900px] p-4 sm:p-5 flex flex-col">
+                    <div className="px-4 py-2 mb-3 border-b border-slate-50 flex items-center justify-between gap-3">
+                      <span className="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em] whitespace-nowrap">
+                        Universal Conversion Suite
+                      </span>
+                      <span className="text-[10px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {productsList.length} Tools Available
+                      </span>
                     </div>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                       {productsList.map((prod) => (
                         <span
-                        key={prod.label}
-                        onClick={() => {
+                          key={prod.label}
+                          onClick={() => {
                             setIsProductsMenuOpen(false);
                             handleNavigation(prod.path);
                           }}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-500 hover:text-white cursor-pointer transition-all group/prod hover:shadow-lg hover:shadow-brand-500/20 active:scale-95"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-500 hover:text-white cursor-pointer transition-all group/prod hover:shadow-lg hover:shadow-brand-500/20 active:scale-95 min-w-0"
                         >
-                          <span className="text-sm font-semibold text-slate-700 group-hover/prod:text-white transition-colors truncate">
+                          <span className="text-sm font-semibold text-slate-700 group-hover/prod:text-white transition-colors truncate min-w-0">
                             {prod.bullet} {prod.label}
                           </span>
                         </span>
@@ -188,14 +211,15 @@ const UnifiedHeader = ({ session, onReset }) => {
             item.path === "/"
               ? location.pathname === "/" && !location.hash
               : item.path.startsWith("/#")
-                ? location.hash === item.path.substring(1)
-                : location.pathname === item.path ||
-                  (item.path !== "/" && location.pathname.startsWith(item.path));
+              ? location.hash === item.path.substring(1)
+              : location.pathname === item.path ||
+                (item.path !== "/" && location.pathname.startsWith(item.path));
+
           return (
             <span
               key={item.label}
               onClick={() => handleNavItemClick(item)}
-              className={`cursor-pointer text-sm xl:text-base font-medium transition-colors whitespace-nowrap py-6 ${
+              className={`cursor-pointer text-xs 2xl:text-sm font-medium transition-colors whitespace-nowrap py-6 ${
                 isActive
                   ? "text-brand-500"
                   : "text-slate-500 hover:text-slate-800"
@@ -207,33 +231,34 @@ const UnifiedHeader = ({ session, onReset }) => {
         })}
       </nav>
 
-      <div className="flex items-center gap-2 md:gap-4 lg:border-l border-slate-100 lg:pl-4 shrink-0 relative z-[60]">
+      <div className="flex items-center gap-1 lg:gap-2 lg:border-l border-slate-100 lg:pl-3 shrink-0 relative z-[60] min-w-0">
         {/* Desktop Buttons */}
-        <div className="hidden lg:flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-1.5 2xl:gap-2 shrink-0">
           <SignedOut>
             <SignInButton mode="modal">
-              <button className="h-8 px-3 xl:px-4 text-xs border border-slate-900 text-slate-900 font-bold rounded-full hover:bg-slate-50 transition-all font-sans whitespace-nowrap">
+              <button className="h-7 px-2.5 2xl:px-4 text-[10px] 2xl:text-xs border border-slate-900 text-slate-900 font-bold rounded-full hover:bg-slate-50 transition-all font-sans whitespace-nowrap">
                 Sign In
               </button>
             </SignInButton>
           </SignedOut>
 
-          <Button className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-3 xl:px-5 h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap">
+          <Button className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-2.5 2xl:px-5 h-7 2xl:h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap">
             Get Desktop Tool
           </Button>
 
           <SignedIn>
-            <div className="flex items-center gap-3 ml-2">
-              {user?.primaryEmailAddress?.emailAddress && ADMIN_EMAILS.includes(user.primaryEmailAddress.emailAddress) && (
-                <Button
-                  variant="ghost"
-                  onClick={() => handleNavigation("/admin/blogs")}
-                  className="h-8 px-3 text-xs font-bold text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-full flex items-center gap-1.5"
-                >
-                  Dashboard
-                </Button>
-              )}
-              <LicenseBadge />
+            <div className="flex items-center gap-1.5 2xl:gap-3 ml-1 2xl:ml-2 shrink-0">
+              {user?.primaryEmailAddress?.emailAddress &&
+                ADMIN_EMAILS.includes(user.primaryEmailAddress.emailAddress) && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleNavigation("/admin/blogs")}
+                    className="h-7 px-2 text-[10px] font-bold text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-full flex items-center gap-1 whitespace-nowrap"
+                  >
+                    Dashboard
+                  </Button>
+                )}
+              <span className="hidden 2xl:inline-flex"><LicenseBadge /></span>
               <UserButton
                 appearance={{
                   elements: {
@@ -246,20 +271,20 @@ const UnifiedHeader = ({ session, onReset }) => {
         </div>
 
         {/* Mobile menu trigger */}
-        <div className="lg:hidden flex items-center gap-2 relative z-[60]">
+        <div className="lg:hidden flex items-center gap-1 sm:gap-2 relative z-[60] shrink-0">
           <Sheet>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 text-slate-600"
+                className="h-9 w-9 text-slate-600 shrink-0"
               >
                 <Menu className="w-6 h-6" />
               </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[280px] flex flex-col gap-6 pt-10 bg-white overflow-y-auto"
+              className="w-[280px] max-w-[90vw] flex flex-col gap-6 pt-10 bg-white overflow-y-auto"
             >
               <SheetTitle className="text-left text-brand-500 font-bold text-xl px-4">
                 Menu
@@ -270,7 +295,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                 <SheetClose asChild>
                   <button
                     onClick={() => handleNavigation("/")}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                       isConverterActive
                         ? "bg-white text-brand-600 shadow-sm"
                         : "text-slate-400"
@@ -283,7 +308,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                 <SheetClose asChild>
                   <button
                     onClick={() => handleNavigation("/ost-viewer")}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                       isViewerActive
                         ? "bg-white text-brand-600 shadow-sm"
                         : "text-slate-400"
@@ -299,7 +324,10 @@ const UnifiedHeader = ({ session, onReset }) => {
                 {navItems.map((item) => {
                   if (item.label === "Products") {
                     return (
-                      <div key={item.label} className="flex flex-col gap-1 mt-2 mb-2">
+                      <div
+                        key={item.label}
+                        className="flex flex-col gap-1 mt-2 mb-2"
+                      >
                         <span className="text-left py-2 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-6">
                           Products
                         </span>
@@ -307,7 +335,7 @@ const UnifiedHeader = ({ session, onReset }) => {
                           <SheetClose key={prod.label} asChild>
                             <button
                               onClick={() => handleNavigation(prod.path)}
-                              className="flex items-center gap-3 py-3 px-6 text-sm font-semibold rounded-xl transition-colors text-slate-700 hover:bg-brand-500 hover:text-white group"
+                              className="flex items-center gap-3 py-3 px-6 text-sm font-semibold rounded-xl transition-colors text-slate-700 hover:bg-brand-500 hover:text-white group w-full text-left"
                             >
                               {prod.bullet} {prod.label}
                             </button>
@@ -322,14 +350,14 @@ const UnifiedHeader = ({ session, onReset }) => {
                     <SheetClose key={item.label} asChild>
                       <button
                         onClick={() => handleNavItemClick(item)}
-                        className={`text-left py-3 px-4 text-base font-medium rounded-xl transition-colors ${
+                        className={`text-left py-3 px-4 text-base font-medium rounded-xl transition-colors w-full ${
                           location.pathname === "/" && item.path === "/"
                             ? !location.hash
                             : item.path.startsWith("/#")
-                              ? location.hash === item.path.substring(1)
-                              : location.pathname === item.path ||
-                                (item.path !== "/" &&
-                                  location.pathname.startsWith(item.path))
+                            ? location.hash === item.path.substring(1)
+                            : location.pathname === item.path ||
+                              (item.path !== "/" &&
+                                location.pathname.startsWith(item.path))
                             ? "bg-brand-50 text-brand-500"
                             : "text-slate-600 hover:bg-slate-50"
                         }`}
@@ -343,17 +371,18 @@ const UnifiedHeader = ({ session, onReset }) => {
 
               <div className="mt-auto pb-8 flex flex-col gap-3 px-6 shrink-0 border-t border-slate-100 pt-6">
                 <SignedIn>
-                  {user?.primaryEmailAddress?.emailAddress && ADMIN_EMAILS.includes(user.primaryEmailAddress.emailAddress) && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        handleNavigation("/admin/blogs");
-                      }}
-                      className="w-full h-11 text-sm font-bold border-brand-500 text-brand-600 rounded-full mb-2"
-                    >
-                      Admin Dashboard
-                    </Button>
-                  )}
+                  {user?.primaryEmailAddress?.emailAddress &&
+                    ADMIN_EMAILS.includes(user.primaryEmailAddress.emailAddress) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handleNavigation("/admin/blogs");
+                        }}
+                        className="w-full h-11 text-sm font-bold border-brand-500 text-brand-600 rounded-full mb-2"
+                      >
+                        Admin Dashboard
+                      </Button>
+                    )}
                 </SignedIn>
 
                 <SignedOut>
@@ -387,4 +416,3 @@ const UnifiedHeader = ({ session, onReset }) => {
 };
 
 export default UnifiedHeader;
-
