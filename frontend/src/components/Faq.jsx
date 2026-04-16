@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import {
-  Search,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -164,9 +162,8 @@ const Faq = () => {
   //     (activeCategory === "General" && q.category === "General"),
   // );
 
-   return (
+  return (
     <div className="bg-slate-50 min-h-screen flex flex-col">
-
       {/* HEADER */}
       <header className="bg-gradient-to-b from-brand-50/80 to-slate-50 pt-12 pb-10 px-4 text-center">
         <h1 className="text-3xl md:text-5xl font-bold text-brand-600 mb-4">
@@ -211,60 +208,52 @@ const Faq = () => {
         ))}
       </div>
 
-        {/* SHARED CONTAINER */}
-<div className="w-full px-6 md:px-12 lg:px-20 xl:px-24">
+      {/* SHARED CONTAINER */}
+      <div className="w-full px-6 md:px-12 lg:px-20 xl:px-24">
+        <div className="max-w-5xl mx-auto">
+          {/* FAQ CONTENT */}
+          <div className="mb-16">
+            {questions
+              .filter((q) => q.category === activeCategory)
+              .map((item, index) => (
+                <div key={item.id} className="mb-10">
+                  <h3 className="text-xl md:text-2xl font-semibold text-black mb-2">
+                    {index + 1}. {item.question}
+                  </h3>
 
-  <div className="max-w-5xl mx-auto">
+                  <p className="text-gray-600 text-base md:text-lg leading-relaxed">
+                    {item.answer}
+                  </p>
+                </div>
+              ))}
+          </div>
 
-    {/* FAQ CONTENT */}
-    <div className="mb-16">
-      {questions
-        .filter((q) => q.category === activeCategory)
-        .map((item, index) => (
-          
-          <div key={item.id} className="mb-10">
+          {/* CTA SECTION */}
+          <div className="bg-black rounded-2xl px-8 md:px-12 py-10 mb-20">
+            <h2 className="text-white text-2xl md:text-3xl font-semibold mb-2">
+              Couldn't find what you needed?
+            </h2>
 
-            <h3 className="text-xl md:text-2xl font-semibold text-black mb-2">
-              {index + 1}. {item.question}
-            </h3>
-
-            <p className="text-gray-600 text-base md:text-lg leading-relaxed">
-              {item.answer}
+            <p className="text-gray-400 text-base md:text-lg mb-6">
+              Submit a support ticket and we’ll get back to you within 24 hours.
             </p>
 
+            <div className="flex gap-4">
+              <Button
+                className="bg-white text-black px-6 py-2 rounded-lg font-medium"
+                onClick={() => navigate("/contact-us")}
+              >
+                Contact Support
+              </Button>
+
+              <Button className="bg-white text-black px-6 py-2 rounded-lg font-medium">
+                Live Chat
+              </Button>
+            </div>
           </div>
-        ))}
-    </div>
-
-    {/* CTA SECTION */}
-    <div className="bg-black rounded-2xl px-8 md:px-12 py-10 mb-20">
-      
-      <h2 className="text-white text-2xl md:text-3xl font-semibold mb-2">
-        Couldn't find what you needed?
-      </h2>
-
-      <p className="text-gray-400 text-base md:text-lg mb-6">
-        Submit a support ticket and we’ll get back to you within 24 hours.
-      </p>
-
-      <div className="flex gap-4">
-        <Button 
-          className="bg-white text-black px-6 py-2 rounded-lg font-medium"
-          onClick={() => navigate("/contact-us")}
-        >
-          Contact Support
-        </Button>
-
-        <Button className="bg-white text-black px-6 py-2 rounded-lg font-medium">
-          Live Chat
-        </Button>
+        </div>
       </div>
-
     </div>
-
-  </div>
-</div>
-      </div>
   );
 };
 

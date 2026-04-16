@@ -306,7 +306,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
   };
 
   return (
-    <section className="relative py-2 md:py-4 px-3 md:px-5 lg:px-8 w-full flex items-center">
+    <section className="relative pt-1 md:pt-2 pb-8 md:pb-12 px-3 md:px-5 lg:px-8 w-full flex items-center">
       <div className="max-w-[1440px] mx-auto relative z-10 w-full lg:grid lg:grid-cols-[1fr_1.3fr] lg:gap-10 items-center">
         {/* Left Column: Heading & Benefits */}
         <div className="text-left flex flex-col md:items-center lg:items-start md:text-center lg:text-left">

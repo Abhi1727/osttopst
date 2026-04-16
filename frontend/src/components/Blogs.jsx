@@ -8,7 +8,7 @@ import {
   Mail,
   ShieldCheck,
   Newspaper,
-  FileText
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -56,7 +56,12 @@ const BlogCard = ({ post, onClick }) => (
   >
     <div className="relative aspect-video overflow-hidden m-3 rounded-2xl shadow-inner bg-brand-50 flex items-center justify-center border border-brand-100">
       {post.image && post.image !== "null" ? (
-        <img src={post.image} alt={post.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+        <img
+          src={post.image}
+          alt={post.title}
+          loading="lazy"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+        />
       ) : (
         <div className="flex flex-col items-center gap-3">
           <Newspaper className="w-12 h-12 text-brand-500/40" />
@@ -81,7 +86,9 @@ const BlogCard = ({ post, onClick }) => (
           <div className="flex items-center gap-4 text-[9px] text-slate-400 font-black uppercase tracking-widest">
             <span className="flex items-center gap-1.5">
               <User className="w-3 h-3 text-brand-500" />
-              <span className="truncate max-w-[80px] text-slate-600">{post.author}</span>
+              <span className="truncate max-w-[80px] text-slate-600">
+                {post.author}
+              </span>
             </span>
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3 h-3 text-brand-500" />
@@ -154,7 +161,8 @@ const Blogs = () => {
           Blog & <span className="text-brand-600">Resources</span>
         </h1>
         <p className="text-lg text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
-          Stay informed with expert blogs, guides, and some smart tips to make your OST to PST Conversion and data management smooth.
+          Stay informed with expert blogs, guides, and some smart tips to make
+          your OST to PST Conversion and data management smooth.
         </p>
 
         {/* Search Bar */}
@@ -260,9 +268,19 @@ const Blogs = () => {
             </button>
           </form>
         </div>
-          <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-white text-center mt-10">Ask the Expert !</h1>
-          <p className="text-brand-50/90 text-xl max-w-2xl mx-auto font-medium leading-relaxed text-center">Submit your problem related to the OST File or Outlook, and our expert will guide you!</p>
-          <button className="bg-[#FFB800] hover:bg-white text-slate-900 font-black px-12 py-5 rounded-full transition-all shadow-xl hover:scale-[1.02] active:scale-95 whitespace-nowrap mx-auto block mt-5" onClick={() => navigate("/contact-us")}>Contact Us</button>
+        <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-white text-center mt-10">
+          Ask the Expert !
+        </h1>
+        <p className="text-brand-50/90 text-xl max-w-2xl mx-auto font-medium leading-relaxed text-center">
+          Submit your problem related to the OST File or Outlook, and our expert
+          will guide you!
+        </p>
+        <button
+          className="bg-[#FFB800] hover:bg-white text-slate-900 font-black px-12 py-5 rounded-full transition-all shadow-xl hover:scale-[1.02] active:scale-95 whitespace-nowrap mx-auto block mt-5"
+          onClick={() => navigate("/contact-us")}
+        >
+          Contact Us
+        </button>
       </div>
     </div>
   );

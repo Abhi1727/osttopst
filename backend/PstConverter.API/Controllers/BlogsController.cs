@@ -81,6 +81,7 @@ namespace PstConverter.Controllers
 
         [HttpGet]
         [AllowAnonymous]
+        //this  is for get all blogs
         public async Task<IActionResult> GetBlogs()
         {
             try
@@ -102,6 +103,7 @@ namespace PstConverter.Controllers
 
         [HttpPost]
         [Authorize]
+        //this  is for create blog
         public async Task<IActionResult> CreateBlog([FromForm] IFormCollection formData)
         {
             if (!IsAdmin())
@@ -266,6 +268,7 @@ namespace PstConverter.Controllers
 
         [HttpDelete("{id}")]
         [Authorize]
+        //this  is for delete blog
         public async Task<IActionResult> DeleteBlog(long id)
         {
             if (!IsAdmin())

@@ -47,7 +47,7 @@ const ContactUs = () => {
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* Hero Section */}
-      <div className="pt-20 pb-16 px-4 text-center max-w-4xl mx-auto">
+      <div className="pt-4 md:pt-8 pb-10 px-4 text-center max-w-4xl mx-auto">
         <h1 className="mb-4">
           How can we <span className="text-brand-600">help?</span>
         </h1>

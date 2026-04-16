@@ -350,8 +350,8 @@ const Pricing = () => {
   return (
     <div className="bg-gray-50 flex flex-col font-sans min-h-screen">
       {/* Hero Section Container */}
-      <div className="min-h-[calc(100vh-5rem)] flex flex-col justify-center py-4 md:py-8">
-        <div className="bg-gray-50 pt-1 md:pt-2 pb-6 text-center px-4 w-full">
+      <div className="flex flex-col pt-2 md:pt-4 pb-2">
+        <div className="bg-gray-50 pb-4 text-center px-4 w-full">
         <h1 className="mb-2">
           Choose the <span className="header-text-gradient">Right Plan</span>{" "}
           for Your Needs

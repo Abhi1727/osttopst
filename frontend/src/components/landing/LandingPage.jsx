@@ -20,9 +20,7 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
     <div className="font-sans">
       {/* First Screen Wrapper - Hero & History Block */}
       <div className="flex flex-col bg-brand-50 relative">
-        <div>
-          <Hero onUploadComplete={onUploadComplete} />
-        </div>
+        <Hero onUploadComplete={onUploadComplete} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-2 z-10">
           <SignedIn>
             <Suspense fallback={<div className="h-20" />}>
