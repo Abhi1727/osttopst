@@ -13,6 +13,7 @@ const UnifiedHeader = lazy(() => import("./components/UnifiedHeader"));
 const Footer = lazy(() => import("./components/landing/Footer"));
 import LandingPage from "./components/landing/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
+import SchemaMarkup from "./components/SchemaMarkup";
 import { Toaster } from "@/components/ui/sonner";
 //import { toast } from "sonner";
 import React from "react";
@@ -124,6 +125,7 @@ function App() {
 
   return (
     <ErrorBoundary>
+      <SchemaMarkup />
       <Toaster position="top-right" />
       {location.pathname !== "/preview" && (
         <Suspense fallback={<div className="h-16 md:h-[72px] w-full bg-white border-b border-slate-50" />}>

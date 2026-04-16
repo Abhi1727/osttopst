@@ -382,7 +382,7 @@ const Pricing = () => {
             isActive={isSignedIn && tierLower === "demo"}
             features={[
               { text: "Full OST to PST conversion", included: true },
-              { text: "1 OST File", included: true },
+              { text: "Single OST File", included: true },
               { text: "500 MB Storage limit", included: true },
               { text: "7 Days Validity", included: true },
               { text: "Priority Support", included: false },
@@ -400,7 +400,7 @@ const Pricing = () => {
             onClick={() => handlePurchase(1, 49, 1)}
             features={[
               { text: "Full OST to PST conversion", included: true },
-              { text: "1 OST File", included: true },
+              { text: "Single OST File", included: true },
               { text: "5 GB Storage limit", included: true },
               { text: "365 Days Validity", included: true },
               { text: "Email Support", included: true },

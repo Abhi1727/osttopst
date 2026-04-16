@@ -71,7 +71,46 @@ const BlogPostDetail = () => {
         document.head.appendChild(link);
       }
       link.setAttribute("href", canonicalUrl);
+
+      // JSON-LD Schema
+      const schemaData = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": canonicalUrl
+        },
+        "headline": formatTitle(post.title),
+        "image": post.image && post.image !== "null" ? [post.image] : [],
+        "author": {
+          "@type": "Organization",
+          "name": "OST to PST Converter"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "OST to PST Converter",
+          "logo": {
+            "@type": "ImageObject",
+            "url": `${baseUrl}/logo.png`
+          }
+        }
+      };
+
+      const existingParams = document.querySelectorAll("script[data-schema-type='blog-posting']");
+      existingParams.forEach(sc => sc.remove());
+
+      const script = document.createElement("script");
+      script.setAttribute("type", "application/ld+json");
+      script.setAttribute("data-schema-type", "blog-posting");
+      script.textContent = JSON.stringify(schemaData, null, 2);
+      document.head.appendChild(script);
     }
+
+    // Cleanup when component unmounts or changes
+    return () => {
+      const scripts = document.querySelectorAll("script[data-schema-type='blog-posting']");
+      scripts.forEach(sc => sc.remove());
+    };
   }, [post]);
 
   // Dynamic Content Processor: Injection of CTA and removing old images
