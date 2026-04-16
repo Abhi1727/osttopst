@@ -33,22 +33,22 @@ const ConversionMissions = () => {
 
   const pdfAudiences = [
     {
-      title: "Outlook Users",
+      title: <a href='https://osttopst.us/our-plans'>Outlook Users</a>,
       description:
         "This product is useful for regular Outlook users whose mailbox cannot be accessed when the Exchange server is down or offline, and need to have access, OST file recovery, or backup.",
     },
     {
-      title: "IT Administrators",
+      title: <a href='https://osttopst.us/our-plans'>IT Administrators</a>,
       description:
         "Great for IT Administrators managing multiple user accounts, it can quickly convert/move/restore all OSTs quickly and accurately across an organization.",
     },
     {
-      title: "Data Migration Specialists",
+      title: <a href='https://osttopst.us/our-plans'>Data Migration Specialists</a>,
       description:
         "Great for data migration specialists who need to be able to easily migrate data from one mail platform or server to another with no data loss.",
     },
     {
-      title: "Small to Large Businesses",
+      title: <a href='https://osttopst.us/our-plans'>Small to Large Businesses</a>,
       description:
         "Whether you are a growing startup business or a very large, established corporation, our converter is designed and built for you and keeps pace with the ever-increasing demand for bulk mailbox migrations.",
     },

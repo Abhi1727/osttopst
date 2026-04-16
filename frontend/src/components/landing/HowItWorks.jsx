@@ -89,8 +89,7 @@ const HowItWorks = () => {
         <div className="mb-4 md:mb-6">
           <div className="text-center mb-2 md:mb-4">
             <h2 className=" text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-              How to convert<span className="text-brand-600"> OST to {currentFormat}</span>{" "}
-              File?
+             <a href="https://osttopst.us/"> How to convert<span className="text-brand-600"> OST to {currentFormat}</span> File?</a>{" "}
             </h2>
           </div>
 

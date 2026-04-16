@@ -42,7 +42,7 @@ const LandingFaq = () => {
         "The process is simple with our tool. Upload your .ost file using the box above. The cloud engine processes the file online, with no need for Outlook installed. When it gets finished, install the PST file and import it into any desktop.",
     },
     {
-      question: "Is our tool the best free OST to PST converter?",
+      question: <a href='https://osttopst.us/our-plans'>Is our tool the best free OST to PST converter?</a>,
       answer:
         "Yes, OST to PST is free for standard file sizes. There are no extra costs, registration, or watermarks. Upgraded plans are available for priority processing and larger files, but the free service remains simple and accessible.",
     },
@@ -79,7 +79,7 @@ const LandingFaq = () => {
     },
     {
       question:
-        "What is the difference between our free OST to PST converter and premium plans?",
+        <a href='https://osttopst.us/our-plans'> What is the difference between our free OST to PST converter and premium plans?</a>,
       answer:
         "Our free tool, which is an OST to PST, covers features such as converting OST files up to 500 MB with data. If your OST file exceeds then buy our Premium plan includes features such as batch conversion, extensive file size limits, and complete support.",
     },

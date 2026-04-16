@@ -93,14 +93,14 @@ const ContactUs = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <SupportCard
             icon={Ticket}
-            title="Submit Ticket"
+            title=<a href="https://osttopst.us/contact-us">Submit Ticket</a>
             description="For any query related to our tool, you need to generate a ticket."
             linkText="Open Ticket"
             linkUrl="#"
           />
           <SupportCard
             icon={MessageSquare}
-            title="Chat Live"
+            title=<a href="https://osttopst.us/contact-us">Chat Live</a>
             description="You can chat live with our team and resolve your queries."
             linkText="Start Chat"
             linkUrl="#"

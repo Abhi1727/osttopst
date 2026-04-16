@@ -341,7 +341,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
             <div className="flex items-center gap-2">
               <Clock size={20} className="text-slate-900 shrink-0" />
               <span className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
-                24/7 expert support
+                <a href="https://osttopst.us/contact-us" className="hover:text-brand-500 transition-colors">24/7 expert support</a>
               </span>
             </div>
             <div className="flex items-center gap-2">

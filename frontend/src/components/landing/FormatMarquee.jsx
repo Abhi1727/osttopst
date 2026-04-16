@@ -11,19 +11,19 @@ const FORMATS = [
       "Convert to PST and access your Outlook data for simple access, import, and backup.",
   },
   {
-    ext: "MSG",
+    ext: <a href='https://osttopst.us/ost-to-msg'>MSG</a>,
     bg: "bg-brand-900",
     description:
       "Import the Emails in their complete Outlook format while preserving formatting, attachments, and metadata.",
   },
   {
-    ext: "EML",
+    ext: <a href='https://osttopst.us/ost-to-eml'>EML</a>,
     bg: "bg-green-700",
     description:
       "Save the Emails in a widely supported format that works on email clients without any compatibility problems.",
   },
   {
-    ext: "PDF",
+    ext: <a href='https://osttopst.us/ost-to-pdf'>PDF</a>,
     bg: "bg-red-800",
     description:
       "Save your emails in a professional format that's perfect for sharing, printing, and compliance.",
@@ -41,7 +41,7 @@ const FORMATS = [
       "View and share emails as web pages that open simply in any browser with structured formatting.",
   },
   {
-    ext: "MBox",
+    ext: <a href='https://osttopst.us/ost-to-mbox'>MBox</a>,
     bg: "bg-brand-700",
     description:
       "Easily move your emails to a platform like Apple Mail or Thunderbird with full data cohesion.",
@@ -59,7 +59,7 @@ const FORMATS = [
       "Collect email data in a format ideal for system integration and technical work processes.",
   },
   {
-    ext: "JSON",
+    ext: <a href='https://osttopst.us/ost-to-json'>JSON</a>,
     bg: "bg-brand-500",
     description:
       "Get transparent, properly structured data output, which is made for developers and modern application use.",

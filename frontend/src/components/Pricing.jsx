@@ -330,11 +330,11 @@ const Pricing = () => {
 
   const faqs = [
     {
-      question: "When will I receive my license?",
+      question: <a href='https://osttopst.us/contact-us'>When will I receive my license?</a>,
       answer: "After the payment is completed, you will receive your license in 5 minutes on your email.",
     },
     {
-      question: "Can we upgrade the plan?",
+      question: <a href='https://osttopst.us/our-plans'>Can we upgrade the plan?</a>,
       answer: "Yes, with the help of the dashboard, you can have an upgrade plan. You just need to make the payment for the updated one and the current plan.",
     },
     {
@@ -342,7 +342,7 @@ const Pricing = () => {
       answer: "We accept all credit cards, PayPal, and other payment methods. All the payments are safe and secure.",
     },
     {
-      question: "Is there any refund policy?",
+      question: <a href='https://osttopst.us/our-plans'>Is there any refund policy?</a>,
       answer: "Yes, within 30 days, you will receive your refund safely and securely if our software does not meet your expectations.",
     },
   ];
