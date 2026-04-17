@@ -20,6 +20,7 @@ import {
 } from "@clerk/clerk-react";
 
 import { ADMIN_EMAILS } from "@/config/admin";
+import { toast } from "sonner";
 
 const UnifiedHeader = ({ session, onReset }) => {
   const navigate = useNavigate();
@@ -236,7 +237,7 @@ const UnifiedHeader = ({ session, onReset }) => {
             </SignInButton>
           </SignedOut>
 
-          <Button className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-2.5 2xl:px-5 h-7 2xl:h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap">
+          <Button onClick={() => toast("Coming soon!")} className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-2.5 2xl:px-5 h-7 2xl:h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap">
             Get Desktop Tool
           </Button>
 

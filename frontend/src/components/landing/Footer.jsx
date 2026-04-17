@@ -6,6 +6,7 @@ import Twitter from "lucide-react/dist/esm/icons/twitter";
 import Linkedin from "lucide-react/dist/esm/icons/linkedin";
 import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
 import ExternalLink from "lucide-react/dist/esm/icons/external-link";
+import { toast } from "sonner";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -58,13 +59,13 @@ const Footer = () => {
               Enterprise-grade recovery solution for converting orphaned OST files to Outlook PST and 16+ popular formats with 100% data integrity.
             </p>
             <div className="flex items-center gap-4 pt-2">
-              <a href="#" className="p-2 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-brand-600 hover:border-brand-100 hover:bg-brand-50 transition-all duration-300">
+              <a href="#" onClick={(e) => { e.preventDefault(); toast("Coming soon!"); }} className="p-2 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-brand-600 hover:border-brand-100 hover:bg-brand-50 transition-all duration-300">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a href="#" className="p-2 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-brand-600 hover:border-brand-100 hover:bg-brand-50 transition-all duration-300">
+              <a href="#" onClick={(e) => { e.preventDefault(); toast("Coming soon!"); }} className="p-2 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-brand-600 hover:border-brand-100 hover:bg-brand-50 transition-all duration-300">
                 <Github className="w-5 h-5" />
               </a>
-              <a href="#" className="p-2 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-brand-600 hover:border-brand-100 hover:bg-brand-50 transition-all duration-300">
+              <a href="#" onClick={(e) => { e.preventDefault(); toast("Coming soon!"); }} className="p-2 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-brand-600 hover:border-brand-100 hover:bg-brand-50 transition-all duration-300">
                 <Linkedin className="w-5 h-5" />
               </a>
             </div>
@@ -82,6 +83,7 @@ const Footer = () => {
                     {link.path.startsWith("/#") ? (
                       <a 
                         href={link.path}
+                        onClick={link.path === "/#download" ? (e) => { e.preventDefault(); toast("Coming soon!"); } : undefined}
                         className="text-slate-500 hover:text-brand-600 text-[15px] font-medium transition-colors inline-flex items-center group"
                       >
                          {link.label}

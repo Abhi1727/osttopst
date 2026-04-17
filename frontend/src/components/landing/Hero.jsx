@@ -458,13 +458,13 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                     <div className=" flex flex-col gap-3">
                       <p className="text-xs font-bold sm:text-sm  font-bold tracking-tight">
                         Supports .ost files · Max{" "}
-                        {isProfessional ? "5GB" : "500MB"} · Unlimited with
-                        desktop app
+                        {isProfessional ? "5GB" : "500MB"} · Unlimited with{" "}
+                        <span className="cursor-pointer text-brand-600 hover:underline inline-block border-b border-transparent" onClick={(e) => { e.preventDefault(); toast("Coming soon!"); }}>desktop app</span>
                       </p>
                       <p className="text-xs sm:text-sm md:text-base text-slate-900 font-medium sm:whitespace-nowrap px-2">
                         Agreed to{" "}
                         <span className="font-bold">Privacy Policy</span>. Use{" "}
-                        <span className="font-bold">Desktop Software</span> for
+                        <span className="font-bold cursor-pointer text-brand-600 hover:underline inline-block border-b border-transparent" onClick={(e) => { e.preventDefault(); toast("Coming soon!"); }}>Desktop Software</span> for
                         unlimited size
                       </p>
                     </div>

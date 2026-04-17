@@ -414,7 +414,7 @@ const Pricing = () => {
             description="For power users needing maximum local storage and speed."
             isLoading={purchasingPlan === 2}
             isActive={isDesktop}
-            onClick={() => handlePurchase(2, 98, 2)}
+            onClick={(e) => { e.preventDefault(); toast("Coming soon!"); }}
             ctaText="Get Desktop"
             features={[
               { text: "Full OST to PST conversion", included: true },
