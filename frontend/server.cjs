@@ -17,18 +17,28 @@ app.use(
         scriptSrc: [
           "'self'",
           "'unsafe-inline'",
+          "'unsafe-eval'", // Needed for some Clerk/React features
           "https://*.clerk.accounts.dev",
+          "https://clerk.osttopst.us", // Production Clerk domain
+        ],
+        scriptSrcElem: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://*.clerk.accounts.dev",
+          "https://clerk.osttopst.us",
         ],
         connectSrc: [
           "'self'",
           "https://*.clerk.accounts.dev",
+          "https://clerk.osttopst.us",
           "http://127.0.0.1:5000",
           API_URL,
         ],
-        imgSrc: ["'self'", "data:", "https://*.clerk.accounts.dev"],
+        imgSrc: ["'self'", "data:", "https://*.clerk.accounts.dev", "https://clerk.osttopst.us", "https://images.remote.com"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        frameSrc: ["'self'", "https://*.clerk.accounts.dev"],
+        frameSrc: ["'self'", "https://*.clerk.accounts.dev", "https://clerk.osttopst.us"],
+        workerSrc: ["'self'", "blob:"],
         upgradeInsecureRequests: [],
       },
     },

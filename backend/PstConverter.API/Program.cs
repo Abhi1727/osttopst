@@ -160,8 +160,9 @@ builder.Services.AddCors(options =>
             }
             else
             {
-                // Tighten CORS for production
-                policy.WithOrigins("https://osttopst.us", "https://www.osttopst.us")
+                // Tighten CORS for production using configuration
+                var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+                policy.WithOrigins(allowedOrigins)
                       .AllowAnyMethod()
                       .AllowAnyHeader();
             }
@@ -251,7 +252,7 @@ app.Use(async (context, next) =>
     context.Response.Headers.XContentTypeOptions = "nosniff";
     context.Response.Headers.XFrameOptions = "DENY";
     context.Response.Headers.XXSSProtection = "1; mode=block";
-    context.Response.Headers.ContentSecurityPolicy = "default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev;";
+    // CSP is handled by Frontend/Nginx to avoid conflicts
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocaton=()";
     await next();
