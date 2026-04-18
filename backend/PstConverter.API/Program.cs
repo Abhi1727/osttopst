@@ -51,6 +51,7 @@ builder.Services.AddControllers()
 builder.Services.AddMemoryCache();// This is for memory cache
 builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();// This is for storage pool
 builder.Services.AddScoped<PstService>();// This is for pst service
+builder.Services.AddScoped<IImageKitService, ImageKitService>();
 builder.Services.AddHostedService<CleanupBackgroundService>();// This is for cleanup background service
 builder.Services.AddSingleton<LicenseAuthService>();// License auth (token caching)
 builder.Services.AddSingleton<LicenseApiClient>();// License API wrapper

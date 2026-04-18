@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text.Json;
+using PstConverter.Services;
 
 
 namespace PstConverter.Controllers
@@ -11,14 +12,16 @@ namespace PstConverter.Controllers
     public class BlogsController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly IImageKitService _imageKitService;
         private readonly string _frontendPublicPath;
         private readonly string _blogsDirectory;
         private readonly string _blogsJsonPath;
         private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
-        public BlogsController(IWebHostEnvironment env, IConfiguration configuration)
+        public BlogsController(IWebHostEnvironment env, IConfiguration configuration, IImageKitService imageKitService)
         {
             _configuration = configuration;
+            _imageKitService = imageKitService;
             // Robust path calculation: Find repo root by looking for 'frontend' directory upwards 
             // starting from the content root path.
             var root = env.ContentRootPath;
@@ -154,29 +157,19 @@ namespace PstConverter.Controllers
                     else slug = $"{slug}-{id}"; // Make auto-generated slugs unique
                 }
 
-                // 2. Handle Thumbnail Processing
+                // 2. Handle Image Processing (ImageKit.io)
                 var thumbnailFile = formData.Files.FirstOrDefault(f => f.Name == "thumbnail");
                 string thumbnailRelativePath = "";
 
                 if (thumbnailFile != null && thumbnailFile.Length > 0)
                 {
-                    Console.WriteLine($"[BlogsController] Found file upload: {thumbnailFile.FileName} ({thumbnailFile.Length} bytes)");
-                    var fileExtension = Path.GetExtension(thumbnailFile.FileName);
-                    var newFileName = $"thumb_{id}{fileExtension ?? ".png"}";
-                    var savePath = Path.Combine(_blogsDirectory, "media", newFileName);
-
-                    using (var stream = new FileStream(savePath, FileMode.Create))
-                    {
-                        await thumbnailFile.CopyToAsync(stream);
-                    }
-                    thumbnailRelativePath = $"/blogs/media/{newFileName}";
-                    Console.WriteLine($"[BlogsController] Saved file to: {savePath}");
+                    Console.WriteLine($"[BlogsController] Found file upload: {thumbnailFile.FileName}. Uploading to ImageKit...");
+                    var fileName = $"thumb_{id}{Path.GetExtension(thumbnailFile.FileName)}";
+                    thumbnailRelativePath = await _imageKitService.UploadImageAsync(thumbnailFile, fileName) ?? "";
                 }
                 else
                 {
                     var defaultImage = formData["defaultImage"].ToString();
-                    Console.WriteLine($"[BlogsController] No file upload. DefaultImage length: {defaultImage?.Length ?? 0}");
-                    
                     if (!string.IsNullOrEmpty(defaultImage) && defaultImage.StartsWith("data:image/"))
                     {
                         try
@@ -186,7 +179,6 @@ namespace PstConverter.Controllers
                             {
                                 var base64Data = defaultImage[(commaIndex + 1)..];
                                 var contentType = defaultImage[5..commaIndex].Split(';')[0];
-
                                 var extension = contentType switch
                                 {
                                     "image/jpeg" => ".jpg",
@@ -197,28 +189,23 @@ namespace PstConverter.Controllers
                                 };
 
                                 var bytes = Convert.FromBase64String(base64Data);
-                                var newFileName = $"thumb_{id}{extension}";
-                                var savePath = Path.Combine(_blogsDirectory, "media", newFileName);
-
-                                await System.IO.File.WriteAllBytesAsync(savePath, bytes);
-                                thumbnailRelativePath = $"/blogs/media/{newFileName}";
-                                Console.WriteLine($"[BlogsController] Saved base64 image to: {savePath}");
+                                var fileName = $"thumb_{id}{extension}";
+                                thumbnailRelativePath = await _imageKitService.UploadImageAsync(bytes, fileName) ?? "";
                             }
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[BlogsController] Base64 decoding failed: {ex.Message}");
-                            thumbnailRelativePath = "/blogs/media/default.png";
+                            Console.WriteLine($"[BlogsController] ImageKit Base64 upload failed: {ex.Message}");
                         }
                     }
-                    else
-                    {
-                        thumbnailRelativePath = (string.IsNullOrEmpty(defaultImage) || defaultImage == "null" || string.Equals(defaultImage.Trim(), "null", StringComparison.OrdinalIgnoreCase))
+                }
 
-                            ? "/blogs/media/default.png"
-                            : defaultImage;
-                        Console.WriteLine($"[BlogsController] Using fallback path: {thumbnailRelativePath}");
-                    }
+                if (string.IsNullOrEmpty(thumbnailRelativePath))
+                {
+                    var defaultImage = formData["defaultImage"].ToString();
+                    thumbnailRelativePath = (string.IsNullOrEmpty(defaultImage) || defaultImage == "null")
+                        ? "/blogs/media/default.png"
+                        : defaultImage;
                 }
 
                 // 3. Update JSON Database

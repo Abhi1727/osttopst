@@ -11,6 +11,7 @@
     <PackageReference Include="Aspose.Words" Version="26.2.0" />
     <PackageReference Include="Aspose.Zip" Version="26.2.0" />
     <PackageReference Include="Clerk.Net" Version="1.15.0" />
+    <PackageReference Include="Imagekit" Version="5.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
