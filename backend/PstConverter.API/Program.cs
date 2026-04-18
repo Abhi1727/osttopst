@@ -24,7 +24,7 @@ try
     license.SetLicense(objStream);
     try
     {
-        var logPath = @"C:\temp\debug_log.txt";
+        var logPath = Path.Combine(AppContext.BaseDirectory, "debug_log.txt");
         File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] Aspose.Email License applied successfully.{Environment.NewLine}");
     }
     catch { }

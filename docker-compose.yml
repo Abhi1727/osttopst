@@ -44,7 +44,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: pstconverter-backend
+    # container_name: pstconverter-backend
     restart: unless-stopped
     depends_on:
       sqlserver:
@@ -52,7 +52,7 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5000
       - ConnectionStrings__DefaultConnection=Server=pstconverter-sqlserver,1433;Database=PstConverterDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD}
@@ -82,7 +82,7 @@ services:
       args:
         VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
         VITE_API_URL: ${VITE_API_URL}
-    container_name: pstconverter-frontend
+    # container_name: pstconverter-frontend
     restart: unless-stopped
     depends_on:
       backend:

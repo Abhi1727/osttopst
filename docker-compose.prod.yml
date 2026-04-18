@@ -1,28 +1,22 @@
-version: '3.8'
-
 # Production-specific overrides for docker-compose.yml
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 services:
-  mysql:
+  sqlserver:
     # Resource limits
     deploy:
       resources:
         limits:
           cpus: '2'
-          memory: 2G
+          memory: 4G
         reservations:
           cpus: '1'
-          memory: 1G
+          memory: 2G
     
-    # Production MySQL configuration
-    command: >
-      --default-authentication-plugin=mysql_native_password
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
-      --max_connections=500
-      --innodb_buffer_pool_size=1G
-      --innodb_log_file_size=256M
+    # Production SQL Server configuration is primarily handled via env vars in the base file.
+    # We can add more specific production tuning here if needed.
+    environment:
+      - MSSQL_PID=Standard # Use Standard edition for production if licensed, otherwise Developer
     
     # Only expose to internal network (remove port mapping)
     ports: []
