@@ -289,6 +289,29 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
     return Results.Ok(status);
 });
 
+app.MapPost("/api/license/subscription", async (
+    LicenseApiClient licenseClient,
+    ClaimsPrincipal user,
+    [FromQuery] string? email,
+    [FromBody] PstConverter.Models.SubscriptionRequest requestBody,
+    ILogger<Program> logger) =>
+{
+    var licenseId = email
+                 ?? user.FindFirstValue(ClaimTypes.Email)
+                 ?? user.FindFirstValue("email")
+                 ?? user.FindFirstValue("sub")
+                 ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
+                 ?? "anonymous";
+
+    if (logger.IsEnabled(LogLevel.Information))
+    {
+        logger.LogInformation("[LICENSE SUB] Subscription request for: {LicenseId}", licenseId);
+    }
+
+    var result = await licenseClient.GenerateSubscriptionRequestAsync(licenseId, requestBody);
+    return Results.Ok(result);
+});
+
 
 app.MapFileEndpoints();
 app.MapFolderEndpoints();
