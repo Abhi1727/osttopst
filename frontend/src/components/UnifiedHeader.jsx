@@ -86,7 +86,7 @@ const UnifiedHeader = ({ session, onReset }) => {
     {
       label: "OST Converter",
       path: "/",
-      desc: "Convert OST files to multiple formats with one powerful tool",
+      desc: "Convert your OST Files into several formats with ease.",
       icon: (
         <>
           <ellipse cx="12" cy="5" rx="9" ry="3" />
@@ -98,7 +98,7 @@ const UnifiedHeader = ({ session, onReset }) => {
     {
       label: "OST to PDF",
       path: "/ost-to-pdf",
-      desc: "Export OST emails and attachments to PDF documents",
+      desc: "Protect emails as safe and shareable PDF Files.",
       icon: (
         <>
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -111,7 +111,7 @@ const UnifiedHeader = ({ session, onReset }) => {
     {
       label: "OST to JSON",
       path: "/ost-to-json",
-      desc: "Transform OST data to JSON format for data processing",
+      desc: "Export OST data into an organized JSON structure.",
       icon: (
         <>
           <polyline points="16 18 22 12 16 6" />
@@ -122,7 +122,7 @@ const UnifiedHeader = ({ session, onReset }) => {
     {
       label: "OST to MBOX",
       path: "/ost-to-mbox",
-      desc: "Migrate OST files to MBOX format for cross-platform email clients",
+      desc: "Convert OST files for use with MBOX-supported clients.",
       icon: (
         <>
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -132,7 +132,7 @@ const UnifiedHeader = ({ session, onReset }) => {
     {
       label: "OST to EML",
       path: "/ost-to-eml",
-      desc: "Extract individual emails from OST to EML file format",
+      desc: "Export emails into individual EML files instantly.",
       icon: (
         <>
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -143,7 +143,7 @@ const UnifiedHeader = ({ session, onReset }) => {
     {
       label: "OST to MSG",
       path: "/ost-to-msg",
-      desc: "Save OST messages in MSG format for Outlook compatibility",
+      desc: "Convert OST data into MSG format effectively.",
       icon: (
         <>
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -158,7 +158,7 @@ const UnifiedHeader = ({ session, onReset }) => {
     {
       label: "OST Viewer Online",
       path: "/ost-viewer",
-      desc: "View and read OST files online without Microsoft Outlook",
+      desc: "Open and read OST files without installing Outlook.",
       icon: (
         <>
           <circle cx="12" cy="12" r="3" />
