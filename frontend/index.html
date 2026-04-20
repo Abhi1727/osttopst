@@ -23,8 +23,16 @@
   <!-- Optimized Non-Blocking Font Loading -->
   <link rel="preload" as="style"
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet" media="print" onload="this.media='all'" />
+  <link id="font-stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet" media="print" />
+  <script>
+    (function() {
+      var el = document.getElementById('font-stylesheet');
+      if (el) {
+        el.addEventListener('load', function() { el.media = 'all'; });
+      }
+    })();
+  </script>
   <noscript>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet" />

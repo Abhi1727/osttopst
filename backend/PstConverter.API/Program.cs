@@ -272,7 +272,6 @@ app.MapGet("/api/license/test", async (LicenseApiClient licenseClient, IConfigur
 
 app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsPrincipal user, [FromQuery] string? email, ILogger<Program> logger) =>
 {
-    // Prioritize email address passed from frontend, otherwise fallback to JWT claims
     var licenseId = email
                  ?? user.FindFirstValue(ClaimTypes.Email)
                  ?? user.FindFirstValue("email")
@@ -287,8 +286,28 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
             email != null ? "QueryParam" : (user.FindFirstValue(ClaimTypes.Email) != null ? "ClaimTypes.Email" : "Fallback"));
     }
 
-    var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId, null);
-    return Results.Ok(status);
+    try
+    {
+        var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId, null);
+        return Results.Ok(status);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "[LICENSE STATUS] Unhandled exception for {LicenseId} - returning fallback", licenseId);
+        return Results.Ok(new
+        {
+            tier = "Demo",
+            canConvert = true,
+            hitFileCountLimit = false,
+            hitSizeLimit = false,
+            hitTimePeriodLimit = false,
+            totalItemsAllotted = 50,
+            totalItemsUsed = 0,
+            totalStorageAllotted = 524288000L,
+            totalStorageUsed = 0L,
+            exportFileLimit = 3
+        });
+    }
 });
 
 app.MapPost("/api/license/subscription", async (
