@@ -8,8 +8,6 @@ public interface IHybridStorageService
 {
     // Upload flow (Initially to R2)
     Task<string> GetPresignedUploadUrlAsync(string key, string contentType);
-    // Task UploadToR2Async(string key, Stream stream, string contentType);
-
     // Finalization (Sync R2 object to Local VM storage)
     Task SyncR2ToLocalAsync(string key);
 
@@ -51,12 +49,6 @@ public class HybridStorageService : IHybridStorageService
     {
         _logger.LogInformation("[Storage] Generating presigned upload URL for R2: {Key}", key);
         return await _r2.GetUploadUrlAsync(key, contentType);
-    }
-
-    public async Task UploadToR2Async(string key, Stream stream, string contentType)
-    {
-        _logger.LogInformation("[Storage] Uploading to R2: {Key}", key);
-        await _r2.UploadFileAsync(key, stream, contentType);
     }
 
     public async Task SyncR2ToLocalAsync(string key)
