@@ -532,7 +532,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         if (excludeEmptyFolders) BuildFolderCountCache(srcStorage.RootFolder, folderCounts!);
 
                         var limitReached = false;
-                        await CopyFolders(licenseId, srcStorage.RootFolder, destStorage.RootFolder, srcStorage, _licenseClient, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, () => limitReached = true, _logger, null, token);
+                        await CopyFolders(licenseId!, srcStorage.RootFolder, destStorage.RootFolder, srcStorage, _licenseClient, excludeEmptyFolders, exportLimit, seenMessages, null, folderCounts, () => limitReached = true, _logger, null, token);
 
                         if (limitReached)
                         {
@@ -1156,11 +1156,11 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         var moduleId = _config["LicenseApi:ModuleId"] ?? "1";
         await _licenseClient.UpdateItemStorageAsync(resId, toolId, moduleId, sessionSize, itemName);
 
-        await _pool.AccessAsync(sessionId, filePath, async pst =>
+        await _pool.AccessAsync(sessionId, filePath, pst =>
         {
             var msg = pst.ExtractMessage(entryId) ?? throw new FileNotFoundException("Message not found");
-            SaveMessageToStream(msg, outputStream, format);
-            return true;
+            SaveMessageToStream(msg, outputStream, format, _logger);
+            return Task.FromResult(true);
         }, password);
     }
 
@@ -1419,7 +1419,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                                 {
                                                     var entry = archive.CreateEntry(entryPath, CompressionLevel.NoCompression);
                                                     using var es = entry.Open();
-                                                    SaveMessageToStream(msg, es, format);
+                                                    SaveMessageToStream(msg, es, format, _logger);
                                                 }
                                             }
                                         }
@@ -1473,22 +1473,11 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         if (sUpdate != null)
                         {
                             sUpdate.ConvertedFileKey = r2Key;
+                            sUpdate.ConvertedFileSize = new FileInfo(tempZipPath).Length;
                             await scopedDb.SaveChangesAsync();
                         }
 
-                        // Immediate cleanup of local export ZIP after successful R2 sync
-                        try
-                        {
-                            if (File.Exists(tempZipPath))
-                            {
-                                File.Delete(tempZipPath);
-                                _logger.LogInformation("[PstService] Local export ZIP removed after R2 sync for session {SessionId}.", sessionId);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "[PstService] Failed to cleanup local export ZIP for session {SessionId}.", sessionId);
-                        }
+                        // Cleanup is handled by DownloadCleanup in the endpoints after serving.
                     }
                     catch (Exception ex)
                     {
@@ -1619,7 +1608,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     var currentExportCount = folderExportedCount;
                     await semaphore.WaitAsync(limitCts.Token);
 
-                    exportTasks.Add(Task.Run(async () =>
+                    exportTasks.Add(Task.Run(() =>
                     {
                         try
                         {
@@ -1649,7 +1638,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                                 {
                                     // Use a MemoryStream to protect the ZIP from being corrupted if SaveMessageToStream throws
                                     using var memoryStream = new MemoryStream();
-                                    SaveMessageToStream(msg, memoryStream, format);
+                                    SaveMessageToStream(msg, memoryStream, format, _logger);
                                     memoryStream.Position = 0;
 
                                     lock (archiveLock)
@@ -1807,7 +1796,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     /// <summary>
     /// Saves a MapiMessage to a stream in the specified export format.
     /// </summary>
-    private static void SaveMessageToStream(MapiMessage msg, Stream stream, ExportFormat format)
+    private static void SaveMessageToStream(MapiMessage msg, Stream stream, ExportFormat format, ILogger? logger = null)
     {
         using var ms = new MemoryStream();
         try
@@ -1941,6 +1930,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             {
                 ms.Position = 0;
                 ms.CopyTo(stream);
+            }
+            else
+            {
+                logger?.LogWarning("[PstService] SaveMessageToStream produced 0 bytes for format {Format}. Subject: {Subject}", format, msg.Subject);
             }
         }
         catch (Exception)

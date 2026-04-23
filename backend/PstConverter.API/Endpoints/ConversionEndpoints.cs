@@ -9,35 +9,6 @@ using PstConverter.Extensions;
 
 namespace PstConverter.Endpoints;
 
-internal static class DownloadCleanup
-{
-    private static readonly TimeSpan DeleteDelay = TimeSpan.FromSeconds(30);
-
-    /// <summary>
-    /// Fires a background task that deletes <paramref name="filePath"/> after 30 seconds.
-    /// Safe to call even if the file does not exist.
-    /// </summary>
-    public static void ScheduleDelete(string filePath, ILogger logger)
-    {
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await Task.Delay(DeleteDelay);
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                    logger.LogInformation("[DownloadCleanup] Deleted converted output: {File}", Path.GetFileName(filePath));
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning("[DownloadCleanup] Could not delete {File}: {Msg}", Path.GetFileName(filePath), ex.Message);
-            }
-        });
-    }
-}
-
 public static class ConversionEndpoints
 {
     /// <summary>
@@ -64,7 +35,8 @@ public static class ConversionEndpoints
                                                      ClaimsPrincipal user,
                                                     IConfiguration config,
                                                     ILogger<Program> logger,
-                                                    IHybridStorageService storageService) =>
+                                                    IHybridStorageService storageService,
+                                                    DownloadCleanup cleanup) =>
         {
             var userId = user.GetInternalUserId();
             var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
@@ -186,7 +158,7 @@ public static class ConversionEndpoints
                     {
                         return Results.BadRequest(new { error = "Export produced an empty file. Please check your license status." });
                     }
-                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(session.ConvertedFileKey);
+                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(session.ConvertedFileKey!);
                     return Results.Redirect(r2Url);
                 }
 
@@ -194,7 +166,7 @@ public static class ConversionEndpoints
                 if (File.Exists(filePath))
                 {
                     // Schedule deletion of the export ZIP 30 seconds after the download starts
-                    DownloadCleanup.ScheduleDelete(filePath, logger);
+                    cleanup.ScheduleDelete(filePath);
                     return Results.File(filePath, "application/zip", exportFileName, enableRangeProcessing: true);
                 }
 
@@ -246,7 +218,8 @@ public static class ConversionEndpoints
                                                            ClaimsPrincipal user,
                                                            IConfiguration config,
                                                            ILogger<Program> logger,
-                                                           IHybridStorageService storageService) =>
+                                                           IHybridStorageService storageService,
+                                                           DownloadCleanup cleanup) =>
         {
             var userId = user.GetInternalUserId();
             var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
@@ -360,7 +333,7 @@ public static class ConversionEndpoints
                     {
                         return Results.BadRequest(new { error = "Conversion produced an empty file. Please check your license status." });
                     }
-                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(session.ConvertedFileKey);
+                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(session.ConvertedFileKey!);
                     return Results.Redirect(r2Url);
                 }
 
@@ -368,7 +341,7 @@ public static class ConversionEndpoints
                 if (File.Exists(filePath))
                 {
                     // Schedule deletion of the converted PST 30 seconds after the download starts
-                    DownloadCleanup.ScheduleDelete(filePath, logger);
+                    cleanup.ScheduleDelete(filePath);
                     return Results.File(filePath, "application/vnd.ms-outlook", fileName, enableRangeProcessing: true);
                 }
 
@@ -406,7 +379,8 @@ public static class ConversionEndpoints
                                                                 ClaimsPrincipal user,
                                                                 IConfiguration config,
                                                                 ILogger<Program> logger,
-                                                                IHybridStorageService storageService) =>
+                                                                IHybridStorageService storageService,
+                                                                DownloadCleanup cleanup) =>
         {
             var userId = user.GetInternalUserId();
             var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
@@ -421,7 +395,7 @@ public static class ConversionEndpoints
                 userEmail = session.Email;
             }
 
-            var itemName = $"{session.OriginalFileName}{session.Size}";
+            var itemName = $"{session!.OriginalFileName}{session.Size}";
             var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
             if (!status.CanConvert || status.HitSizeLimit || status.HitTimePeriodLimit)
             {
@@ -452,7 +426,7 @@ public static class ConversionEndpoints
                             ? "application/vnd.ms-outlook" 
                             : "application/octet-stream";
 
-                        DownloadCleanup.ScheduleDelete(filePath, logger);
+                        cleanup.ScheduleDelete(filePath);
                         return Results.File(filePath, contentType, fileName, enableRangeProcessing: true);
                     }
                 }

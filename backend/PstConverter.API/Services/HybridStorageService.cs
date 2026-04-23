@@ -111,6 +111,13 @@ public class HybridStorageService : IHybridStorageService
 
         var fileInfo = new FileInfo(localPath);
         var sizeInBytes = fileInfo.Length;
+
+        if (sizeInBytes == 0)
+        {
+            _logger.LogError("[Storage] Aborting sync to R2: Local file is 0 bytes. {LocalPath}", localPath);
+            throw new InvalidOperationException("Cannot sync an empty (0-byte) file to cloud storage.");
+        }
+
         _logger.LogInformation("[Storage] Syncing Local to R2: {LocalPath} ({Size} bytes) -> {Key}", localPath, sizeInBytes, key);
 
         using (var fileStream = new FileStream(localPath, FileMode.Open, FileAccess.Read, FileShare.Read))

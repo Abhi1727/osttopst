@@ -31,7 +31,8 @@ public static class MessageEndpoints
             PstService pstService,
             ClaimsPrincipal user,
             IConfiguration config,
-            ILogger<Program> logger) =>
+            ILogger<Program> logger,
+            DownloadCleanup cleanup) =>
         {
             var userId = user.GetInternalUserId();
             var filter = new MessageDateFilter
@@ -162,7 +163,8 @@ public static class MessageEndpoints
             AppDbContext db,
             IConfiguration config,
             ILogger<Program> logger,
-            IHybridStorageService storageService) =>
+            IHybridStorageService storageService,
+            DownloadCleanup cleanup) =>
         {
             var userId = user.GetInternalUserId();
             var userEmail = user.GetUserEmailId(null, config["LicenseApi:UserId"]);
@@ -210,7 +212,7 @@ public static class MessageEndpoints
                 // 1. Prioritize R2 Redirect (Always download from R2 directly if available)
                 if (session != null && !string.IsNullOrEmpty(session.ConvertedFileKey))
                 {
-                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(session.ConvertedFileKey);
+                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(session.ConvertedFileKey!);
                     return Results.Redirect(r2Url);
                 }
 
@@ -218,7 +220,7 @@ public static class MessageEndpoints
                 if (File.Exists(filePath))
                 {
                     // Schedule deletion of the export ZIP 30 seconds after the download starts
-                    DownloadCleanup.ScheduleDelete(filePath, logger);
+                    cleanup.ScheduleDelete(filePath);
                     var baseName = session != null ? Path.GetFileNameWithoutExtension(session.OriginalFileName) : "export";
                     return Results.File(filePath, "application/zip", $"{baseName}_{format}_selected.zip");
                 }

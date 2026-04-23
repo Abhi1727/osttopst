@@ -15,10 +15,14 @@ namespace PstConverter.Services;
 /// <summary>
 /// Background service that periodically cleans up old files and expired conversion sessions.
 /// </summary>
-public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<CleanupBackgroundService> logger) : BackgroundService
+public class CleanupBackgroundService(
+    IServiceProvider serviceProvider, 
+    ILogger<CleanupBackgroundService> logger,
+    IFileCleanupQueue cleanupQueue) : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ILogger<CleanupBackgroundService> _logger = logger;
+    private readonly IFileCleanupQueue _cleanupQueue = cleanupQueue;
     private readonly string _uploadDir = StorageConstants.UploadDir;
     private readonly TimeSpan _cleanupInterval = TimeSpan.FromHours(1);
     private readonly TimeSpan _initialDelay = TimeSpan.FromMinutes(30);  // wait before first cleanup
@@ -65,6 +69,16 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
             }
         }
 
+        // Start the queue processing loop
+        _ = Task.Run(async () =>
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await ProcessCleanupQueueAsync();
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
+        }, stoppingToken);
+        
         _logger.LogInformation("Cleanup Background Service is stopping.");
     }
 
@@ -208,6 +222,26 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
             }
             db.ConversionSessions.RemoveRange(orphanedSessions);
             await db.SaveChangesAsync(stoppingToken);
+        }
+    }
+    
+    private async Task ProcessCleanupQueueAsync()
+    {
+        var count = _cleanupQueue.PendingFiles.Count;
+        for (int i = 0; i < count; i++)
+        {
+            if (_cleanupQueue.PendingFiles.TryDequeue(out var item))
+            {
+                if (DateTime.Now >= item.DeleteAfter)
+                {
+                    await TryDeleteWithRetryAsync(item.Path);
+                }
+                else
+                {
+                    // Not ready yet, put it back
+                    _cleanupQueue.PendingFiles.Enqueue(item);
+                }
+            }
         }
     }
 

@@ -56,7 +56,8 @@ public static class FolderEndpoints
             PstService pstService,
             ClaimsPrincipal user,
             IConfiguration config,
-            ILogger<Program> logger) =>
+            ILogger<Program> logger,
+            DownloadCleanup cleanup) =>
         {
             var userId = user.GetInternalUserId();
             var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
@@ -77,6 +78,7 @@ public static class FolderEndpoints
             {
                 var exportFormat = ExportFormatHelpers.Parse(format);
                 var filePath = await pstService.ExportFolderAsync(sessionId, userId, folderId, exportFormat, filter, userEmail);
+                cleanup.ScheduleDelete(filePath);
                 return Results.File(filePath, "application/zip", "folder_export.zip");
             }
             catch (UnauthorizedAccessException)

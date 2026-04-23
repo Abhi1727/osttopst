@@ -54,7 +54,8 @@ public class R2StorageProvider : IStorageProvider
             Key = key,
             BucketName = _bucketName,
             ContentType = contentType,
-            DisablePayloadSigning = true // Required for Cloudflare R2 streaming compatibility
+            DisablePayloadSigning = true, // Required for Cloudflare R2 streaming compatibility
+            ChecksumAlgorithm = null      // Ensure no checksum algorithm is selected
         });
     }
 
