@@ -30,7 +30,7 @@ using Aspose.Email.Mapi;
 namespace PstConverter.Services;
 
 
-public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbContext db, ILogger<PstService> loggerService, IServiceScopeFactory scopeFactory, LicenseApiClient licenseClient, IConfiguration config)
+public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbContext db, ILogger<PstService> loggerService, IServiceScopeFactory scopeFactory, LicenseApiClient licenseClient, IConfiguration config, IHybridStorageService storageService)
 {
     private readonly string _uploadDir = StorageConstants.UploadDir;//for upload directory
     private readonly IPstStoragePool _pool = pool;
@@ -40,6 +40,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private readonly LicenseApiClient _licenseClient = licenseClient;
     private readonly IConfiguration _config = config;
+    private readonly IHybridStorageService _storageService = storageService;
+
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _uploadLocks = new();
     private static readonly ConcurrentDictionary<string, CancellationTokenSource> _conversionCts = new();
     private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
@@ -101,347 +103,56 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             _db.Entry(session).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
         }
 
-        var pstPath = Path.Combine(_uploadDir, $"{sessionId}.pst");//This is for pst file path
-        if (File.Exists(pstPath)) return (pstPath, session.Password);
-        var ostPath = Path.Combine(_uploadDir, $"{sessionId}.ost");//This is for ost file path
-        if (File.Exists(ostPath)) return (ostPath, session.Password);
+        var ext = session.FileType.StartsWith('.') ? session.FileType : "." + session.FileType;
+        var storageKey = $"{sessionId}{ext}";
 
-        // File is missing on disk (e.g. container volume was reset).
-        // Mark the session so future requests immediately know without re-checking disk.
-        _logger.LogWarning("Session {SessionId} exists in DB but file is missing on disk. Marking as FileGone.", sessionId);
         try
         {
-            session.Status = "FileGone";
-            await _db.SaveChangesAsync();
+            var localPath = _storageService.GetLocalPath(storageKey);
+            return (localPath, session.Password);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not update session {SessionId} status to FileGone.", sessionId);
-        }
-
-        throw new FileNotFoundException("The session file is no longer available on this server. Please re-upload your file.");
-
-    }
-    /// <summary>
-    /// Saves an uploaded file to the local storage and creates a new conversion session.
-    /// </summary>
-    /// <param name="fileStream">The stream containing the file data.</param>
-    /// <param name="originalFileName">The original name of the uploaded file.</param>
-    /// <param name="userId">The ID of the user who uploaded the file.</param>
-    /// <param name="size">The size of the uploaded file in bytes.</param>
-    /// <param name="userEmail">Optional email of the user.</param>
-    /// <param name="password">Optional password for the PST/OST file.</param>
-    /// <returns>The unique session ID for the uploaded file.</returns>
-    
-    public async Task<string> SaveUploadedFileAsync(Stream fileStream, string originalFileName, string userId, long size, string? userEmail = null, string? password = null)
-    {
-        var sessionId = Guid.NewGuid().ToString("N");
-        var ext = Path.GetExtension(originalFileName).ToLowerInvariant();
-        if (ext != ".ost") ext = ".pst";
-        var filePath = Path.Combine(_uploadDir, $"{sessionId}{ext}");
-        OriginalFileName = originalFileName;
-        FileSize = size;
-        try
-        {
-            using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            _logger.LogError(ex, "Failed to fetch file from storage for session {SessionId}", sessionId);
+            
+            // Mark as FileGone if not found
+            if (ex is FileNotFoundException)
             {
-                await fileStream.CopyToAsync(fs);
+                session.Status = "FileGone";
+                await _db.SaveChangesAsync();
             }
-
-
-            var session = new ConversionSession
-            {
-                SessionId = sessionId,
-                OriginalFileName = originalFileName,
-                UserId = userId,
-                Size = size,
-                FileType = ext.TrimStart('.'),
-                CreatedAt = DateTime.Now,
-                Status = "Uploaded",
-                Password = password,
-                Email = userEmail ?? userId,
-                StoreGuid = string.Empty
-            };
-            _db.ConversionSessions.Add(session);
-            await _db.SaveChangesAsync();
-            // Console.WriteLine($"[UPLOAD] Session created: {sessionId}, Status: Uploaded");
-            return sessionId;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "ERROR during file upload");
-            if (File.Exists(filePath)) TryDelete(filePath);
             throw;
         }
     }
-    /// <summary>
-    /// Initializes a chunked upload process.
-    /// </summary>
-    /// <param name="originalFileName">The original name of the file being uploaded.</param>
-    /// <param name="userId">The ID of the user initiating the upload.</param>
-    /// <param name="totalChunks">The total number of chunks expected.</param>
-    /// <param name="totalSize">The total size of the file in bytes.</param>
-    /// <returns>A unique upload ID for the chunked session.</returns>
-    
 
-    public async Task<string> InitChunkedUploadAsync(string originalFileName, string userId, int totalChunks, long totalSize, string? userEmail = null, string purpose = "Conversion")
+    public async Task<string> RegisterExternalUploadAsync(string key, string originalFileName, string userId, long size, string? userEmail = null, string? password = null)
     {
-        var uploadId = Guid.NewGuid().ToString("N");
-        var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
-        Directory.CreateDirectory(chunkDir);
-
-        var metadata = new ChunkedUploadMetadata
-        {
-            UploadId = uploadId,
-            OriginalFileName = originalFileName,
-            UserId = userId,
-            UserEmail = userEmail,
-            TotalChunks = totalChunks,
-            TotalSize = totalSize,
-            ReceivedChunks = [],
-            CreatedAt = DateTime.Now,
-            Purpose = purpose
-        };
-
-        var metaPath = Path.Combine(chunkDir, "_metadata.json");
-        await File.WriteAllTextAsync(metaPath, JsonSerializer.Serialize(metadata));
-
-        // Console.WriteLine($"[CHUNK] Initialized chunked upload: {uploadId}, Total Chunks: {totalChunks}, File: {originalFileName}");
-        return uploadId;
-    }
-    /// <summary>
-    /// Saves an individual chunk of a chunked upload.
-    /// </summary>
-    /// <param name="uploadId">The unique ID of the chunked upload session.</param>
-    /// <param name="userId">The ID of the user uploading the chunk.</param>
-    /// <param name="chunkIndex">The zero-based index of the chunk.</param>
-    /// <param name="chunkStream">The stream containing the chunk data.</param>
-    /// <returns>A tuple indicating success and the total number of chunks received so far.</returns>
-    
-    //this is for chunked upload
-    public async Task<(bool success, int receivedCount)> SaveChunkAsync(string uploadId, string userId, int chunkIndex, Stream chunkStream)
-    {
-        var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
-        if (!Directory.Exists(chunkDir)) throw new FileNotFoundException("Upload session not found");
-
-        var metaPath = Path.Combine(chunkDir, "_metadata.json");
-        ChunkedUploadMetadata metadata;
-        try
-        {
-            using var fs = new FileStream(metaPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            metadata = await JsonSerializer.DeserializeAsync<ChunkedUploadMetadata>(fs)
-                ?? throw new InvalidOperationException("Corrupted metadata");
-        }
-        catch (Exception)
-        {
-            throw;
-        }
-
-        if (metadata.UserId != userId) throw new UnauthorizedAccessException("You do not have access to this upload session.");
-
-        if (chunkIndex == 0)
-        {
-            var ext = Path.GetExtension(metadata.OriginalFileName);
-            if (!PstConverter.Endpoints.FileEndpoints.IsValidOutlookDataFile(chunkStream, ext))
-            {
-                throw new ArgumentException($"The file does not have a valid {ext.ToUpperInvariant().TrimStart('.')} signature.");
-            }
-        }
-
-
-        var chunkPath = Path.Combine(chunkDir, $"chunk_{chunkIndex:D5}");
-        using (var fs = new FileStream(chunkPath, FileMode.Create, FileAccess.Write))
-        {
-            await chunkStream.CopyToAsync(fs);
-        }
-
-        if (chunkIndex % 5 == 0 || chunkIndex == metadata.TotalChunks - 1)
-        {
-            // Console.WriteLine($"[CHUNK] Received chunk {chunkIndex + 1}/{metadata.TotalChunks} for upload {uploadId}");
-        }
-
-        return (true, chunkIndex + 1);
-    }
-    /// <summary>
-    /// Aborts a chunked upload session and cleans up temporary files.
-    /// </summary>
-    /// <param name="uploadId">The unique ID of the chunked upload session.</param>
-    /// <param name="userId">The ID of the user aborting the upload.</param>
-    public async Task AbortChunkedUploadAsync(string uploadId, string userId)
-    {
-        var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
-        if (!Directory.Exists(chunkDir)) return;
-
-        // Verify ownership (metadata is written in InitChunkedUploadAsync)
-        var metaPath = Path.Combine(chunkDir, "_metadata.json");
-        if (File.Exists(metaPath))
-        {
-            try
-            {
-                var json = await File.ReadAllTextAsync(metaPath);
-                var metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(json);
-                if (metadata != null && metadata.UserId != userId)
-                {
-                    throw new UnauthorizedAccessException("You do not have access to this upload session.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to read metadata for aborted upload {UploadId}", uploadId);
-            }
-        }
-
-        try
-        {
-            Directory.Delete(chunkDir, true);
-            if (_logger.IsEnabled(LogLevel.Information))
-            {
-                _logger.LogInformation("Aborted chunked upload {UploadId} and cleaned up directory.", uploadId);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete chunk directory during abort for {UploadId}", uploadId);
-            throw;
-        }
-    }
-    /// <summary>
-    /// Finalizes a chunked upload by merging all chunks into a single file and creating a conversion session.
-    /// </summary>
-    /// <param name="uploadId">The unique ID of the chunked upload session.</param>
-    /// <param name="userId">The ID of the user finalizing the upload.</param>
-    /// <param name="userEmail">Optional email of the user.</param>
-    /// <returns>A result object containing the session ID and file metadata.</returns>
-    public async Task<FinalizationResult> FinalizeChunkedUploadAsync(string uploadId, string userId, string? userEmail = null)
-    {
-        var chunkDir = Path.Combine(_uploadDir, $"chunks_{uploadId}");
-        if (!Directory.Exists(chunkDir)) throw new FileNotFoundException("Upload session not found");
-
-        var uploadLock = _uploadLocks.GetOrAdd(uploadId, _ => new SemaphoreSlim(1, 1));
-        await uploadLock.WaitAsync();
-        ChunkedUploadMetadata metadata;
-        try
-        {
-            var json = await File.ReadAllTextAsync(Path.Combine(chunkDir, "_metadata.json"));
-            metadata = JsonSerializer.Deserialize<ChunkedUploadMetadata>(json)
-                ?? throw new InvalidOperationException("Corrupted metadata");
-        }
-        finally
-        {
-            uploadLock.Release();
-            _uploadLocks.TryRemove(uploadId, out _);
-        }
-
-        if (metadata.UserId != userId) throw new UnauthorizedAccessException("You do not have access to this upload session.");
-
-        var sessionId = Guid.NewGuid().ToString("N");
-        var ext = Path.GetExtension(metadata.OriginalFileName).ToLowerInvariant();
-        if (ext != ".ost") ext = ".pst";
-        var finalPath = Path.Combine(_uploadDir, $"{sessionId}{ext}");
-
+        var sessionId = Path.GetFileNameWithoutExtension(key);
+        var ext = Path.GetExtension(key).ToLowerInvariant();
+        
         var session = new ConversionSession
         {
             SessionId = sessionId,
-            OriginalFileName = metadata.OriginalFileName,
-            UserId = metadata.UserId,
-            Size = metadata.TotalSize,
+            OriginalFileName = originalFileName,
+            UserId = userId,
+            Size = size,
             FileType = ext.TrimStart('.'),
             CreatedAt = DateTime.Now,
-            Status = "Assembling",
-            Password = null,
-            Email = metadata.UserEmail ?? userEmail ?? metadata.UserId,
-            Purpose = metadata.Purpose ?? "Conversion"
+            Status = "Uploaded",
+            Password = password,
+            Email = userEmail ?? userId,
+            StoreGuid = string.Empty
         };
+
         _db.ConversionSessions.Add(session);
         await _db.SaveChangesAsync();
-
-        // Track storage for professional users
-        //_ = _licenseClient.UpdateStorageAsync(userEmail ?? userId, "1", metadata.TotalSize); //check for later license api
-
-        // Console.WriteLine($"[ASSEMBLY] Starting background assembly for session {sessionId}, Upload ID: {uploadId}");
-        var cts = new CancellationTokenSource();
-        _conversionCts[sessionId] = cts;
-        var token = cts.Token;
-
-
-        _ = Task.Run(async () =>
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var scopedDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            try
-            {
-                token.ThrowIfCancellationRequested();
-                if (_logger.IsEnabled(LogLevel.Information))
-                {
-                    _logger.LogInformation("Merging {Count} chunks for upload {UploadId} in background", metadata.TotalChunks, uploadId);
-                }
-
-                const int bufferSize = 1024 * 1024;
-                using (var finalStream = new FileStream(finalPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize))
-                {
-                    for (int i = 0; i < metadata.TotalChunks; i++)
-                    {
-                        var chunkPath = Path.Combine(chunkDir, $"chunk_{i:D5}");
-                        if (!File.Exists(chunkPath))
-                        {
-                            throw new FileNotFoundException($"Missing chunk {i} for upload {uploadId}");
-                        }
-                    }
-
-                    finalStream.SetLength(metadata.TotalSize);
-
-                    for (int i = 0; i < metadata.TotalChunks; i++)
-                    {
-                        var chunkPath = Path.Combine(chunkDir, $"chunk_{i:D5}");
-                        using var chunkFs = new FileStream(chunkPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize);
-                        await chunkFs.CopyToAsync(finalStream, bufferSize, token);
-                    }
-                }
-
-                var s = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
-                if (s != null && !token.IsCancellationRequested)
-                {
-                    s.Status = "Uploaded";
-                    s.StoreGuid = string.Empty;
-                    await scopedDb.SaveChangesAsync();
-                }
-
-                try { Directory.Delete(chunkDir, true); } catch { }
-            }
-            catch (OperationCanceledException)
-            {
-                TryDelete(finalPath);
-            }
-            catch (Exception ex)
-            {
-                if (!token.IsCancellationRequested)
-                {
-                    _logger.LogError(ex, "Background assembly failed for session {SessionId}", sessionId);
-                    var s = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
-                    if (s != null)
-                    {
-                        s.Status = "AssemblyFailed";
-                        s.ErrorMessage = ex.Message;
-                        await scopedDb.SaveChangesAsync();
-                    }
-                }
-            }
-            finally
-            {
-                _conversionCts.TryRemove(sessionId, out _);
-                cts.Dispose();
-            }
-        }, token);
-
-        return new FinalizationResult(sessionId, metadata.OriginalFileName, metadata.TotalSize, ext.TrimStart('.'));
+        return sessionId;
     }
-    /// <summary>
-    /// Represents the result of a finalized chunked upload.
-    /// </summary>
-    public record FinalizationResult(string SessionId, string FileName, long Size, string FileType);
+
     /// <summary>
     /// Converts an OST file to a PST file.
     /// </summary>
+
     /// <param name="sessionId">The session ID of the file to convert.</param>
     /// <param name="userId">The ID of the user requesting conversion.</param>
     /// <param name="excludeEmptyFolders">Whether to exclude empty folders in the output.</param>
@@ -1968,9 +1679,18 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
     {
         if (_conversionCts.TryRemove(sessionId, out var cts)) { cts.Cancel(); cts.Dispose(); }
         await _pool.RemoveAsync(sessionId);
+        
+        var session = await _db.ConversionSessions.AsNoTracking().FirstOrDefaultAsync(s => s.SessionId == sessionId);
+        if (session != null)
+        {
+            var ext = session.FileType.StartsWith('.') ? session.FileType : "." + session.FileType;
+            var storageKey = $"{sessionId}{ext}";
+            await _storageService.DeleteFromBothAsync(storageKey);
+        }
+
+        // Keep local cleanup for converted files and zips which aren't in R2
         foreach (var ext in (string[])[".pst", ".ost"])
         {
-            TryDelete(Path.Combine(_uploadDir, $"{sessionId}{ext}"));
             TryDelete(Path.Combine(_uploadDir, $"{sessionId}_converted{ext}"));
         }
         var zipFiles = Directory.GetFiles(_uploadDir, $"export_{sessionId}_*.zip");

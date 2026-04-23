@@ -313,11 +313,13 @@ const UploadPhase = ({ onSessionReady }) => {
           file,
           getToken,
           (info) => setProgress(info),
+          user?.id, // Added userId
           null,
           null,
           null,
           "Viewer",
         );
+
         onSessionReady({
           sessionId: result.sessionId,
           originalFileName: result.originalFileName || file.name,

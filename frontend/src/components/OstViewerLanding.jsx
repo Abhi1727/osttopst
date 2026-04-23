@@ -112,11 +112,13 @@ const HeroUpload = ({ onSessionReady }) => {
           file,
           getToken,
           (info) => setProgress(info),
+          user?.id, // Pass the User ID for session registration
           null,
           null,
           null,
           "Viewer",
         );
+
         onSessionReady({
           sessionId: result.sessionId,
           originalFileName: result.originalFileName || file.name,

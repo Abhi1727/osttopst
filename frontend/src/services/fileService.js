@@ -2,10 +2,8 @@ import { API_BASE_URL, getHeaders } from "./api";
 import { conversionService } from "./conversionService";
 
 // ======== CONFIGURATION ========
-const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB per chunk (Better for large files)
-const MAX_RETRIES = 5; // Retry each chunk up to 5 times
-const RETRY_DELAY_MS = 3000; // Wait 3 seconds between retries
-const SMALL_FILE_THRESHOLD = 5 * 1024 * 1024; // Files under 5MB use single upload
+// (Constants moved/removed as direct R2 upload is now the primary path)
+
 
 /**
  * Sleep helper for retry delays
@@ -23,414 +21,93 @@ async function resolveToken(tokenOrProvider) {
 }
 
 /**
- * Upload a single chunk via XHR with progress + retry logic.
- * Returns a promise that resolves when the chunk is uploaded.
+ * Direct Upload to R2 via Presigned URL.
+ * The bytes travel directly from browser to Cloudflare R2.
  */
-export const uploadChunkWithRetry = (
-  uploadId,
-  chunkIndex,
-  chunkBlob,
+export const directR2Upload = async (
+  file,
   tokenOrProvider,
-  retries = MAX_RETRIES,
-  signal = null,
+  onProgress,
+  userId,
+  signal = null
 ) => {
-  return new Promise((resolve, reject) => {
-    let currentXhr = null;
+  onProgress({ phase: "init", percent: 0, detail: "Requesting secure upload link..." });
 
+  // 1. Get Presigned URL from Backend
+  const token = await resolveToken(tokenOrProvider);
+  const urlRes = await fetch(
+    `${API_BASE_URL}/storage/presigned-upload?fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || "application/octet-stream")}`,
+    { headers: getHeaders(token) }
+  );
+
+  if (!urlRes.ok) throw new Error("Failed to get upload link");
+  const { url, key } = await urlRes.json();
+
+  // 2. Upload directly to R2
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
     if (signal) {
-      if (signal.aborted) {
-        return reject(new Error("Upload cancelled"));
-      }
       signal.addEventListener("abort", () => {
-        if (currentXhr) {
-          currentXhr.abort();
-        }
+        xhr.abort();
         reject(new Error("Upload cancelled"));
       });
     }
 
-    const attempt = async (attemptsLeft) => {
-      try {
-        const token = await resolveToken(tokenOrProvider);
-        const xhr = new XMLHttpRequest();
-        currentXhr = xhr;
-        xhr.timeout = 5 * 60 * 1000; // 5 minutes per chunk to handle slow speeds
+    xhr.open("PUT", url);
+    // Note: We MUST set the content type exactly as we did when generating the URL
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
 
-        xhr.open(
-          "POST",
-          `${API_BASE_URL}/file-details/upload/${uploadId}/chunk/${chunkIndex}`,
-        );
-        if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        onProgress({ phase: "uploading", percent, detail: `Uploading to Cloud... ${percent}%` });
+      }
+    });
 
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              resolve(JSON.parse(xhr.responseText));
-            } catch {
-              resolve({ success: true, chunkIndex });
-            }
-          } else if (xhr.status >= 400 && xhr.status < 500) {
-            // Do not retry client errors (e.g. invalid file, unauthorized)
-            try {
-              const resp = JSON.parse(xhr.responseText);
-              reject(
-                new Error(
-                  resp.error || `Upload rejected (status ${xhr.status})`,
-                ),
-              );
-            } catch {
-              reject(new Error(`Upload rejected (status ${xhr.status})`));
-            }
-          } else if (attemptsLeft > 1) {
-            console.warn(
-              `Chunk ${chunkIndex} failed (status ${xhr.status}), retrying... (${attemptsLeft - 1} left)`,
-            );
-            setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
-          } else {
-            reject(
-              new Error(
-                `Chunk ${chunkIndex} failed after ${retries} attempts (status: ${xhr.status})`,
-              ),
-            );
-          }
-        });
+    xhr.onload = async () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress({ phase: "finalizing", percent: 99, detail: "Verifying upload..." });
 
-        xhr.addEventListener("error", () => {
-          if (attemptsLeft > 1) {
-            console.warn(
-              `Chunk ${chunkIndex} network error, retrying... (${attemptsLeft - 1} left)`,
-            );
-            setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
-          } else {
-            reject(
-              new Error(
-                `Chunk ${chunkIndex} failed after ${retries} attempts (network error)`,
-              ),
-            );
-          }
-        });
+        // 3. Finalize on Backend (Mirror to Azure + Register Session)
+        try {
+          const finalRes = await fetch(`${API_BASE_URL}/storage/finalize-external-upload`, {
+            method: "POST",
+            headers: { ...getHeaders(token), "Content-Type": "application/json" },
+            body: JSON.stringify({
+              key,
+              originalFileName: file.name,
+              userId: userId,
+              size: file.size
+            })
+          });
 
-        xhr.addEventListener("timeout", () => {
-          if (attemptsLeft > 1) {
-            console.warn(
-              `Chunk ${chunkIndex} timeout, retrying... (${attemptsLeft - 1} left)`,
-            );
-            setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
-          } else {
-            reject(
-              new Error(
-                `Chunk ${chunkIndex} timed out after ${retries} attempts`,
-              ),
-            );
-          }
-        });
-
-        const formData = new FormData();
-        formData.append("chunk", chunkBlob, `chunk_${chunkIndex}`);
-        xhr.send(formData);
-      } catch (err) {
-        // Handle token resolution errors
-        console.error(`Token resolution failed for chunk ${chunkIndex}:`, err);
-        if (attemptsLeft > 1) {
-          setTimeout(() => attempt(attemptsLeft - 1), RETRY_DELAY_MS);
-        } else {
+          if (!finalRes.ok) throw new Error("Failed to finalize upload on server");
+          const result = await finalRes.json();
+          onProgress({ phase: "complete", percent: 100, detail: "Upload successful!" });
+          resolve(result);
+        } catch (err) {
           reject(err);
         }
+      } else {
+        reject(new Error(`Cloud upload failed with status ${xhr.status}`));
       }
     };
 
-    attempt(retries);
+    xhr.onerror = () => reject(new Error("Network error during cloud upload"));
+    xhr.send(file);
   });
 };
+
 
 /**
- * Chunked upload: Split file → init → upload chunks sequentially → finalize.
- * onProgress receives { phase, percent, detail } for granular UI updates.
+ * Main upload function.
+ * Uses Direct Cloud Upload for all files now.
  */
-export const chunkedUpload = async (
-  file,
-  tokenOrProvider,
-  onProgress,
-  password = null,
-  signal = null,
-  email = null,
-  purpose = "Conversion",
-) => {
-  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-  let uploadId = null;
-  let result = null;
-
-  const checkAbort = () => {
-    if (signal?.aborted) {
-      throw new Error("Upload cancelled");
-    }
-  };
-
-  onProgress({
-    phase: "init",
-    percent: 0,
-    detail: `Initializing upload (${totalChunks} chunks)...`,
-  });
-
-  // Step 1: Initialize upload session
-  const token = await resolveToken(tokenOrProvider);
-  const initRes = await fetch(`${API_BASE_URL}/file-details/upload/init`, {
-    method: "POST",
-    headers: {
-      ...getHeaders(token),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      FileName: file.name,
-      TotalChunks: totalChunks,
-      TotalSize: file.size,
-      Password: password || null,
-      Email: email || null,
-      Purpose: purpose || "Conversion",
-    }),
-  });
-
-  if (!initRes.ok) {
-    const err = await initRes.json().catch(() => ({}));
-    throw new Error(err.error || "Failed to initialize upload");
-  }
-
-  const initData = await initRes.json();
-  uploadId = initData.uploadId;
-
-  try {
-    checkAbort();
-
-    // Step 2: Upload chunks with parallel concurrency
-    const MAX_CONCURRENT_UPLOADS = 4; // Increased concurrency for speed
-    const chunkIndices = Array.from({ length: totalChunks }, (_, i) => i);
-    const results = [];
-
-    const uploadNext = async () => {
-      while (chunkIndices.length > 0 && !signal?.aborted) {
-        const i = chunkIndices.shift();
-        const start = i * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, file.size);
-        const chunkBlob = file.slice(start, end);
-
-        const percent = Math.round((results.length / totalChunks) * 100);
-        onProgress({
-          phase: "uploading",
-          percent,
-          detail: `Uploading chunk ${results.length + 1} of ${totalChunks}...`,
-          chunkIndex: i,
-          totalChunks,
-        });
-
-        await uploadChunkWithRetry(
-          uploadId,
-          i,
-          chunkBlob,
-          tokenOrProvider,
-          MAX_RETRIES,
-          signal,
-        );
-        results.push(i);
-      }
-    };
-
-    // Start concurrent workers
-    const workers = Array.from(
-      { length: Math.min(MAX_CONCURRENT_UPLOADS, totalChunks) },
-      () => uploadNext(),
-    );
-    await Promise.all(workers);
-    checkAbort();
-
-    onProgress({
-      phase: "finalizing",
-      percent: 95,
-      detail: "Assembling file on server...",
-    });
-
-    // Step 3: Finalize - merge chunks
-    const finalToken = await resolveToken(tokenOrProvider);
-    const finalRes = await fetch(
-      `${API_BASE_URL}/file-details/upload/${uploadId}/finalize`,
-      {
-        method: "POST",
-        headers: getHeaders(finalToken),
-      },
-    );
-
-    if (!finalRes.ok) {
-      const err = await finalRes.json().catch(() => ({}));
-      throw new Error(err.error || "Failed to finalize upload");
-    }
-
-    result = await finalRes.json();
-    onProgress({
-      phase: "finalizing",
-      percent: 95,
-      detail: "Assembling file on server...",
-      activeSessionId: result.sessionId,
-    });
-
-    // Step 4: Poll for completion if status is "Assembling"
-    if (result.status === "Assembling") {
-      let attempts = 0;
-      const maxAttempts = 60; // 5 minutes max polling (5s intervals)
-
-      while (result.status === "Assembling" && attempts < maxAttempts) {
-        checkAbort();
-        onProgress({
-          phase: "finalizing",
-          percent: 95 + Math.min(attempts, 4), // Visual progress during assembly
-          detail: "Assembling file on server...",
-        });
-
-        await sleep(5000); // Wait 5 seconds between polls
-        checkAbort();
-        attempts++;
-
-        const checkToken = await resolveToken(tokenOrProvider);
-        const checkRes = await fetch(
-          `${API_BASE_URL}/sessions/${result.sessionId}/check`,
-          {
-            headers: getHeaders(checkToken),
-            signal: signal,
-          },
-        );
-
-        if (checkRes.ok) {
-          result = await checkRes.json();
-          // If status is "Uploaded", we are done
-        } else if (checkRes.status === 404) {
-          throw new Error("Upload session not found or has expired. Please try uploading again.");
-        }
-      }
-
-      if (result.status === "AssemblyFailed") {
-        throw new Error("File assembly failed on server. Please try again.");
-      }
-    }
-  } catch (err) {
-    if (signal?.aborted && uploadId) {
-      // Cleanup on server
-      await cancelChunkedUpload(uploadId, tokenOrProvider);
-    }
-    throw err;
-  }
-
-  onProgress({
-    phase: "complete",
-    percent: 100,
-    detail: "Upload complete! Redirecting...",
-  });
-
-  // Wait 3 seconds before finishing to let user see 100%
-  await sleep(3000);
-
-  return result;
-};
-
-/**
- * Legacy single-file upload via XHR (for small files under threshold).
- */
-export const singleUpload = async (
-  file,
-  tokenOrProvider,
-  onProgress,
-  password = null,
-  signal = null,
-  email = null,
-  purpose = "Conversion",
-) => {
-  return new Promise((resolve, reject) => {
-    // Wrap in async function to handle token resolution
-    const startUpload = async () => {
-      try {
-        const token = await resolveToken(tokenOrProvider);
-        const xhr = new XMLHttpRequest();
-        xhr.timeout = 300000; // 5 minutes
-
-        if (signal) {
-          signal.addEventListener("abort", () => {
-            xhr.abort();
-            reject(new Error("Upload cancelled"));
-          });
-          if (signal.aborted) {
-            xhr.abort();
-            reject(new Error("Upload cancelled"));
-            return;
-          }
-        }
-
-        xhr.open("POST", `${API_BASE_URL}/file-details/upload`);
-        if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            onProgress({
-              phase: "uploading",
-              percent,
-              detail: `Uploading... ${percent}%`,
-            });
-          }
-        });
-
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              onProgress({
-                phase: "complete",
-                percent: 100,
-                detail: "Complete!",
-              });
-              resolve(JSON.parse(xhr.responseText));
-            } catch {
-              reject(new Error("Invalid server response."));
-            }
-          } else {
-            try {
-              const err = JSON.parse(xhr.responseText);
-              reject(new Error(err.error || `Upload failed (${xhr.status})`));
-            } catch {
-              reject(new Error(`Upload failed with status ${xhr.status}`));
-            }
-          }
-        });
-
-        xhr.addEventListener("error", () => {
-          reject(
-            new Error(
-              "Network error. Please check your connection and try again.",
-            ),
-          );
-        });
-
-        xhr.addEventListener("timeout", () => {
-          reject(new Error("Upload timed out. The file may be too large."));
-        });
-
-        xhr.addEventListener("abort", () => {
-          reject(new Error("Upload was cancelled."));
-        });
-
-        const formData = new FormData();
-        formData.append("file", file);
-        if (password) formData.append("password", password);
-        if (email) formData.append("email", email);
-        if (purpose) formData.append("purpose", purpose);
-        xhr.send(formData);
-      } catch (err) {
-        reject(err);
-      }
-    };
-    startUpload();
-  });
-};
-
 export const uploadFile = async (
   file,
   tokenOrProvider,
   onProgress,
+  userId,
   password = null,
   signal = null,
   email = null,
@@ -445,33 +122,18 @@ export const uploadFile = async (
   };
 
   const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+  console.log(`[FileService] Direct Cloud Upload for "${file.name}" (${fileSizeMB} MB)`);
 
-  console.log(
-    `[FileService] Uploading "${file.name}" (${fileSizeMB} MB), using ${file.size > SMALL_FILE_THRESHOLD ? "chunked" : "single"} mode`,
+  return await directR2Upload(
+    file,
+    tokenOrProvider,
+    progressHandler,
+    userId,
+    signal
   );
-
-  if (file.size > SMALL_FILE_THRESHOLD) {
-    return await chunkedUpload(
-      file,
-      tokenOrProvider,
-      progressHandler,
-      password,
-      signal,
-      email,
-      purpose,
-    );
-  } else {
-    return await singleUpload(
-      file,
-      tokenOrProvider,
-      progressHandler,
-      password,
-      signal,
-      email,
-      purpose,
-    );
-  }
 };
+
+
 
 export const getFolders = async (sessionId, token, excludeEmpty = true) => {
   const response = await fetch(

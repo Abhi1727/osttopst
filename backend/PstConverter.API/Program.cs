@@ -49,7 +49,13 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 builder.Services.AddMemoryCache();// This is for memory cache
-builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();// This is for storage pool
+builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();
+builder.Services.AddSingleton<R2StorageProvider>();
+
+builder.Services.AddSingleton<IHybridStorageService, HybridStorageService>();
+
+
+    // This is for storage pool
 builder.Services.AddScoped<PstService>();// This is for pst service
 builder.Services.AddScoped<IImageKitService, ImageKitService>();
 builder.Services.AddHostedService<CleanupBackgroundService>();// This is for cleanup background service
@@ -338,6 +344,7 @@ app.MapFileEndpoints();
 app.MapFolderEndpoints();
 app.MapMessageEndpoints();
 app.MapConversionEndpoints();
+app.MapStorageEndpoints();
 app.MapSessionEndpoints();
 
 

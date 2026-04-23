@@ -195,11 +195,13 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                 ? prog
                 : { percent: prog, phase: "uploading" },
             ),
+          user?.id, // Added userId
           null, // password
           controller.signal,
           user?.primaryEmailAddress?.emailAddress ?? null,
           "Conversion",
         );
+
 
         // Backend returns sessionId, not _id
         const sessionId = session.sessionId || session._id;
