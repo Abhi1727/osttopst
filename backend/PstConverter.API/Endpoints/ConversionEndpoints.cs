@@ -61,9 +61,10 @@ public static class ConversionEndpoints
                                                     PstService pstService,
                                                     LicenseApiClient licenseClient,
                                                     AppDbContext db,
-                                                    ClaimsPrincipal user,
+                                                     ClaimsPrincipal user,
                                                     IConfiguration config,
-                                                    ILogger<Program> logger) =>
+                                                    ILogger<Program> logger,
+                                                    IHybridStorageService storageService) =>
         {
             var userId = user.GetInternalUserId();
             var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
@@ -175,12 +176,29 @@ public static class ConversionEndpoints
                 }
 
                 // Use a more standard filename for the export
-                var exportFileName = string.IsNullOrEmpty(sessionId) ? "export.zip" : $"export_{sessionId}.zip";
+                var baseName = session != null ? Path.GetFileNameWithoutExtension(session.OriginalFileName) : "export";
+                var exportFileName = $"{baseName}_{format}.zip";
 
-                // Schedule deletion of the export ZIP 30 seconds after the download starts
-                DownloadCleanup.ScheduleDelete(filePath, logger);
+                // 1. Prioritize R2 Redirect (Always download from R2 directly if available)
+                if (session != null && !string.IsNullOrEmpty(session.ConvertedFileKey))
+                {
+                    if (session.ConvertedFileSize == 0)
+                    {
+                        return Results.BadRequest(new { error = "Export produced an empty file. Please check your license status." });
+                    }
+                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(session.ConvertedFileKey);
+                    return Results.Redirect(r2Url);
+                }
 
-                return Results.File(filePath, "application/zip", exportFileName, enableRangeProcessing: true);
+                // 2. Fallback to Local VM (only if not yet synced to R2)
+                if (File.Exists(filePath))
+                {
+                    // Schedule deletion of the export ZIP 30 seconds after the download starts
+                    DownloadCleanup.ScheduleDelete(filePath, logger);
+                    return Results.File(filePath, "application/zip", exportFileName, enableRangeProcessing: true);
+                }
+
+                return Results.NotFound(new { error = "Export file not found" });
             }
             catch (InvalidOperationException ex)
             {
@@ -227,7 +245,8 @@ public static class ConversionEndpoints
                                                            AppDbContext db,
                                                            ClaimsPrincipal user,
                                                            IConfiguration config,
-                                                           ILogger<Program> logger) =>
+                                                           ILogger<Program> logger,
+                                                           IHybridStorageService storageService) =>
         {
             var userId = user.GetInternalUserId();
             var userEmail = user.GetUserEmailId(email, config["LicenseApi:UserId"]);
@@ -334,10 +353,26 @@ public static class ConversionEndpoints
                     return Results.Accepted();
                 }
 
-                // Schedule deletion of the converted PST 30 seconds after the download starts
-                DownloadCleanup.ScheduleDelete(filePath, logger);
+                // 1. Prioritize R2 Redirect (Always download from R2 directly if available)
+                if (session != null && !string.IsNullOrEmpty(session.ConvertedFileKey))
+                {
+                    if (session.ConvertedFileSize == 0)
+                    {
+                        return Results.BadRequest(new { error = "Conversion produced an empty file. Please check your license status." });
+                    }
+                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(session.ConvertedFileKey);
+                    return Results.Redirect(r2Url);
+                }
 
-                return Results.File(filePath, "application/vnd.ms-outlook", fileName, enableRangeProcessing: true);
+                // 2. Fallback to Local VM (only if not yet synced to R2)
+                if (File.Exists(filePath))
+                {
+                    // Schedule deletion of the converted PST 30 seconds after the download starts
+                    DownloadCleanup.ScheduleDelete(filePath, logger);
+                    return Results.File(filePath, "application/vnd.ms-outlook", fileName, enableRangeProcessing: true);
+                }
+
+                return Results.NotFound(new { error = "Converted file not found" });
             }
             catch (FileNotFoundException)
             {
@@ -370,7 +405,8 @@ public static class ConversionEndpoints
                                                                 AppDbContext db,
                                                                 ClaimsPrincipal user,
                                                                 IConfiguration config,
-                                                                ILogger<Program> logger) =>
+                                                                ILogger<Program> logger,
+                                                                IHybridStorageService storageService) =>
         {
             var userId = user.GetInternalUserId();
             var session = await db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
@@ -392,11 +428,23 @@ public static class ConversionEndpoints
                 return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
             }
 
-            if (session.SplitFilesJson != null)
+            if (session?.SplitFilesJson != null)
             {
                 var files = System.Text.Json.JsonSerializer.Deserialize<string[]>(session.SplitFilesJson);
                 if (files != null && files.Contains(fileName))
                 {
+                    // 1. Prioritize R2 Redirect for split files
+                    var r2Key = $"osttopst/download/{userEmail ?? "anonymous"}/{sessionId}/{fileName}";
+                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(r2Key);
+                    
+                    // We check if it's ready in DB first to be safe, but since this is a direct download call,
+                    // we can try the R2 redirect immediately.
+                    if (session.Status?.StartsWith("Ready", StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                         return Results.Redirect(r2Url);
+                    }
+
+                    // 2. Fallback to Local VM
                     var filePath = Path.Combine(pstService.GetUploadDir(), fileName);
                     if (File.Exists(filePath))
                     {
@@ -404,9 +452,7 @@ public static class ConversionEndpoints
                             ? "application/vnd.ms-outlook" 
                             : "application/octet-stream";
 
-                        // Schedule deletion of split PST file 30 seconds after download starts
                         DownloadCleanup.ScheduleDelete(filePath, logger);
-
                         return Results.File(filePath, contentType, fileName, enableRangeProcessing: true);
                     }
                 }

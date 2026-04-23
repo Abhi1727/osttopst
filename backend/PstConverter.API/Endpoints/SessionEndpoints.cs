@@ -172,7 +172,7 @@ public static class SessionEndpoints
 
             return Results.Ok(new
             {
-                sessionId = session.SessionId,
+                sessionId = session!.SessionId,
                 originalFileName = session.OriginalFileName,
                 status = session.Status,
                 exists = pstExists || ostExists || isSessionReady,

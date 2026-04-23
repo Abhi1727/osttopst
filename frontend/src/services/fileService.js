@@ -29,19 +29,21 @@ export const directR2Upload = async (
   tokenOrProvider,
   onProgress,
   userId,
-  signal = null
+  signal = null,
+  email = null
 ) => {
   onProgress({ phase: "init", percent: 0, detail: "Requesting secure upload link..." });
 
   // 1. Get Presigned URL from Backend
   const token = await resolveToken(tokenOrProvider);
+  const emailParam = email ? `&email=${encodeURIComponent(email)}` : "";
   const urlRes = await fetch(
-    `${API_BASE_URL}/storage/presigned-upload?fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || "application/octet-stream")}`,
+    `${API_BASE_URL}/storage/presigned-upload?fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || "application/octet-stream")}${emailParam}`,
     { headers: getHeaders(token) }
   );
 
   if (!urlRes.ok) throw new Error("Failed to get upload link");
-  const { url, key } = await urlRes.json();
+  const { url, key, sessionId } = await urlRes.json();
 
   // 2. Upload directly to R2
   return new Promise((resolve, reject) => {
@@ -77,11 +79,16 @@ export const directR2Upload = async (
               key,
               originalFileName: file.name,
               userId: userId,
-              size: file.size
+              size: file.size,
+              sessionId: sessionId, // Required by backend for hierarchical storage
+              email: email
             })
           });
 
-          if (!finalRes.ok) throw new Error("Failed to finalize upload on server");
+          if (!finalRes.ok) {
+             const errorData = await finalRes.json().catch(() => ({}));
+             throw new Error(errorData.error || "Failed to finalize upload on server");
+          }
           const result = await finalRes.json();
           onProgress({ phase: "complete", percent: 100, detail: "Upload successful!" });
           resolve(result);
@@ -129,7 +136,8 @@ export const uploadFile = async (
     tokenOrProvider,
     progressHandler,
     userId,
-    signal
+    signal,
+    email
   );
 };
 

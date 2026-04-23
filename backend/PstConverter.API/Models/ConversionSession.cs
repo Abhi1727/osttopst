@@ -42,6 +42,11 @@ public class ConversionSession
     public string? SplitFilesJson { get; set; }
     public string? ErrorMessage { get; set; }
 
+    [MaxLength(255)]
+    public string? ConvertedFileKey { get; set; }
+
+    public long? ConvertedFileSize { get; set; }
+
     [MaxLength(50)]
     public string Purpose { get; set; } = "Conversion"; // "Conversion" or "Viewer"
 }

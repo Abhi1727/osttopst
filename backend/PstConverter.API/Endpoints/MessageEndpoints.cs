@@ -1,8 +1,11 @@
+using System.IO;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PstConverter.Services;
 using PstConverter.Models;
 using PstConverter.Extensions;
+using PstConverter.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace PstConverter.Endpoints;
 
@@ -156,8 +159,10 @@ public static class MessageEndpoints
             PstService pstService,
             LicenseApiClient licenseClient,
             ClaimsPrincipal user,
+            AppDbContext db,
             IConfiguration config,
-            ILogger<Program> logger) =>
+            ILogger<Program> logger,
+            IHybridStorageService storageService) =>
         {
             var userId = user.GetInternalUserId();
             var userEmail = user.GetUserEmailId(null, config["LicenseApi:UserId"]);
@@ -200,7 +205,25 @@ public static class MessageEndpoints
                     return Results.Accepted();
                 }
 
-                return Results.File(filePath, "application/zip", "selected_messages_export.zip");
+                var session = await db.ConversionSessions.AsNoTracking().FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                
+                // 1. Prioritize R2 Redirect (Always download from R2 directly if available)
+                if (session != null && !string.IsNullOrEmpty(session.ConvertedFileKey))
+                {
+                    var r2Url = await storageService.GetPresignedDownloadUrlAsync(session.ConvertedFileKey);
+                    return Results.Redirect(r2Url);
+                }
+
+                // 2. Fallback to Local VM (only if not yet synced to R2)
+                if (File.Exists(filePath))
+                {
+                    // Schedule deletion of the export ZIP 30 seconds after the download starts
+                    DownloadCleanup.ScheduleDelete(filePath, logger);
+                    var baseName = session != null ? Path.GetFileNameWithoutExtension(session.OriginalFileName) : "export";
+                    return Results.File(filePath, "application/zip", $"{baseName}_{format}_selected.zip");
+                }
+
+                return Results.NotFound(new { error = "Batch export file not found" });
             }
             catch (UnauthorizedAccessException)
             {

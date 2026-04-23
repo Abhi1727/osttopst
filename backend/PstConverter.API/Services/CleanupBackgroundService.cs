@@ -159,23 +159,14 @@ public class CleanupBackgroundService(IServiceProvider serviceProvider, ILogger<
             {
                 await pool.RemoveAsync(session.SessionId);
 
-                // Delete the original OST source file when the session expires (6-hour mark)
-                var ostPath = Path.Combine(_uploadDir, $"{session.SessionId}.ost");
-                await TryDeleteWithRetryAsync(ostPath);
+                // Delete all files associated with this session (Pattern: {sessionId}_*)
+                // This covers source OST/PST, converted PSTs, and ZIP exports.
+                foreach (var sessionFile in Directory.GetFiles(_uploadDir, $"{session.SessionId}_*"))
+                {
+                    await TryDeleteWithRetryAsync(sessionFile);
+                }
 
-                // Original PST input file (if the user uploaded a PST for viewing)
-                var pstInputPath = Path.Combine(_uploadDir, $"{session.SessionId}.pst");
-                await TryDeleteWithRetryAsync(pstInputPath);
-
-                // Converted PST output files (pattern: {sessionId}_converted_*.pst)
-                foreach (var convertedFile in Directory.GetFiles(_uploadDir, $"{session.SessionId}_converted*.pst"))
-                    await TryDeleteWithRetryAsync(convertedFile);
-
-                // Export ZIP files
-                foreach (var zipFile in Directory.GetFiles(_uploadDir, $"export_{session.SessionId}_*.zip"))
-                    await TryDeleteWithRetryAsync(zipFile);
-
-                // Split PST temp directory
+                // Split PST temp directory (if any)
                 var splitDir = Path.Combine(_uploadDir, $"split_{session.SessionId}");
                 if (Directory.Exists(splitDir))
                     try { Directory.Delete(splitDir, true); } catch { }

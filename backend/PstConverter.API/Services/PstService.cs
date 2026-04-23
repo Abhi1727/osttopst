@@ -104,11 +104,12 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
 
         var ext = session.FileType.StartsWith('.') ? session.FileType : "." + session.FileType;
-        var storageKey = $"{sessionId}{ext}";
+        var r2UserFolder = session.Email ?? "anonymous";
+        var storageKey = $"osttopst/upload/{r2UserFolder}/{sessionId}/{session.OriginalFileName}";
 
         try
         {
-            var localPath = _storageService.GetLocalPath(storageKey);
+            var localPath = await _storageService.EnsureLocalAsync(storageKey);
             return (localPath, session.Password);
         }
         catch (Exception ex)
@@ -125,9 +126,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
     }
 
-    public async Task<string> RegisterExternalUploadAsync(string key, string originalFileName, string userId, long size, string? userEmail = null, string? password = null)
+    public async Task<string> RegisterExternalUploadAsync(string key, string originalFileName, string userId, long size, string sessionId, string? userEmail = null, string? password = null)
     {
-        var sessionId = Path.GetFileNameWithoutExtension(key);
         var ext = Path.GetExtension(key).ToLowerInvariant();
         
         var session = new ConversionSession
@@ -275,13 +275,16 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         // --------------------------------------------------
 
         string ext = ".pst";
-        var outputPath = Path.Combine(_uploadDir, $"{sessionId}_converted_{exportLimit}{(deduplicate ? "_dedup" : "")}{ext}");
-
         session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
         var baseName = session != null
             ? Path.GetFileNameWithoutExtension(session.OriginalFileName)
             : sessionId;
         var fileName = $"{baseName}_converted{ext}";
+
+        // Use GetLocalPath to ensure consistency with R2 key structure (sessionId_fileName)
+        var r2UserFolder = licenseId ?? "anonymous";
+        var dummyKey = $"osttopst/download/{r2UserFolder}/{sessionId}/{fileName}";
+        var outputPath = _storageService.GetLocalPath(dummyKey);
 
         if (session != null && session.Status == "Converting")
         {
@@ -571,6 +574,54 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                         }
                         Directory.Delete(tempDir, true);
                         TryDelete(outputPath); // Delete monolithic
+                    }
+                }
+
+                // 4. Sync converted file(s) to R2
+                if (!token.IsCancellationRequested)
+                {
+                    var r2UserFolder = licenseId ?? "anonymous";
+                    try
+                    {
+                        if (splitFilenames.Count > 0)
+                        {
+                            foreach (var sfName in splitFilenames)
+                            {
+                                var localPath = Path.Combine(_uploadDir, sfName);
+                                var r2Key = $"osttopst/download/{r2UserFolder}/{sessionId}/{sfName}";
+                                await _storageService.SyncLocalToR2Async(localPath, r2Key, "application/vnd.ms-outlook");
+                                
+                                // Immediate cleanup of local split file after R2 sync (with 10s delay as requested)
+                                var capturedPath = localPath;
+                                _ = Task.Run(async () => {
+                                    await Task.Delay(10000);
+                                    TryDelete(capturedPath);
+                                });
+                            }
+                        }
+                        else if (File.Exists(outputPath))
+                        {
+                            var r2Key = $"osttopst/download/{r2UserFolder}/{sessionId}/{fileName}";
+                            await _storageService.SyncLocalToR2Async(outputPath, r2Key, "application/vnd.ms-outlook");
+                            
+                            var sUpdate = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
+                            if (sUpdate != null)
+                            {
+                                sUpdate.ConvertedFileKey = r2Key;
+                                try { sUpdate.ConvertedFileSize = new FileInfo(outputPath).Length; } catch { }
+                                await scopedDb.SaveChangesAsync();
+                            }
+
+                            // Immediate cleanup of local converted file after R2 sync (with 10s delay as requested)
+                            _ = Task.Run(async () => {
+                                await Task.Delay(10000);
+                                TryDelete(outputPath);
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "[PstService] Failed to upload converted file to R2 for session {SessionId}. Local file still available.", sessionId);
                     }
                 }
 
@@ -1211,7 +1262,10 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
             suffix += $"_lmt_{exportLimit}";
         }
 
-        var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{format}{suffix}_{excludeEmptyFolders}.zip");
+        var sessionMetadata = await _db.ConversionSessions.AsNoTracking().FirstOrDefaultAsync(s => s.SessionId == sessionId);
+        var baseName = sessionMetadata != null ? Path.GetFileNameWithoutExtension(sessionMetadata.OriginalFileName) : "export";
+        var friendlyZipName = $"{baseName}_{format}.zip";
+        var tempZipPath = Path.Combine(_uploadDir, $"export_{sessionId}_{friendlyZipName}");
 
         var session = await _db.ConversionSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
 
@@ -1405,6 +1459,42 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                     }
                     return true;
                 }, password);
+
+                // Sync export ZIP to R2 for persistent storage
+                if (!token.IsCancellationRequested && File.Exists(tempZipPath))
+                {
+                    var r2UserFolder = userEmail ?? licenseId ?? "anonymous";
+                    try
+                    {
+                        var r2Key = $"osttopst/download/{r2UserFolder}/{sessionId}/{friendlyZipName}";
+                        await _storageService.SyncLocalToR2Async(tempZipPath, r2Key, "application/zip");
+                        
+                        var sUpdate = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
+                        if (sUpdate != null)
+                        {
+                            sUpdate.ConvertedFileKey = r2Key;
+                            await scopedDb.SaveChangesAsync();
+                        }
+
+                        // Immediate cleanup of local export ZIP after successful R2 sync
+                        try
+                        {
+                            if (File.Exists(tempZipPath))
+                            {
+                                File.Delete(tempZipPath);
+                                _logger.LogInformation("[PstService] Local export ZIP removed after R2 sync for session {SessionId}.", sessionId);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "[PstService] Failed to cleanup local export ZIP for session {SessionId}.", sessionId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "[PstService] Failed to upload export ZIP to R2 for session {SessionId}. Local file still available.", sessionId);
+                    }
+                }
 
                 var s2 = await scopedDb.ConversionSessions.FirstOrDefaultAsync(x => x.SessionId == sessionId);
                 if (s2 != null && !token.IsCancellationRequested)
