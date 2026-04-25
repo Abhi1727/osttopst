@@ -10,37 +10,42 @@ using Microsoft.Extensions.DependencyInjection; // This is for dependency inject
 using Microsoft.AspNetCore.Mvc; // This is for [FromQuery] and other MVC attributes
 using Microsoft.AspNetCore.ResponseCompression;
 
-// Initialize Aspose.Email License  
-try
-{
-    var license = new License();
+// Aspose License will be initialized after builder creation to read from appsettings.json
 
-    //  License licObj = new License();
-    // string Lic = "<?xml version=\\\"1.0\\\"?>\\r\\n<License>\\r\\n  <Data>\\r\\n    <LicensedTo>Shef USA</LicensedTo>\\r\\n    <EmailTo>tarunlamba@shefusa.com</EmailTo>\\r\\n    <LicenseType>Developer OEM</LicenseType>\\r\\n    <LicenseNote>1 Developer And Unlimited Deployment Locations</LicenseNote>\\r\\n    <OrderID>260226165350</OrderID>\\r\\n    <UserID>1327979</UserID>\\r\\n    <OEM>This is a redistributable license</OEM>\\r\\n    <Products>\\r\\n      <Product>Aspose.Total Product Family</Product>\\r\\n    </Products>\\r\\n    <EditionType>Professional</EditionType>\\r\\n    <SerialNumber>b9f2d0d5-bdef-4f1d-968d-4cdd2111ade2</SerialNumber>\\r\\n    <SubscriptionExpiry>20270226</SubscriptionExpiry>\\r\\n    <LicenseExpiry>20260326</LicenseExpiry>\\r\\n    <ExpiryNote>This is a temporary license for non-commercial use only and it will expire on 2026-03-26</ExpiryNote>\\r\\n    <LicenseVersion>3.0</LicenseVersion>\\r\\n    <LicenseInstructions>https://purchase.aspose.com/policies/use-license</LicenseInstructions>\\r\\n  </Data>\\r\\n  <Signature>mFYcemoPfrXsGUWnC0oT2uR289LbOmnbnSNh3b756tCIeWVAJw5jivY236zdzaoU0+gyu8CnQq9Soiwz93HF6ychmsiqUaBcH/8EDTQqom1E/19rAKkSoDBpOwLO6sgl4CX2EmE3IdxTKzEd78j85fmUHSSql9WpW+UASSId/EE=</Signature>\\r\\n</License>";
-    string Lic = "<?xml version=\"1.0\"?>\r\n<License>\r\n  <Data>\r\n    <LicensedTo>shef solutions inc</LicensedTo>\r\n    <EmailTo>hr1@shefsolutionsinc.com</EmailTo>\r\n    <LicenseType>Site OEM</LicenseType>\r\n    <LicenseNote>Up To 10 Developers And Unlimited Deployment Locations</LicenseNote>\r\n    <OrderID>260421185938</OrderID><UserID>1340527</UserID>    <OEM>This is a redistributable license</OEM><Products><Product>Aspose.Total Product Family</Product></Products><EditionType>Enterprise</EditionType><SerialNumber>a590e5eb-061c-467d-934a-74f68e32f421</SerialNumber><SubscriptionExpiry>20270421</SubscriptionExpiry><LicenseExpiry>20260521</LicenseExpiry><ExpiryNote>This is a temporary license for non-commercial use only and it will expire on 2026-05-21</ExpiryNote><LicenseVersion>3.0</LicenseVersion><LicenseInstructions>https://purchase.aspose.com/policies/use-license</LicenseInstructions></Data><Signature>wrfUdpEkqHV/m3GMi5SRdsS7cYKaTca5pnuhAUnARdYFAyqOHBrmUKkWXZWfUNPL3Ht16E2WWMkFgHkG7a8qrBdBUaORbzyTyOJbZhRhsuzQlRiIjH90BG5GxEnVEdQr8Sk5F/0IfeRXk6Mr7WVk9npqEVOb4e2cwobzRCutL0s=</Signature></License>";
-    byte[] byteArray = Encoding.UTF8.GetBytes(Lic);
-    MemoryStream objStream = new(byteArray);
-
-    license.SetLicense(objStream);
-    try
-    {
-        var logPath = Path.Combine(AppContext.BaseDirectory, "debug_log.txt");
-        File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] Aspose.Email License applied successfully.{Environment.NewLine}");
-    }
-    catch { }
-
-
-    //if (File.Exists("Aspose.Email.lic"))
-    //{
-    //    license.SetLicense("Aspose.Email.lic");
-    //}
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Aspose.Email License Error: {ex.Message}");
-}
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Initialize Aspose Licenses from appsettings.json
+var asposeLicenseString = builder.Configuration["Aspose:License"];
+if (!string.IsNullOrEmpty(asposeLicenseString))
+{
+    try
+    {
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(asposeLicenseString));
+        
+        // Apply to Aspose.Email
+        new Aspose.Email.License().SetLicense(ms);
+        
+        // Apply to Aspose.Words
+        ms.Position = 0;
+        new Aspose.Words.License().SetLicense(ms);
+        
+        // Apply to Aspose.Zip
+        ms.Position = 0;
+        new Aspose.Zip.License().SetLicense(ms);
+
+        Console.WriteLine("[ASPOSE] Licenses applied successfully from appsettings.json");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[ASPOSE] Error applying license: {ex.Message}");
+    }
+}
+else
+{
+    Console.WriteLine("[ASPOSE] No license string found in appsettings.json. Running in evaluation mode.");
+}
+
 
 // Add services
 builder.Services.AddControllers()

@@ -1159,7 +1159,7 @@ const OstViewer = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          className="flex-1 flex flex-col min-h-0"
+          className="fixed inset-0 z-[100] flex flex-col bg-white overflow-hidden"
         >
           <PreviewPhase session={session} onReset={handleReset} getToken={getToken} />
         </motion.div>

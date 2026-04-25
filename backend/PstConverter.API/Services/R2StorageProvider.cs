@@ -12,7 +12,7 @@ public class R2StorageProvider : IStorageProvider
     private readonly IAmazonS3 _s3Client;
     private readonly string _bucketName;
 
-    public string ProviderName => "CloudflareR2";
+    //public string ProviderName => "CloudflareR2";
 
     public R2StorageProvider(IConfiguration configuration)
     {
