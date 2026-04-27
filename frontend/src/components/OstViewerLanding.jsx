@@ -166,7 +166,7 @@ const HeroUpload = ({ onSessionReady }) => {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".ost,.pst"
+          accept=".ost"
           className="hidden"
           onChange={handleFileInputChange}
         />
@@ -274,179 +274,315 @@ const FaqItem = ({ q, a }) => {
 // ─── Main Landing ─────────────────────────────────────────────────────────────
 
 const OstViewerLanding = ({ onSessionReady }) => {
+  const [activeTab, setActiveTab] = useState("emails");
+
+  useEffect(() => {
+    document.title = "Open our Online OST Previewer- No Download Required";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", "OST Viewer Online- View OST emails, contacts, calendars & attachments. No Outlook or Exchange installation required.");
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = "OST Viewer Online- View OST emails, contacts, calendars & attachments. No Outlook or Exchange installation required.";
+      document.head.appendChild(meta);
+    }
+  }, []);
+
+  const dataTypesTabs = [
+    {
+      id: "emails",
+      label: "Emails",
+      title: "Emails",
+      content: (
+        <>
+          We enable the preview of all OST mailbox data
+          <ul className="list-disc ml-6 mt-2 space-y-1">
+            <li>Sender</li>
+            <li>Receiver</li>
+            <li>Subject</li>
+            <li>Body Content</li>
+            <li>Attachments</li>
+            <li>Format</li>
+            <li>Images</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "attachments",
+      label: "Attachments",
+      title: "Attachments",
+      content: (
+        <>
+          Our tool provides an entire file preview of the OST mailbox along with attachments.
+          <ul className="list-disc ml-6 mt-2 space-y-1">
+            <li>Audios</li>
+            <li>Videos</li>
+            <li>Images</li>
+            <li>Documents</li>
+            <li>PDF File</li>
+            <li>ZIP File</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "contacts",
+      label: "Contacts",
+      title: "Contacts",
+      content: (
+        <>
+          We permit exporting Outlook contacts with no data loss.
+          <ul className="list-disc ml-6 mt-2 space-y-1">
+            <li>Names</li>
+            <li>Mobile Number</li>
+            <li>Email Address</li>
+            <li>Company Information</li>
+            <li>Notes</li>
+            <li>Person Profile</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "calendars",
+      label: "Calendars",
+      title: "Calendars",
+      content: (
+        <>
+          Our tool allow to open and read OST calendars to your local desktop.
+          <ul className="list-disc ml-6 mt-2 space-y-1">
+            <li>Appointments</li>
+            <li>Meetings</li>
+            <li>Events</li>
+            <li>Task</li>
+            <li>Location</li>
+            <li>Time</li>
+            <li>Begin and End Date</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "tasks",
+      label: "Tasks",
+      title: "Tasks",
+      content: (
+        <>
+          We let you read the task information, and for a big OST file, utilize the filter feature.
+          <ul className="list-disc ml-6 mt-2 space-y-1">
+            <li>Status</li>
+            <li>Priority</li>
+            <li>Starting & Ending Date</li>
+            <li>Progress</li>
+            <li>Task Details</li>
+            <li>Subject</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "notes",
+      label: "Notes",
+      title: "Notes",
+      content: (
+        <>
+          Our OST Viewer provides a way to view the details of notes.
+          <ul className="list-disc ml-6 mt-2 space-y-1">
+            <li>Memos</li>
+            <li>Fast Reminders</li>
+            <li>Written Notes</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "folder-format",
+      label: "Folder Format",
+      title: "Folder Format",
+      content: (
+        <>
+          We help you view the original mailbox sequence.
+          <ul className="list-disc ml-6 mt-2 space-y-1">
+            <li>Drafts</li>
+            <li>Sent</li>
+            <li>Inbox</li>
+            <li>Removed Items</li>
+          </ul>
+        </>
+      )
+    }
+  ];
+
   const whyItems = [
     {
-      icon: Monitor,
-      title: "Secure and Reliable",
-      desc: "Our OST Viewer makes sure entire data safety through the process. Files get processed in a safe environment, without storing any data.",
-    },
-    {
-      icon: Globe,
-      title: "24x7 Accessibility Support",
-      desc: "We offer 24/7 accessibility support anytime and anywhere without any limitations. Our tool guides you to see the data quickly.",
-    },
-    {
-      icon: Zap,
-      title: "No File Size Limitation",
-      desc: "Our OST Viewer tool permits you to upload and see OST files of any size. It does not matter if it is a small file or a large file; we manage effectively.",
-    },
-    {
-      icon: WifiOff,
-      title: "Supports in multiple browsers",
-      desc: "We provide a web-based OST viewer that works on all the major browsers like Chrome, Edge, Firefox, and Safari.",
-    },
-    {
       icon: Eye,
-      title: "Open OST File without Outlook",
-      desc: "Simply access OST files without requiring Outlook or an Exchange Server, which makes it easy when the setup is not available.",
+      title: "1. Only Read Mode",
+      desc: "The tool opens the OST file in a non-editable mode and makes sure that the original data stays same.",
     },
     {
-      icon: Eye,
-      title: "Quick preview of Mailbox Data",
-      desc: "Fastly see emails, attachments, contacts, calendars, and folder formats without any kind of delay.",
+      icon: Shield,
+      title: "2. Secure Attachments Management",
+      desc: "The attachments are showing safety without any kind of risk or threats externally.",
+    },
+    {
+      icon: Shield,
+      title: "3. Privacy focused",
+      desc: "Our tool is developed to make sure that user data does not get shared or monitored by any other third parties.",
+    },
+    {
+      icon: Archive,
+      title: "4. No Data Retained",
+      desc: "All the data is available during an active session and is deleted instantly after the end of the session.",
     },
   ];
 
   const features = [
     {
-      icon: Upload,
-      title: "Quickly Open OST Files",
-      desc: "Upload your OST file and begin viewing data immediately. Our platform processes the file safely and displays all mailbox content in a structured way.",
+      icon: Globe,
+      title: "1. Browser-Based Access",
+      desc: "Ensure the structure of your OST file for smooth direction.",
     },
     {
-      icon: Archive,
-      title: "Discover Full Mailbox Data",
-      desc: "Access all OST file elements: emails, attachments, contacts, calendars, notes, and tasks — shown in an authentic, structured format.",
+      icon: Eye,
+      title: "2. Enables Preview of Orphaned OST files",
+      desc: "Open an orphaned OST file online. Simply open inaccessible or disconnected OST files without any complexities.",
     },
     {
-      icon: Mail,
-      title: "Preview Emails with Complete Details",
-      desc: "Every email shows full properties — sender, recipient, subject, and message body — ensuring a transparent and accurate experience.",
+      icon: FileText,
+      title: "3. Read Only View",
+      desc: "We make sure no changes are made to the authentic data while browsing file contents.",
+    },
+    {
+      icon: Shield,
+      title: "4. No Outlook Reliability",
+      desc: "You do not need Microsoft Outlook or Exchange Server access. You can even easily open an orphaned OST file.",
     },
     {
       icon: Search,
-      title: "Upgraded Search and Filters",
-      desc: "Instantly find emails using advanced filters like sender, subject, or date. Especially useful when working with large OST files.",
+      title: "5. Advanced Search Filters",
+      desc: "Our tool offers advanced search options that enable users to import the OST Files by manually searching or by sorting through date, month, and year filters.",
     },
     {
-      icon: Paperclip,
-      title: "View Attachments without Installation",
-      desc: "View email attachments in the browser without downloading them separately, making quick review safe and easy.",
+      icon: Zap,
+      title: "6. Fast Upload and Preview",
+      desc: "Upload the OST file and begin to see mailbox data within a few seconds.",
     },
-    {
-      icon: Cpu,
-      title: "Handles Huge OST Files",
-      desc: "Optimised to process large OST files efficiently, ensuring smooth performance without slowing down your system.",
-    },
-  ];
-
-  const dataTypes = [
     {
       icon: Mail,
-      color: "bg-brand-500",
-      title: "Emails",
-      desc: "View emails with full properties, HTML structure, images, and signatures. Supports all email message elements.",
+      title: "7. Entire Mailbox Visible",
+      desc: "You can have access to emails, attachments, contacts, calendars, notes, and tasks in a proper format.",
     },
     {
-      icon: Paperclip,
-      color: "bg-violet-500",
-      title: "Attachments",
-      desc: "Full file preview of OST mailbox attachments. Supports TXT, DOC, JPEG, PNG, MP3, MP4, and many more formats.",
-    },
-    {
-      icon: Users,
-      color: "bg-emerald-500",
-      title: "Contacts",
-      desc: "Export Outlook contacts with all details: name, address, phone, email ID, photo, and more — without losing any information.",
-    },
-    {
-      icon: Calendar,
-      color: "bg-orange-500",
-      title: "Calendars",
-      desc: "View OST calendars in ICS format with full schedule details including events, meetings, tasks, and appointments.",
+      icon: Archive,
+      title: "8. Preserves Original Hierarchy & Structure",
+      desc: "Managing the same hierarchy with the OST Viewer Software.",
     },
   ];
 
   const steps = [
     {
-      icon: Upload,
+      icon: Globe,
       num: "01",
-      title: "Upload OST File",
-      desc: "Choose and upload your OST file via the browser. No software download needed — just a few clicks and you're ready.",
+      title: "Step 1: Open our OST Viewer in your browser",
+      desc: "Introduce the tool in your browser, no OST Viewer, no software install needed. There is no requirement to download or install any software; our tool is developed for numerous browsers. It permits users to open OST files without any restrictions.",
+    },
+    {
+      icon: Shield,
+      num: "02",
+      title: "Step 2: Upload the OST File Safely",
+      desc: "Choose and upload the OST file via the saved interface with encrypted data transfer. The overall uploading process is saved utilizing upgraded encryption protocols, making sure data stays safe while transferring, with no difficulties.",
     },
     {
       icon: Cpu,
-      num: "02",
-      title: "Automatic Data Processing",
-      desc: "Once uploaded, our tool safely processes your file, scanning and organising all mailbox data while maintaining the original structure.",
+      num: "03",
+      title: "Step 3: System Processes the File",
+      desc: "The tool has an automated scan and analyzes the OST File. After the uploading process, our system starts to work automatically. It does a quick scan yet wide scan for the analysis of file format and to extract all mailbox elements.",
     },
     {
-      icon: Eye,
-      num: "03",
-      title: "Fast Mailbox Preview",
-      desc: "Browse folders, emails, and attachments directly through a clean, user-friendly interface — no waiting, no installation.",
+      icon: Search,
+      num: "04",
+      title: "Step 4: Quickly Preview and Discover Data",
+      desc: "Preview OST mailbox data before migration and access to emails, attachments, contacts, calendars, and more in a well-structured way. Once the process is completed, you can quickly access and discover the data in a transparent interface. Directly via folders, emails, and preview the attachments.",
     },
   ];
 
   const reviews = [
     {
       name: "Michael Collins",
-      role: "IT Manager",
-      text: "We manage OST files and earlier downloaded various tools across systems. Now everything works in the browser. I upload and see emails within minutes. Quick, dependable, and built for an online environment.",
+      role: "IT Support Specialist",
+      text: "The online OST Viewer worked perfectly for me. I uploaded the file and was able to see all emails quickly without downloading anything.",
       stars: 5,
     },
     {
-      name: "Jessica Turner",
+      name: "Jennifer Anderson",
       role: "System Administrator",
-      text: "I had an orphaned OST file that required immediate access, and the tool made the entire procedure easy. The interface is user-friendly and I opened the OST file without any IT support.",
+      text: "I wanted a reliable OST viewer, so I came across the OST Viewer tool, which is browser-based. Their tool processed my file instantly and managed the folder format.",
       stars: 5,
     },
     {
-      name: "David Brooks",
-      role: "Network Engineer",
-      text: "Impressed that we don't have to rely on Outlook. Uploading the OST file quickly and previewing mailbox data before migration saved me a lot of time.",
+      name: "Laura Brooks",
+      role: "Data Analyst",
+      text: "I was really impressed by how quickly this OST Viewer tool processed my file. The huge OST files opened simply without any issue.",
       stars: 5,
     },
     {
-      name: "Amanda Reynolds",
-      role: "Operations Manager",
-      text: "Our team needs to review archived email data regularly, and this is a perfect solution. Web-based access makes it simple for everyone, even non-technical users.",
+      name: "Kevin Jenkins",
+      role: "Compliance Officer",
+      text: "For audit purposes, I required fast access to mailbox data without downloading software. Their Online OST viewer worked perfectly and kept everything in sequence.",
+      stars: 5,
+    },
+    {
+      name: "Emily Wilson",
+      role: "IT Consultant",
+      text: "I had an Orphaned OST file, and no Outlook was downloaded. The online viewer guided me to access quickly. The interface is user-friendly and simple to use.",
+      stars: 5,
+    },
+    {
+      name: "Julius Smith",
+      role: "Corporate User",
+      text: "The best area is security. The device processes safely and securely, and stores them temporarily. I was able to open OST file without IT support.",
       stars: 5,
     },
   ];
 
   const faqs = [
     {
-      q: "What is OST Viewer Online?",
-      a: "OST Viewer is a browser-based tool that lets you view OST files before converting to PST without downloading any software. Simply upload the file and access your email data directly in the browser.",
+      q: "Q1. Can I read an orphaned OST file online without an Exchange or Outlook profile?",
+      a: "Yes, our tool permits opening and discovering OST files even authentic Exchange Server or Outlook profile is not needed.",
     },
     {
-      q: "Do I need Outlook to open OST files online?",
-      a: "No, you don't need Outlook or an Exchange Server. Our tool works independently, allowing access to orphaned or archived OST file emails without any email client.",
+      q: "Q2. How does the Online OST viewer manage files after processing?",
+      a: "The online OST viewer tool helps in processing the file in a safe environment and automatically deletes it after the process ends.",
     },
     {
-      q: "Is it important to install any software?",
-      a: "No installation or download is needed. Everything works fully in the browser, saving your time and system resources.",
+      q: "Q3. Is it possible to view OST files generated from different Outlook versions?",
+      a: "Yes, the tool supports OST files created by all important versions of Microsoft Outlook.",
     },
     {
-      q: "What kind of data can I see in my OST file?",
-      a: "You can preview all mailbox items including emails, contacts, attachments, calendars, and tasks. The tool maintains the original file structure and format.",
+      q: "Q4. Does the tool show deleted items in the OST file?",
+      a: "Yes, our OST Viewer tool scans and shows deleted mailbox elements.",
     },
     {
-      q: "Is my data safe while using your OST viewer?",
-      a: "Yes. We prioritise data security. Files are processed safely with temporary data storage, and the entire process is built to ensure your privacy.",
+      q: "Q5. Can I search a specific file to view?",
+      a: "Yes, we offer an advanced search view feature where users can easily import and upload a specific file to view.",
     },
     {
-      q: "Does your tool support orphaned OST files?",
-      a: "Yes. Our tool fully supports orphaned and corrupted OST files, allowing you to retrieve and view your data seamlessly.",
+      q: "Q6. What data can I see in the OST Viewer?",
+      a: "We enable users to open, view, and read their OST Files in their structured format, including the email headers, body, attachments, etc., in the mail view mode.",
     },
     {
-      q: "How long does it take to view an OST file?",
-      a: "It depends on file size, but most OST files are processed within seconds, letting you start browsing almost immediately.",
+      q: "Q7. Can I export OST files from the OST Viewer?",
+      a: "Our OST Viewer Online Tool enables users to view their OST Files. However, if you want to export your OST files, use our separate tool called the OST to PST Converter.",
     },
     {
-      q: "Can I view attachments in the OST file?",
-      a: "Yes. View email attachments directly in the browser without installing anything extra — quickly and safely.",
+      q: "Q8. How do I view an OST File without Exchange?",
+      a: "Users can access the OST File Emails without an Exchange Server, using our OST Viewer Online Tool Content. This tool enables users to open, view, and read the OST Files for free.",
+    },
+    {
+      q: "Q9. Can I view large OST Files Online Free 50 GB?",
+      a: "Our tool allows users to view large OST files for free. You can simply browse your files, import, and open to read your OST Files.",
     },
   ];
 
@@ -468,18 +604,27 @@ const OstViewerLanding = ({ onSessionReady }) => {
                 </span>
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-[54px] font-black text-slate-900 tracking-tight leading-[1.05] mb-6">
-                OST Viewer <span className="text-brand-500">Online</span>
+                Secure OST Viewer Online
               </h1>
+              <div className="text-xl md:text-2xl font-bold text-slate-800 mb-4">
+                See, Open, and Analyze OST Files Effectively
+              </div>
               <p className="text-lg text-slate-500 font-medium leading-relaxed mb-8 max-w-lg">
-                See OST files quickly in your browser — no installation needed.
-                Get access to your Outlook OST files anytime, anywhere with our
-                powerful browser-based viewer.
+                Our online free OST Viewer is a strong, easy-to-use solution that opens, reads, and analyzes OST files without requiring Microsoft Outlook. Built for simplicity, our tool shows quick access to mailbox data.
               </p>
+              <div className="flex flex-wrap gap-4 mb-8">
+                <button className="px-6 py-3 rounded-full bg-brand-500 text-white font-bold hover:bg-brand-600 transition-colors">
+                  Begin Free Trial
+                </button>
+                <button className="px-6 py-3 rounded-full bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-colors">
+                  Download Now
+                </button>
+              </div>
               <div className="grid grid-cols-3 gap-6 mb-8">
                 {[
-                  ["1 Million+", "Satisfied Customers"],
-                  ["100%", "Safe & Secure"],
                   ["10+ Years", "Experience"],
+                  ["24x7", "Customer Support"],
+                  ["3 Million+", "Served"],
                 ].map(([val, lab]) => (
                   <div key={lab}>
                     <div className="text-2xl font-black text-slate-900">
@@ -512,12 +657,45 @@ const OstViewerLanding = ({ onSessionReady }) => {
         </div>
       </section>
 
+      {/* ── Highlights ────────────────────────────────── */}
+      <section className="py-20 px-4 bg-white border-b border-slate-100">
+        <div className="max-w-5xl mx-auto">
+          <SectionHeading
+            label="Highlights"
+            title="Key Highlights of our OST Viewer"
+            sub="A complete set of tools to browse and examine your files."
+          />
+          <div className="grid md:grid-cols-2 gap-x-12 gap-y-5">
+            {[
+              "No software installation or downloading required.",
+              "Works from any modern web browser.",
+              "Quick and precise OST File preview.",
+              "View the OST file, email, and attachments.",
+              "Manages original data format and sequence.",
+              "Safe and secure cloud-based processing.",
+              "Suitable for fast access and analysis.",
+              "Open OST File Without Outlook Online Free",
+              "Reduce the technical difficulties.",
+              "Utilize our advanced search feature, where users can search for their file names and upload",
+              "Easily separate the OST Files by sorting through our year, month, and date filters."
+            ].map((text, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={14} className="text-brand-500" />
+                </div>
+                <span className="text-slate-600 font-medium leading-relaxed">{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Why Use ────────────────────────────────── */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-slate-50">
         <div className="max-w-6xl mx-auto">
           <SectionHeading
             label="Why Choose Us"
-            title="Why Use Our OST Viewer Online?"
+            title="Secure and Reliable, our OST Viewer Online Tool"
             sub="The outdated OST viewers needed downloads and installation. We remove that barrier by offering a completely web-based experience."
           />
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -546,11 +724,11 @@ const OstViewerLanding = ({ onSessionReady }) => {
       </section>
 
       {/* ── Features ───────────────────────────────── */}
-      <section className="py-20 px-4 bg-slate-50">
+      <section className="py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <SectionHeading
             label="Features"
-            title="Features of Our OST Viewer"
+            title="Main Features of our Online OST Viewer Tool"
             sub="Everything you need to open, browse, and understand your OST mailbox — no software required."
           />
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -580,31 +758,50 @@ const OstViewerLanding = ({ onSessionReady }) => {
 
       {/* ── Data Types ─────────────────────────────── */}
       <section className="py-20 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <SectionHeading
-            label="Mailbox Data"
-            title="Open and View OST Mailbox Data"
-            sub="Preview every type of data stored in your OST file with full fidelity — exactly as it was in Outlook."
-          />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {dataTypes.map((d, i) => (
-              <div
-                key={i}
-                className="p-7 rounded-2xl border border-slate-200 hover:shadow-xl hover:shadow-slate-200/50 transition-all text-center group"
-              >
-                <div
-                  className={`w-14 h-14 ${d.color} rounded-2xl flex items-center justify-center text-white mx-auto mb-5 group-hover:scale-110 transition-transform`}
-                >
-                  <d.icon size={24} />
-                </div>
-                <h3 className="text-base font-black text-slate-900 mb-2">
-                  {d.title}
-                </h3>
-                <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                  {d.desc}
-                </p>
-              </div>
-            ))}
+        <div className="max-w-6xl mx-auto flex flex-col items-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-[#1e234c] mb-12">
+            View & Read Ost Mailbox With Free Outlook Ost Viewer
+          </h2>
+          
+          <div className="flex flex-col md:flex-row gap-8 items-start w-full max-w-5xl">
+            {/* Tabs */}
+            <div className="w-full md:w-64 flex flex-col border border-slate-200 bg-white shadow-sm shrink-0">
+              {dataTypesTabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <div
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "relative cursor-pointer px-6 py-4 border-b border-slate-200 text-sm font-medium transition-colors last:border-b-0",
+                      isActive
+                        ? "bg-brand-500 text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    {tab.label}
+                    {isActive && (
+                      <div className="hidden md:block absolute top-1/2 -translate-y-1/2 -right-[12px] w-0 h-0 border-y-[16px] border-y-transparent border-l-[12px] border-l-brand-500 z-10" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 bg-white pt-2 md:pl-4">
+              {dataTypesTabs.map((tab) => {
+                if (activeTab !== tab.id) return null;
+                return (
+                  <div key={tab.id} className="animate-in fade-in duration-300">
+                    <div className="text-sm md:text-[15px] text-slate-600 leading-[1.8] max-w-3xl">
+                      <span className="font-bold text-slate-800">{tab.title}: - </span>
+                      {tab.content}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -616,15 +813,16 @@ const OstViewerLanding = ({ onSessionReady }) => {
             Use Cases
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-white mb-8">
-            Why Need OST Viewer?
+            Use Cases of the OST Viewer Tool
           </h2>
           <div className="grid sm:grid-cols-2 gap-4 text-left">
             {[
-              "When Outlook is not installed in the system",
-              "Lost Exchange Server connection",
-              "Open orphaned OST files online",
-              "Need to instantly access archived email data",
-              "Damaged or inaccessible OST file",
+              "Access Corrupted or Orphaned Files: Open, preview, and read the corrupted or Orphaned OST File.",
+              "View OST File: Directly view the contents in an OST File.",
+              "Recovery of Data: If the Outlook email account has been deleted, but the OST File exists.",
+              "Restoration of Mailbox Details: To retrieve and restore all the mailbox data.",
+              "Support Forensic Investigation: To read and examine during forensic analysis without any modifications.",
+              "Access during Server downtime: If the whole mail server is suffering from downtime, and the user needs to access their emails.",
             ].map((item, i) => (
               <div
                 key={i}
@@ -643,8 +841,8 @@ const OstViewerLanding = ({ onSessionReady }) => {
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             label="Process"
-            title="Our OST Viewer Work Process"
-            sub="Beginning with how to open an OST file in your browser is fast, simple, and built for everyone — just three steps."
+            title="How to use our OST Viewer?"
+            sub="Beginning with how to open an OST file in your browser is fast, simple, and built for everyone."
           />
           <div className="grid md:grid-cols-3 gap-8">
             {steps.map((s, i) => (
