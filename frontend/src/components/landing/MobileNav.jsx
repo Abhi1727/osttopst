@@ -151,9 +151,11 @@ const MobileNav = ({
               </SignInButton>
             </SignedOut>
 
-            <Button onClick={() => toast("Coming soon!")} className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-6 rounded-full text-sm border-none shadow-lg shadow-brand-500/20">
-              Get Desktop Tool
-            </Button>
+            {isConverterActive && (
+              <Button onClick={() => toast("Coming soon!")} className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-6 rounded-full text-sm border-none shadow-lg shadow-brand-500/20">
+                Get Desktop Tool
+              </Button>
+            )}
           </div>
         </SheetContent>
       </Sheet>

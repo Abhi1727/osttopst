@@ -585,12 +585,14 @@ const UnifiedHeader = ({ session, onReset }) => {
             </SignInButton>
           </SignedOut>
 
-          <Button
-            onClick={() => toast("Coming soon!")}
-            className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-2.5 2xl:px-5 h-7 2xl:h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap"
-          >
-            Get Desktop Tool
-          </Button>
+          {isConverterActive && (
+            <Button
+              onClick={() => toast("Coming soon!")}
+              className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-2.5 2xl:px-5 h-7 2xl:h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap"
+            >
+              Get Desktop Tool
+            </Button>
+          )}
 
           <SignedIn>
             <div className="flex items-center gap-1.5 2xl:gap-3 ml-1 2xl:ml-2 shrink-0">

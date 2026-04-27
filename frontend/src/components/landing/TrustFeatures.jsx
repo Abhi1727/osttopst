@@ -54,7 +54,7 @@ const TrustFeatures = () => {
       icon: FileText,
       title: "Free File Conversion",
       description:
-        "Automatically convert your files into any required format with our advanced conversion engine.",
+        "Automatically convert your files into any required format with our advanced conversion engine for free.",
     },
     {
       icon: Trash2,
@@ -86,12 +86,12 @@ const TrustFeatures = () => {
       description:
         "Compatible with all versions of Outlook 2021 and below. We have no restrictions for using Outlook.",
     },
-    {
-      icon: Box,
-      title: "Batch Conversion",
-      description:
-        "Convert multiple OST files simultaneously to save time and effort.",
-    },
+    // {
+    //   icon: Box,
+    //   title: "Batch Conversion",
+    //   description:
+    //     "Convert multiple OST files simultaneously to save time and effort.",
+    // },
     {
       icon: Scissors,
       title: "Split Large PST",
@@ -129,7 +129,7 @@ const TrustFeatures = () => {
       icon: FileText,
       title: "Free File Conversion",
       description:
-        "Automatically convert your files into any required format with our advanced conversion engine.",
+        "Automatically convert your files into any required format with our advanced conversion engine for free.",
     },
     {
       icon: Trash2,
@@ -161,12 +161,12 @@ const TrustFeatures = () => {
       description:
         "Compatible with all versions of Outlook 2021 and below. We have no restrictions on using Outlook.",
     },
-    {
-      icon: Box,
-      title: "Batch Conversion",
-      description:
-        "Convert multiple OST files simultaneously to save time and effort.",
-    },
+    // {
+    //   icon: Box,
+    //   title: "Batch Conversion",
+    //   description:
+    //     "Convert multiple OST files simultaneously to save time and effort.",
+    // },
     {
       icon: CloudUpload,
       title: "Direct Migration",
@@ -198,7 +198,7 @@ const TrustFeatures = () => {
       icon: FileText,
       title: "Free File Conversion",
       description:
-        "Automatically convert your files into any required format with our advanced conversion engine.",
+        "Automatically convert your files into any required format with our advanced conversion engine for free.",
     },
     {
       icon: Trash2,
@@ -230,12 +230,12 @@ const TrustFeatures = () => {
       description:
         "Compatible with all versions of Outlook 2021 and below. We have no restrictions on using Outlook.",
     },
-    {
-      icon: Box,
-      title: "Batch Conversion",
-      description:
-        "Convert multiple OST files simultaneously to save time and effort.",
-    },
+    // {
+    //   icon: Box,
+    //   title: "Batch Conversion",
+    //   description:
+    //     "Convert multiple OST files simultaneously to save time and effort.",
+    // },
     {
       icon: CloudUpload,
       title: "Direct Migration",
@@ -267,7 +267,7 @@ const TrustFeatures = () => {
       icon: FileText,
       title: "Free File Conversion",
       description:
-        "Automatically convert your files into any required format with our advanced conversion engine.",
+        "Automatically convert your files into any required format with our advanced conversion engine for free.",
     },
     {
       icon: Trash2,
@@ -299,12 +299,12 @@ const TrustFeatures = () => {
       description:
         "Compatible with all versions of Outlook 2021 and below. We have no restrictions on using Outlook.",
     },
-    {
-      icon: Box,
-      title: "Batch Conversion",
-      description:
-        "Convert multiple OST files simultaneously to save time and effort.",
-    },
+    // {
+    //   icon: Box,
+    //   title: "Batch Conversion",
+    //   description:
+    //     "Convert multiple OST files simultaneously to save time and effort.",
+    // },
     {
       icon: CloudUpload,
       title: "Direct Migration",
@@ -336,7 +336,7 @@ const TrustFeatures = () => {
       icon: FileText,
       title: "Free File Conversion",
       description:
-        "Automatically convert your files into any required format with our advanced conversion engine.",
+        "Automatically convert your files into any required format with our advanced conversion engine for free.",
     },
     {
       icon: Trash2,
@@ -368,12 +368,12 @@ const TrustFeatures = () => {
       description:
         "Compatible with all versions of Outlook 2021 and below. We have no restrictions on using Outlook.",
     },
-    {
-      icon: Box,
-      title: "Batch Conversion",
-      description:
-        "Convert multiple OST files simultaneously to save time and effort.",
-    },
+    // {
+    //   icon: Box,
+    //   title: "Batch Conversion",
+    //   description:
+    //     "Convert multiple OST files simultaneously to save time and effort.",
+    // },
     {
       icon: CloudUpload,
       title: "Direct Migration",
