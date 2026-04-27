@@ -86,8 +86,8 @@ const HeroUpload = ({ onSessionReady }) => {
 
       // 1. Basic extension check
       const ext = file.name.split(".").pop().toLowerCase();
-      if (!["ost", "pst"].includes(ext)) {
-        toast.error("Only .ost and .pst files are supported.");
+      if (!["OST", "pst"].includes(ext)) {
+        toast.error("Only .OST and .pst files are supported.");
         return;
       }
 
@@ -98,9 +98,9 @@ const HeroUpload = ({ onSessionReady }) => {
         return;
       }
 
-      const MAX_SIZE = isProfessional 
+      const MAX_SIZE = isProfessional
         ? 5 * 1024 * 1024 * 1024 // 5 GB
-        : 500 * 1024 * 1024;     // 500 MB
+        : 500 * 1024 * 1024; // 500 MB
       if (file.size > MAX_SIZE) {
         setShowUpgradeModal(true);
         return;
@@ -166,7 +166,7 @@ const HeroUpload = ({ onSessionReady }) => {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".ost"
+          accept=".OST"
           className="hidden"
           onChange={handleFileInputChange}
         />
@@ -204,22 +204,22 @@ const HeroUpload = ({ onSessionReady }) => {
             </button>
           </div>
 
-            <p className="text-xs sm:text-sm font-bold tracking-tight mt-6">
-              Supports .ost/.pst files · Max {isProfessional ? "5GB" : "500MB"}
-            </p>
-            <p className="text-xs sm:text-sm text-slate-900 font-medium">
-              Secure upload · No data stored
-            </p>
-          </div>
+          <p className="text-xs sm:text-sm font-bold tracking-tight mt-6">
+            Supports .OST/.pst files · Max {isProfessional ? "5GB" : "500MB"}
+          </p>
+          <p className="text-xs sm:text-sm text-slate-900 font-medium">
+            Secure upload · No data stored
+          </p>
         </div>
-
-        {/* MODAL */}
-        {showUpgradeModal && (
-          <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
-        )}
       </div>
-    );
-  };
+
+      {/* MODAL */}
+      {showUpgradeModal && (
+        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+      )}
+    </div>
+  );
+};
 
 // ─── Section Heading ─────────────────────────────────────────────────────────
 
@@ -273,18 +273,22 @@ const FaqItem = ({ q, a }) => {
 
 // ─── Main Landing ─────────────────────────────────────────────────────────────
 
-const OstViewerLanding = ({ onSessionReady }) => {
+const OSTViewerLanding = ({ onSessionReady }) => {
   const [activeTab, setActiveTab] = useState("emails");
 
   useEffect(() => {
     document.title = "Open our Online OST Previewer- No Download Required";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", "OST Viewer Online- View OST emails, contacts, calendars & attachments. No Outlook or Exchange installation required.");
+      metaDesc.setAttribute(
+        "content",
+        "OST Viewer Online- View OST emails, contacts, calendars & attachments. No Outlook or Exchange installation required.",
+      );
     } else {
-      const meta = document.createElement('meta');
-      meta.name = 'description';
-      meta.content = "OST Viewer Online- View OST emails, contacts, calendars & attachments. No Outlook or Exchange installation required.";
+      const meta = document.createElement("meta");
+      meta.name = "description";
+      meta.content =
+        "OST Viewer Online- View OST emails, contacts, calendars & attachments. No Outlook or Exchange installation required.";
       document.head.appendChild(meta);
     }
   }, []);
@@ -307,7 +311,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
             <li>Images</li>
           </ul>
         </>
-      )
+      ),
     },
     {
       id: "attachments",
@@ -315,7 +319,8 @@ const OstViewerLanding = ({ onSessionReady }) => {
       title: "Attachments",
       content: (
         <>
-          Our tool provides an entire file preview of the OST mailbox along with attachments.
+          Our tool provides an entire file preview of the OST mailbox along with
+          attachments.
           <ul className="list-disc ml-6 mt-2 space-y-1">
             <li>Audios</li>
             <li>Videos</li>
@@ -325,7 +330,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
             <li>ZIP File</li>
           </ul>
         </>
-      )
+      ),
     },
     {
       id: "contacts",
@@ -343,7 +348,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
             <li>Person Profile</li>
           </ul>
         </>
-      )
+      ),
     },
     {
       id: "calendars",
@@ -362,7 +367,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
             <li>Begin and End Date</li>
           </ul>
         </>
-      )
+      ),
     },
     {
       id: "tasks",
@@ -370,7 +375,8 @@ const OstViewerLanding = ({ onSessionReady }) => {
       title: "Tasks",
       content: (
         <>
-          We let you read the task information, and for a big OST file, utilize the filter feature.
+          We let you read the task information, and for a big OST file, utilize
+          the filter feature.
           <ul className="list-disc ml-6 mt-2 space-y-1">
             <li>Status</li>
             <li>Priority</li>
@@ -380,7 +386,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
             <li>Subject</li>
           </ul>
         </>
-      )
+      ),
     },
     {
       id: "notes",
@@ -395,7 +401,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
             <li>Written Notes</li>
           </ul>
         </>
-      )
+      ),
     },
     {
       id: "folder-format",
@@ -411,8 +417,8 @@ const OstViewerLanding = ({ onSessionReady }) => {
             <li>Removed Items</li>
           </ul>
         </>
-      )
-    }
+      ),
+    },
   ];
 
   const whyItems = [
@@ -484,26 +490,26 @@ const OstViewerLanding = ({ onSessionReady }) => {
   const steps = [
     {
       icon: Globe,
-      num: "01",
-      title: "Step 1: Open our OST Viewer in your browser",
+      num: "Step 1",
+      title: "Open our OST Viewer in your browser",
       desc: "Introduce the tool in your browser, no OST Viewer, no software install needed. There is no requirement to download or install any software; our tool is developed for numerous browsers. It permits users to open OST files without any restrictions.",
     },
     {
       icon: Shield,
-      num: "02",
-      title: "Step 2: Upload the OST File Safely",
+      num: "Step 2",
+      title: "Upload the OST File Safely",
       desc: "Choose and upload the OST file via the saved interface with encrypted data transfer. The overall uploading process is saved utilizing upgraded encryption protocols, making sure data stays safe while transferring, with no difficulties.",
     },
     {
       icon: Cpu,
-      num: "03",
-      title: "Step 3: System Processes the File",
+      num: "Step 3",
+      title: "System Processes the File",
       desc: "The tool has an automated scan and analyzes the OST File. After the uploading process, our system starts to work automatically. It does a quick scan yet wide scan for the analysis of file format and to extract all mailbox elements.",
     },
     {
       icon: Search,
-      num: "04",
-      title: "Step 4: Quickly Preview and Discover Data",
+      num: "Step 4",
+      title: "Quickly Preview and Discover Data",
       desc: "Preview OST mailbox data before migration and access to emails, attachments, contacts, calendars, and more in a well-structured way. Once the process is completed, you can quickly access and discover the data in a transparent interface. Directly via folders, emails, and preview the attachments.",
     },
   ];
@@ -610,7 +616,10 @@ const OstViewerLanding = ({ onSessionReady }) => {
                 See, Open, and Analyze OST Files Effectively
               </div>
               <p className="text-lg text-slate-500 font-medium leading-relaxed mb-8 max-w-lg">
-                Our online free OST Viewer is a strong, easy-to-use solution that opens, reads, and analyzes OST files without requiring Microsoft Outlook. Built for simplicity, our tool shows quick access to mailbox data.
+                Our online free OST Viewer is a strong, easy-to-use solution
+                that opens, reads, and analyzes OST files without requiring
+                Microsoft Outlook. Built for simplicity, our tool shows quick
+                access to mailbox data.
               </p>
               <div className="flex flex-wrap gap-4 mb-8">
                 <button className="px-6 py-3 rounded-full bg-brand-500 text-white font-bold hover:bg-brand-600 transition-colors">
@@ -677,13 +686,15 @@ const OstViewerLanding = ({ onSessionReady }) => {
               "Open OST File Without Outlook Online Free",
               "Reduce the technical difficulties.",
               "Utilize our advanced search feature, where users can search for their file names and upload",
-              "Easily separate the OST Files by sorting through our year, month, and date filters."
+              "Easily separate the OST Files by sorting through our year, month, and date filters.",
             ].map((text, i) => (
               <div key={i} className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center shrink-0 mt-0.5">
                   <Check size={14} className="text-brand-500" />
                 </div>
-                <span className="text-slate-600 font-medium leading-relaxed">{text}</span>
+                <span className="text-slate-600 font-medium leading-relaxed">
+                  {text}
+                </span>
               </div>
             ))}
           </div>
@@ -760,9 +771,9 @@ const OstViewerLanding = ({ onSessionReady }) => {
       <section className="py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto flex flex-col items-center">
           <h2 className="text-2xl md:text-3xl font-bold text-center text-[#1e234c] mb-12">
-            View & Read Ost Mailbox With Free Outlook Ost Viewer
+            View & Read OST Mailbox With Free Outlook OST Viewer
           </h2>
-          
+
           <div className="flex flex-col md:flex-row gap-8 items-start w-full max-w-5xl">
             {/* Tabs */}
             <div className="w-full md:w-64 flex flex-col border border-slate-200 bg-white shadow-sm shrink-0">
@@ -776,7 +787,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
                       "relative cursor-pointer px-6 py-4 border-b border-slate-200 text-sm font-medium transition-colors last:border-b-0",
                       isActive
                         ? "bg-brand-500 text-white"
-                        : "bg-white text-slate-700 hover:bg-slate-50"
+                        : "bg-white text-slate-700 hover:bg-slate-50",
                     )}
                   >
                     {tab.label}
@@ -795,7 +806,9 @@ const OstViewerLanding = ({ onSessionReady }) => {
                 return (
                   <div key={tab.id} className="animate-in fade-in duration-300">
                     <div className="text-sm md:text-[15px] text-slate-600 leading-[1.8] max-w-3xl">
-                      <span className="font-bold text-slate-800">{tab.title}: - </span>
+                      <span className="font-bold text-slate-800">
+                        {tab.title}: -{" "}
+                      </span>
                       {tab.content}
                     </div>
                   </div>
@@ -815,7 +828,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
           <h2 className="text-3xl md:text-4xl font-black text-white mb-8">
             Use Cases of the OST Viewer Tool
           </h2>
-          <div className="grid sm:grid-cols-2 gap-4 text-left">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               "Access Corrupted or Orphaned Files: Open, preview, and read the corrupted or Orphaned OST File.",
               "View OST File: Directly view the contents in an OST File.",
@@ -823,28 +836,39 @@ const OstViewerLanding = ({ onSessionReady }) => {
               "Restoration of Mailbox Details: To retrieve and restore all the mailbox data.",
               "Support Forensic Investigation: To read and examine during forensic analysis without any modifications.",
               "Access during Server downtime: If the whole mail server is suffering from downtime, and the user needs to access their emails.",
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 bg-white/10 rounded-xl p-4 border border-white/20"
-              >
-                <Check size={16} className="text-white mt-0.5 shrink-0" />
-                <span className="text-white font-medium text-sm">{item}</span>
-              </div>
-            ))}
+            ].map((item, i) => {
+              const [title, ...rest] = item.split(":");
+              const description = rest.join(":").trim();
+              return (
+                <div
+                  key={i}
+                  className="flex flex-col items-center text-center gap-3 bg-white/10 hover:bg-white/20 transition-all rounded-xl p-6 border border-white/20"
+                >
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mb-1">
+                    <Check size={24} className="text-white" />
+                  </div>
+                  <h3 className="text-white font-bold text-lg leading-snug">
+                    {title}
+                  </h3>
+                  <p className="text-white/80 font-medium text-sm leading-relaxed">
+                    {description}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ── How It Works ───────────────────────────── */}
       <section className="py-20 px-4 bg-white">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <SectionHeading
             label="Process"
             title="How to use our OST Viewer?"
             sub="Beginning with how to open an OST file in your browser is fast, simple, and built for everyone."
           />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
             {steps.map((s, i) => (
               <motion.div
                 key={i}
@@ -852,9 +876,9 @@ const OstViewerLanding = ({ onSessionReady }) => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.12 }}
-                className="relative text-center p-8 rounded-2xl border border-slate-200 bg-white hover:shadow-xl transition-all group"
+                className="relative text-center px-8 pb-8 pt-10 rounded-2xl border border-slate-200 bg-white hover:shadow-xl transition-all group mt-4"
               >
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-brand-500 text-white text-xs font-black flex items-center justify-center shadow-lg shadow-brand-500/30">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 h-8 px-4 rounded-full bg-brand-500 text-white text-xs font-black flex items-center justify-center shadow-lg shadow-brand-500/30 whitespace-nowrap">
                   {s.num}
                 </div>
                 <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-500 mx-auto mb-5 mt-4 group-hover:bg-brand-500 group-hover:text-white transition-all">
@@ -942,4 +966,4 @@ const OstViewerLanding = ({ onSessionReady }) => {
   );
 };
 
-export default OstViewerLanding;
+export default OSTViewerLanding;
