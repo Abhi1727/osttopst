@@ -698,7 +698,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
             title="Secure and Reliable, our OST Viewer Online Tool"
             sub="The outdated OST viewers needed downloads and installation. We remove that barrier by offering a completely web-based experience."
           />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {whyItems.map((item, i) => (
               <motion.div
                 key={i}
@@ -731,7 +731,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
             title="Main Features of our Online OST Viewer Tool"
             sub="Everything you need to open, browse, and understand your OST mailbox — no software required."
           />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((f, i) => (
               <motion.div
                 key={i}
@@ -844,7 +844,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
             title="How to use our OST Viewer?"
             sub="Beginning with how to open an OST file in your browser is fast, simple, and built for everyone."
           />
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {steps.map((s, i) => (
               <motion.div
                 key={i}
@@ -876,7 +876,7 @@ const OstViewerLanding = ({ onSessionReady }) => {
       <section className="py-20 px-4 bg-slate-50">
         <div className="max-w-6xl mx-auto">
           <SectionHeading label="Customer Reviews" title="What Our Users Say" />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {reviews.map((r, i) => (
               <motion.div
                 key={i}
