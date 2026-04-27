@@ -1,4 +1,3 @@
-using System.IO;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PstConverter.Services;
@@ -45,7 +44,7 @@ public static class ConversionEndpoints
             var itemName = sessionForCheck != null ? $"{sessionForCheck.OriginalFileName}{sessionForCheck.Size}" : sessionId;
 
             // Get comprehensive license status (handles caches, tiers, and limits)
-            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
+            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
             
             // Allow export to start even if license is expired/limited.
             // Under significantly limited states, we fallback to Demo limits (partial export).
@@ -83,14 +82,6 @@ public static class ConversionEndpoints
 
                     if (sessionForCheck != null)
                     {
-                        // Strict License Check: Reject if prospective conversion exceeds limit
-                        if (await licenseClient.WillExceedLimitAsync(userEmail, sessionForCheck.Size))
-                        {
-                            if (logger.IsEnabled(LogLevel.Information))
-                                logger.LogWarning("Export rejected: File session {SessionId} ({Size} bytes) would exceed limit for {UserId}", sessionId, sessionForCheck.Size, userId);
-                            return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
-                        }
-
                         // Professional users: 5GB file size hard limit
                         const long ProfessionalFileSizeLimit = 5L * 1024 * 1024 * 1024;
                         if (sessionForCheck.Size > ProfessionalFileSizeLimit && status.Tier == LicenseTier.Professional)
@@ -239,7 +230,7 @@ public static class ConversionEndpoints
                 var itemName = sessionForCheck != null ? $"{sessionForCheck.OriginalFileName}{sessionForCheck.Size}" : sessionId;
 
                 // Get comprehensive license status (handles caches, tiers, and limits)
-                var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
+                var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
                 
                 // Allow conversion to start even if license is expired/limited.
                 // PstService.ConvertOstToPstAsync now handles this by falling back to Demo limits (partial conversion).
@@ -278,15 +269,7 @@ public static class ConversionEndpoints
 
                         if (sessionForCheck != null)
                         {
-                            // Strict License Check: Reject if prospective conversion exceeds limit
-                            if (await licenseClient.WillExceedLimitAsync(userEmail, sessionForCheck.Size))
-                            {
-                                if (logger.IsEnabled(LogLevel.Information))
-                                    logger.LogWarning("Convert rejected: File session {SessionId} ({Size} bytes) would exceed limit for {UserId}", sessionId, sessionForCheck.Size, userId);
-                                return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);
-                            }
-
-                            // Professional users: 5GB file size hard limit
+                                // Professional users: 5GB file size hard limit
                             const long ProfessionalFileSizeLimit = 5L * 1024 * 1024 * 1024;
                             if (sessionForCheck.Size > ProfessionalFileSizeLimit && status.Tier == LicenseTier.Professional)
                             {
@@ -396,7 +379,7 @@ public static class ConversionEndpoints
             }
 
             var itemName = $"{session!.OriginalFileName}{session.Size}";
-            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
+            var status = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
             if (!status.CanConvert || status.HitSizeLimit || status.HitTimePeriodLimit)
             {
                 return Results.Json(new { error = "LimitReached", status }, statusCode: StatusCodes.Status403Forbidden);

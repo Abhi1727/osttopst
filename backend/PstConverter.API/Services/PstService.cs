@@ -260,7 +260,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         }
 
         // Get detailed license status (checks CanConvert, limits, etc.)
-        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId, itemName);
+        var licenseStatus = await _licenseClient.GetDetailedLicenseStatusAsync(licenseId);
         if (!licenseStatus.CanConvert)
         {
             // If license is expired or limited, fallback to Demo limits to allow "converting what it can"
@@ -341,7 +341,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
                 }
                 backgroundUserId = backgroundUserId.ToLowerInvariant();
 
-                _logger.LogInformation("[PstService] Background conversion starting for session {SessionId}. User: {User}", sessionId, backgroundUserId);
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("[PstService] Background conversion starting for session {SessionId}. User: {User}", sessionId, backgroundUserId);
 
                 if (sessionInfo == null || string.IsNullOrEmpty(sessionInfo.OriginalFileName))
                 {
@@ -373,7 +374,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                 // 2. Check License Item Status
                 // var itemStatus = await _licenseClient.GetItemStatus(backgroundUserId, itemName);
-                _logger.LogInformation("[LICENSE] Item {Item} (User: {User})", itemName, backgroundUserId);
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("[LICENSE] Item {Item} (User: {User})", itemName, backgroundUserId);
 
                 // if (itemStatus == ItemStatus.Failed)
                 // {
@@ -1196,8 +1198,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
         await _pool.AccessAsync(sessionId, filePath, async pst =>
         {
             var folder = pst.GetFolderById(folderId) ?? throw new FileNotFoundException("Folder not found");
-            using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024))
-            using (var archive = new ZipArchive(fs, ZipArchiveMode.Create, true))
+            using var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024);
+            using var archive = new ZipArchive(fs, ZipArchiveMode.Create, true);
             {
                 var archiveLock = new object();
                 await ExportFolderRecursive(resId, pst, folder, "", format, archive, archiveLock, filter, false, -1, CancellationToken.None);
@@ -1359,8 +1361,8 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
                 await _pool.AccessAsync(sessionId, filePath, async pst =>
                 {
-                    using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 4 * 1024 * 1024))
-                    using (var archive = new System.IO.Compression.ZipArchive(fs, ZipArchiveMode.Create, true))
+                    using var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 4 * 1024 * 1024);
+                    using var archive = new System.IO.Compression.ZipArchive(fs, ZipArchiveMode.Create, true);
                     {
                         int index = 0;
 
@@ -1670,7 +1672,7 @@ public class PstService(IPstStoragePool pool, IDistributedCache cache, AppDbCont
 
         finally
         {
-            await Task.WhenAll(exportTasks).ContinueWith(_ => { });
+            await Task.WhenAll(exportTasks).ContinueWith(_ => { }, CancellationToken.None);
         }
 
         if (limitHitLocal) return;

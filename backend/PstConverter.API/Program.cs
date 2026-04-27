@@ -1,13 +1,12 @@
 using System.Text;
 using System.Security.Claims;
 using Aspose.Email;
-using PstConverter.Endpoints; // This is for endpoints
-using PstConverter.Services; // This is for services
-using PstConverter.Data; // This is for data
-using Microsoft.EntityFrameworkCore; // This is for database
-using System.Threading.RateLimiting; // This is for rate limiting
-using Microsoft.Extensions.DependencyInjection; // This is for dependency injection
-using Microsoft.AspNetCore.Mvc; // This is for [FromQuery] and other MVC attributes
+using PstConverter.Endpoints;
+using PstConverter.Services;
+using PstConverter.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 
 // Aspose License will be initialized after builder creation to read from appsettings.json
@@ -53,24 +52,20 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
-builder.Services.AddMemoryCache();// This is for memory cache
+builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IPstStoragePool, PstStoragePool>();
 builder.Services.AddSingleton<R2StorageProvider>();
-
 builder.Services.AddSingleton<IHybridStorageService, HybridStorageService>();
 builder.Services.AddSingleton<IFileCleanupQueue, FileCleanupQueue>();
 builder.Services.AddSingleton<DownloadCleanup>();
 
-
-    // This is for storage pool
-builder.Services.AddScoped<PstService>();// This is for pst service
+builder.Services.AddScoped<PstService>();
 builder.Services.AddScoped<IImageKitService, ImageKitService>();
-builder.Services.AddHostedService<CleanupBackgroundService>();// This is for cleanup background service
-builder.Services.AddSingleton<LicenseAuthService>();// License auth (token caching)
-builder.Services.AddSingleton<LicenseApiClient>();// License API wrapper
-builder.Services.AddEndpointsApiExplorer();// This is for endpoints api explorer
-builder.Services.AddSwaggerGen();// This is for swagger gen
-//builder.Services.AddOpenApi();// This is for open api
+builder.Services.AddHostedService<CleanupBackgroundService>();
+builder.Services.AddSingleton<LicenseAuthService>();
+builder.Services.AddSingleton<LicenseApiClient>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // Configure Response Compression
 builder.Services.AddResponseCompression(options =>
@@ -146,8 +141,8 @@ builder.Services.AddRateLimiter(options =>
             factory: partition => new FixedWindowRateLimiterOptions
             {
                 AutoReplenishment = true,
-                PermitLimit = 5000,
-                QueueLimit = 100,
+                PermitLimit = 5000,// for 1 minute
+                QueueLimit = 100,// if more than 100 requests come in 1 minute then reject
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 Window = TimeSpan.FromMinutes(1)
             }));
@@ -174,7 +169,7 @@ builder.Services.AddCors(options =>
             else
             {
                 // Tighten CORS for production using configuration
-                var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+                var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
                 policy.WithOrigins(allowedOrigins)
                       .AllowAnyMethod()
                       .AllowAnyHeader();
@@ -219,7 +214,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.MapOpenApi();
 }
 
 app.UseResponseCompression();
@@ -301,7 +295,7 @@ app.MapGet("/api/license/status", async (LicenseApiClient licenseClient, ClaimsP
 
     try
     {
-        var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId, null);
+        var status = await licenseClient.GetDetailedLicenseStatusAsync(licenseId);
         return Results.Ok(status);
     }
     catch (Exception ex)

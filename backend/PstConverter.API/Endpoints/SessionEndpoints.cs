@@ -152,7 +152,7 @@ public static class SessionEndpoints
                 }
 
                 var itemName = session?.OriginalFileName != null ? $"{session.OriginalFileName}{session.Size}" : sessionId;
-                var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail, itemName);
+                var licenseStatus = await licenseClient.GetDetailedLicenseStatusAsync(userEmail);
                 limitHit = licenseStatus.HitFileCountLimit || licenseStatus.HitSizeLimit || licenseStatus.HitTimePeriodLimit;
 
                 if (limitHit && session != null && session.Status != "Ready")

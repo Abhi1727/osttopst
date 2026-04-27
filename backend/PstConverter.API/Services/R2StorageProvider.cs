@@ -2,14 +2,12 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Microsoft.Extensions.Configuration;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace PstConverter.Services;
 
 public class R2StorageProvider : IStorageProvider
 {
-    private readonly IAmazonS3 _s3Client;
+    private readonly AmazonS3Client _s3Client;
     private readonly string _bucketName;
 
     //public string ProviderName => "CloudflareR2";

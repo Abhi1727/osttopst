@@ -234,7 +234,8 @@ namespace PstConverter.Services
 
                 var converter = new ConvertStringEnum();
                 var tier = converter.ConvertStringToLicenseTier(response.Content);
-                logger.LogInformation("[LICENSE STATUS] User: {User}, Tier: {Tier}", licenseId, tier);
+                if (logger.IsEnabled(LogLevel.Information))
+                    logger.LogInformation("[LICENSE STATUS] User: {User}, Tier: {Tier}", licenseId, tier);
                 return tier;
             }
             catch (Exception ex)
@@ -352,7 +353,7 @@ namespace PstConverter.Services
         // ─────────────────────────────────────────────────────────────────────
         // 5. GET ...  →  DetailedLicenseStatus
         // ─────────────────────────────────────────────────────────────────────
-        public async Task<DetailedLicenseStatus> GetDetailedLicenseStatusAsync(string emailOrId, string? itemId)
+        public async Task<DetailedLicenseStatus> GetDetailedLicenseStatusAsync(string emailOrId)
         {
             var licenseId = emailOrId.ToLowerInvariant();
 
@@ -423,7 +424,8 @@ namespace PstConverter.Services
                     // Automatically trigger a 7-day trial request if they are at least in Demo tier
                     if (tier == LicenseTier.Demo && (dbUsage.dbTier == LicenseTier.Demo || dbUsage.dbTier == 0))
                     {
-                        logger.LogInformation("[LICENSE AUTO-TRIAL] Auto-starting 7-day trial for {LicenseId}", licenseId);
+                        if (logger.IsEnabled(LogLevel.Information))
+                            logger.LogInformation("[LICENSE AUTO-TRIAL] Auto-starting 7-day trial for {LicenseId}", licenseId);
                         await GenerateSubscriptionRequestAsync(licenseId, new SubscriptionRequest
                         {
                             TotalItems = 1,
@@ -460,8 +462,9 @@ namespace PstConverter.Services
 
                 _localCache[localCacheKey] = (status, DateTime.Now.Add(_cacheDuration));
 
-                logger.LogInformation("[LICENSE DETAILED] User: {User}, Tier: {Tier}, Items: {ItemsUsed}/{ItemsAllotted}, Storage: {StorageUsed}/{StorageAllotted}",
-                    licenseId, status.Tier, status.TotalItemsUsed, status.TotalItemsAllotted, status.TotalStorageUsed, status.TotalStorageAllotted);
+                if (logger.IsEnabled(LogLevel.Information))
+                    logger.LogInformation("[LICENSE DETAILED] User: {User}, Tier: {Tier}, Items: {ItemsUsed}/{ItemsAllotted}, Storage: {StorageUsed}/{StorageAllotted}",
+                        licenseId, status.Tier, status.TotalItemsUsed, status.TotalItemsAllotted, status.TotalStorageUsed, status.TotalStorageAllotted);
 
                 await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(status), new DistributedCacheEntryOptions
                 {
@@ -565,7 +568,8 @@ namespace PstConverter.Services
                 _localCache.TryRemove(licenseId, out _);
                 await cache.RemoveAsync($"license_status_{licenseId}");
 
-                logger.LogInformation("[LICENSE SUBSCRIPTION] Request sent for {LicenseId}. Cleared cache to trigger sync.", licenseId);
+                if (logger.IsEnabled(LogLevel.Information))
+                    logger.LogInformation("[LICENSE SUBSCRIPTION] Request sent for {LicenseId}. Cleared cache to trigger sync.", licenseId);
 
                 return new SubscriptionResponse
                 {
@@ -617,11 +621,6 @@ namespace PstConverter.Services
             return null;
         }
 
-        public async Task<bool> WillExceedLimitAsync(string _licenseId, long _additionalBytes)
-        {
-            // Limits are disabled as per user request.
-            return await Task.FromResult(false);
-        }
 
         private static DetailedLicenseStatus ApplyLimits(DetailedLicenseStatus s)
         {

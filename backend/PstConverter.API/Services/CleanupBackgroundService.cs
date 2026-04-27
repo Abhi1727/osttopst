@@ -36,7 +36,17 @@ public class CleanupBackgroundService(
     {
         _logger.LogInformation("Cleanup Background Service is starting.");
 
-        // Wait before first run so recently-uploaded sessions aren't immediately evicted
+        // Process the cleanup queue continuously in the background from startup
+        _ = Task.Run(async () =>
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try { await ProcessCleanupQueueAsync(); } catch { }
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
+        }, stoppingToken);
+
+        // Wait before first scheduled cleanup run
         try
         {
             await Task.Delay(_initialDelay, stoppingToken);
@@ -64,21 +74,10 @@ public class CleanupBackgroundService(
             }
             catch (OperationCanceledException)
             {
-                // Normal shutdown
                 break;
             }
         }
 
-        // Start the queue processing loop
-        _ = Task.Run(async () =>
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                await ProcessCleanupQueueAsync();
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-            }
-        }, stoppingToken);
-        
         _logger.LogInformation("Cleanup Background Service is stopping.");
     }
 

@@ -2,9 +2,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using PstConverter.Services;
-using System.Threading.Tasks;
-using System;
-using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using PstConverter.Extensions;
 using System.Security.Claims;
@@ -49,7 +46,8 @@ public static class StorageEndpoints
                 if (string.IsNullOrEmpty(request.Key)) return Results.BadRequest(new { error = "Key is required" });
                 if (string.IsNullOrEmpty(request.SessionId)) return Results.BadRequest(new { error = "SessionId is required" });
 
-                logger.LogInformation("[Storage] Finalizing upload for Key: {Key}, SessionId: {SessionId}", request.Key, request.SessionId);
+                if (logger.IsEnabled(LogLevel.Information))
+                    logger.LogInformation("[Storage] Finalizing upload for Key: {Key}, SessionId: {SessionId}", request.Key, request.SessionId);
 
                 // 1. Sync from R2 to Local VM storage
                 await storage.SyncR2ToLocalAsync(request.Key);
