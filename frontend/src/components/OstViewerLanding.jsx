@@ -621,14 +621,14 @@ const OSTViewerLanding = ({ onSessionReady }) => {
                 Microsoft Outlook. Built for simplicity, our tool shows quick
                 access to mailbox data.
               </p>
-              <div className="flex flex-wrap gap-4 mb-8">
+              {/* <div className="flex flex-wrap gap-4 mb-8">
                 <button className="px-6 py-3 rounded-full bg-brand-500 text-white font-bold hover:bg-brand-600 transition-colors">
                   Begin Free Trial
                 </button>
                 <button className="px-6 py-3 rounded-full bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-colors">
                   Download Now
                 </button>
-              </div>
+              </div> */}
               <div className="grid grid-cols-3 gap-6 mb-8">
                 {[
                   ["10+ Years", "Experience"],
@@ -774,37 +774,39 @@ const OSTViewerLanding = ({ onSessionReady }) => {
             View & Read OST Mailbox With Free Outlook OST Viewer
           </h2>
 
-          <div className="flex flex-col md:flex-row gap-8 items-start w-full max-w-5xl">
+          <div className="flex flex-col gap-8 items-center w-full max-w-5xl">
             {/* Tabs */}
-            <div className="w-full md:w-64 flex flex-col border border-slate-200 bg-white shadow-sm shrink-0">
-              {dataTypesTabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <div
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      "relative cursor-pointer px-6 py-4 border-b border-slate-200 text-sm font-medium transition-colors last:border-b-0",
-                      isActive
-                        ? "bg-brand-500 text-white"
-                        : "bg-white text-slate-700 hover:bg-slate-50",
-                    )}
-                  >
-                    {tab.label}
-                    {isActive && (
-                      <div className="hidden md:block absolute top-1/2 -translate-y-1/2 -right-[12px] w-0 h-0 border-y-[16px] border-y-transparent border-l-[12px] border-l-brand-500 z-10" />
-                    )}
-                  </div>
-                );
-              })}
+            <div className="w-full overflow-x-auto pb-6 -mb-6 px-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex flex-row w-max min-w-full border border-slate-200 bg-white shadow-sm shrink-0">
+                {dataTypesTabs.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <div
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={cn(
+                        "relative flex-1 min-w-[130px] text-center cursor-pointer px-4 py-4 border-r border-slate-200 text-sm font-medium transition-colors last:border-r-0 whitespace-nowrap",
+                        isActive
+                          ? "bg-brand-500 text-white"
+                          : "bg-white text-slate-700 hover:bg-slate-50",
+                      )}
+                    >
+                      {tab.label}
+                      {isActive && (
+                        <div className="hidden md:block absolute -bottom-[12px] left-1/2 -translate-x-1/2 w-0 h-0 border-x-[12px] border-x-transparent border-t-[12px] border-t-brand-500 z-10" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 bg-white pt-2 md:pl-4">
+            <div className="w-full bg-white pt-2 px-4 md:px-8 flex justify-center">
               {dataTypesTabs.map((tab) => {
                 if (activeTab !== tab.id) return null;
                 return (
-                  <div key={tab.id} className="animate-in fade-in duration-300">
+                  <div key={tab.id} className="animate-in fade-in duration-300 w-full flex justify-center">
                     <div className="text-sm md:text-[15px] text-slate-600 leading-[1.8] max-w-3xl">
                       <span className="font-bold text-slate-800">
                         {tab.title}: -{" "}
