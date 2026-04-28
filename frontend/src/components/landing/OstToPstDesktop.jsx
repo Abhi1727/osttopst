@@ -114,14 +114,12 @@ const OstToPstDesktop = () => {
         <div className="lg:grid lg:grid-cols-[1fr_1.1fr] lg:gap-16 items-center">
           <div className="mb-12 lg:mb-0 text-left">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
-              Secure OST to PST <br />
-              Conversion with <br />
-              <span className="text-brand-500">Enterprise Precision</span>
+              OST to PST Converter <br />
+              Software <br />
+              <span className="text-brand-500">Quick & Reliable</span>
             </h1>
             <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-xl font-medium">
-              Reliably migrate orphaned, corrupted, or encrypted OST files to
-              accessible Outlook PST format. Experience zero data loss and
-              absolute technical accuracy.
+              Quickly recover inaccessible, corrupted, or orphaned OST files and convert them into PST format without losing the data. Our upgraded OST to PST Converter ensures complete mailbox recovery while maintaining the original structure.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <Button
@@ -148,19 +146,19 @@ const OstToPstDesktop = () => {
                   10+ Years
                 </p>
                 <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">
-                  Industry Experience
+                  of experience
                 </p>
               </div>
               <div>
                 <p className="text-3xl font-bold text-brand-600 mb-1">24x7</p>
                 <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">
-                  Technical Support
+                  Customer Support
                 </p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-brand-600 mb-1">99.9%</p>
+                <p className="text-3xl font-bold text-brand-600 mb-1">99%</p>
                 <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">
-                  Conversion Accuracy
+                  Data Accuracy
                 </p>
               </div>
             </div>
@@ -226,50 +224,50 @@ const OstToPstDesktop = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-12">
             <h2 className="text-3xl font-bold text-[#1e293b] mb-2">
-              Key Product Highlights
+              Key Highlights of our OST to PST Converter Tool
             </h2>
-            <p className="text-[#64748b] text-sm font-medium">
-              Engineered for comprehensive data recovery and seamless mailbox
-              migration.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <HighlightCard
               icon={RefreshCw}
-              text="Seamless conversion of OST to Outlook PST"
+              text="Our OST to PST Converter tool seamlessly converts OST files, including emails, contacts, calendars, tasks, notes, and much more."
             />
             <HighlightCard
               isLogo={true}
-              text="Handles large OST files with zero lag"
+              text="We transform large OST Files into PST while maintaining complete data integrity."
             />
             <HighlightCard
               icon={Wrench}
-              text="Advanced support for corrupted OST files"
+              text="Our Service converts the corrupted OST files also into PST files safely and securely."
             />
             <HighlightCard
               icon={History}
-              text="Supports all MS Outlook versions (2000-2021)"
+              text="We support Office 365, and all the versions of Outlook 2021, 2019, 2016, 2013, 2010, and 2007."
             />
             <HighlightCard
               icon={Layers}
-              text="Built-in de-duplication engine"
+              text="We assure that your email folders and sub-folders are organized with easy navigation and quick access to the data."
             />
             <HighlightCard
               icon={ShieldCheck}
-              text="Preserves Folder Hierarchy & Metadata"
+              text="We ensure that there is no duplication of data while preserving the original items with built-in protection."
             />
             <HighlightCard
               icon={ShieldCheck}
-              text="100% Secure & Data-Integrity Guaranteed"
+              text="Our service safeguards your OST files locally in multiple formats such as PST, MBOX, MSG, EML, and more."
             />
             <HighlightCard
               icon={Zap}
-              text="High-speed multi-threaded conversion"
+              text="After downloading our OST to PST Converter Offline tool, you will get a seamless conversion experience."
+            />
+            <HighlightCard
+              icon={Scissors}
+              text="You can split converted large PST files into smaller PST files using our OST to PST Offline Converter."
             />
             <HighlightCard
               icon={Lock}
-              text="Support for password-protected OST"
+              text="The OST Converter tool guides you to easily retrieve corrupted and deleted data from the OST file into the original file formats."
             />
           </div>
         </div>
@@ -279,49 +277,49 @@ const OstToPstDesktop = () => {
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-[#1e293b] mb-16">
-            Enterprise-Grade Features
+            Prime Features of OST to PST Converter
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
             <EnterpriseFeatureCard
               icon={ArrowLeftRight}
-              title="Multi-Format Export"
-              description="Convert OST not just to PST, but to EML, MSG, PDF, and HTML formats effortlessly."
+              title="Convert OST to PST & Other Formats"
+              description="Our tool helps users convert OST files into PST files as well as into 9 other formats like EML, MSG, HTML, MBOX, EMLX, PDF, DOC, JSON, and TXT."
             />
             <EnterpriseFeatureCard
               icon={Eye}
-              title="Detailed Preview"
-              description="Full preview of all email components, attachments, and metadata before final export."
+              title="Preview Emails and Mailbox Items"
+              description="Users can easily view emails, attachments, and other mailbox items of the OST file before initiating the conversion process."
             />
             <EnterpriseFeatureCard
               icon={CloudOff}
-              title="No Server Needed"
-              description="Standalone utility. No Outlook or Exchange Server connection required for conversion."
+              title="No Outlook Installation Required"
+              description="Our tool ensures that users don’t need to install Outlook to convert the OST file into a PST file."
+            />
+            <EnterpriseFeatureCard
+              icon={Server}
+              title="No Exchange Server Needed"
+              description="Using our OST to PST Converter, you can access or download the converted PST file without the Exchange server & Microsoft Office 365."
             />
             <EnterpriseFeatureCard
               icon={Scissors}
-              title="Split PST Option"
-              description="Prevent PST corruption by splitting large files into smaller, manageable sizes."
+              title="Split Large PST File"
+              description="Our software offers an alternative to split the large PST file to limit the chances of a corrupted file. You can easily split a PST file by size, date, email ID, and folder."
             />
             <EnterpriseFeatureCard
               icon={Type}
               title="Naming Convention"
-              description="Organize exported emails with custom naming rules based on date, subject, or sender."
+              description="With the help of our naming convention option, you can save the OST file to various formats. Our software offers a naming pattern as the subject."
             />
             <EnterpriseFeatureCard
               icon={Layers}
               title="Batch Conversion"
-              description="Process hundreds of OST files in a single queue with enterprise batch processing."
+              description="Convert multiple OST files into PST in one go without damaging the accuracy and save time and effort."
             />
             <EnterpriseFeatureCard
               icon={Monitor}
-              title="Modern Interface"
-              description="Clean, intuitive UI designed for both IT professionals and home users."
-            />
-            <EnterpriseFeatureCard
-              icon={Filter}
-              title="Selective Filter"
-              description="Export specific folders or date ranges to keep your new PST clean and relevant."
+              title="User-Friendly Interface"
+              description="Our OST to PST Converter tool is designed to be well understood by the users. The interface is made simple and easy with clear instructions and guidance."
             />
           </div>
         </div>
@@ -330,9 +328,9 @@ const OstToPstDesktop = () => {
       {/* Supported Export Formats Section */}
       <section className="py-20 bg-brand-500 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-10 text-white">Supported Export Formats</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-10 text-white">Supports 10+ Export Formats Options</h2>
             <div className="flex flex-wrap justify-center gap-3 ">
-                {['PST', 'EML', 'MSG', 'HTML', 'MBOX', 'PDF', 'DOC', 'JSON', 'TXT','DOCX','CSV','XML','VCF','ICS','OLM'].map((format) => (
+                {['PST', 'EML', 'MSG', 'HTML', 'MBOX', 'EMLX', 'PDF', 'DOC', 'JSON', 'TXT'].map((format) => (
                     <div key={format} className="px-5 py-2 bg-white border border-white text-brand-500 text-xs font-bold tracking-widest rounded-md">
                         {format}
                     </div>
@@ -345,40 +343,39 @@ const OstToPstDesktop = () => {
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-                <h2 className="text-3xl font-bold text-slate-900 mb-4">Comprehensive Data Recovery</h2>
-                <p className="text-slate-500 font-medium">Every granular mailbox item is recovered with original formatting.</p>
+                <h2 className="text-3xl font-bold text-slate-900 mb-4">We Convert Complete Data from the OST Mailbox to PST</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
                 <RecoveryCategory 
                     icon={MailIcon} 
                     title="Email" 
-                    items={["Email Body & Threads", "CC / BCC Fields", "From / To / Date", "Subject Line", "Digital Signatures"]} 
+                    items={["Email", "CC", "BCC", "From", "Date", "Subject", "Signature"]} 
                 />
                 <RecoveryCategory 
                     icon={Paperclip} 
-                    title="Attachments" 
-                    items={["Documents (PDF, Office)", "Images (JPG, PNG, TIFF)", "Multimedia Files", "Archive Files (ZIP, RAR)"]} 
+                    title="Attachments & File Data" 
+                    items={["Documents: PDFs, TXT, DOCS, PPT, etc", "Image File Format: JPG, PNG, BMP, TIFF, etc", "Multimedia Files: Audio & Video Files", "Archive Files: ZIP, RAR, 7Z, TAR"]} 
                 />
                 <RecoveryCategory 
                     icon={Folder} 
                     title="Folders" 
-                    items={["Inbox & Sent Items", "Drafts & Deleted Items", "Custom User Folders", "Junk & Archive Mail"]} 
+                    items={["Inbox", "Draft", "Sent Items", "Outbox", "Deleted Items", "Spam Email"]} 
                 />
                 <RecoveryCategory 
                     icon={Contact} 
                     title="Contacts" 
-                    items={["Full Names & Titles", "Primary & Secondary Emails", "Phone Numbers & Addresses", "Company Metadata"]} 
+                    items={["Name", "Email", "Contact Number", "Location"]} 
                 />
                 <RecoveryCategory 
                     icon={Calendar} 
                     title="Calendar" 
-                    items={["Meeting Invites", "Appointments", "Recurring Events", "Location & Attachments"]} 
+                    items={["Meetings", "Appointments", "All-Day Events", "Recurring Events", "One-Day Events", "Reminders/Notifications"]} 
                 />
                 <RecoveryCategory 
                     icon={StickyNote} 
                     title="Notes & Tasks" 
-                    items={["Personalized Notes", "Tasks & Deadlines", "Priority Status", "Start/End Date Metadata"]} 
+                    items={["Note Text, Subject, Color, Category", "Task Title, Due Date, Start Date", "Task Status, Priority"]} 
                 />
             </div>
         </div>
@@ -469,29 +466,30 @@ const OstToPstDesktop = () => {
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-                <h2 className="text-3xl font-bold text-slate-900">Security & Reliability Pillars</h2>
+                <h2 className="text-3xl font-bold text-slate-900 mb-4">What Makes Our OST to PST Converter Secure?</h2>
+                <p className="text-slate-500 font-medium">Our tool provides quick & secured OST to PST conversion.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <SecurityPillarCard 
                     icon={ShieldCheck} 
                     title="Handle Data Safely" 
-                    description="Local processing only. Your emails never leave your machine during the conversion process." 
+                    description="We ensure your safe data management without any alteration in the uploaded data." 
                 />
                 <SecurityPillarCard 
                     icon={ShieldOff} 
-                    title="Zero Data Loss" 
-                    description="Advanced recovery algorithms ensure even corrupted segments are reconstructed without loss." 
+                    title="No Data Loss" 
+                    description="We ensure all emails, contacts, calendars, and attachments are intact in the same manner." 
                 />
                 <SecurityPillarCard 
                     icon={Link2Off} 
                     title="Orphaned OST Recovery" 
-                    description="Full recovery for OST files that are no longer associated with their original Exchange account." 
+                    description="Users can access data from disconnected, damaged, and corrupted OST files." 
                 />
                 <SecurityPillarCard 
                     icon={Lock} 
-                    title="TLS 1.3 Encryption" 
-                    description="Enterprise-grade encryption standards applied to all software communications and updates." 
+                    title="Encryption Support" 
+                    description="We protect sensitive information during the OST to PST Conversion using TLS 1.3 encryption standards." 
                 />
             </div>
         </div>
@@ -500,27 +498,27 @@ const OstToPstDesktop = () => {
       {/* Common Use Scenarios Section */}
       <section className="py-24 bg-brand-500 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl font-bold mb-16 text-white">Common Use Scenarios</h2>
+            <h2 className="text-3xl font-bold mb-16 text-white">Use cases of our OST to PST Converter Software</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
                 <ScenarioCard 
                     icon={UserMinus} 
-                    title="Profile Removed" 
-                    description="When an Outlook profile is deleted and the OST becomes inaccessible." 
+                    title="Outlook Profile Removed" 
+                    description="When your Outlook profile gets deleted or removed, the OST files sometimes become inaccessible. The tool permits you to extract and convert data from the existing OST file." 
                 />
                 <ScenarioCard 
                     icon={Server} 
-                    title="Server Crash" 
-                    description="Retrieving local data after an Exchange server failure or decommissioning." 
+                    title="Exchange Server Crash" 
+                    description="While Exchange Server crashes or experiences downtime, many users lost theor mailbox data. The software helps in retrieving data from OST to PST for ongoing access." 
                 />
                 <ScenarioCard 
                     icon={HeartCrack} 
-                    title="Corrupted OST" 
-                    description="Fixing 'The file is not an Outlook data file' errors through reconstruction." 
+                    title="OST Becomes Corrupted" 
+                    description="The OST file can become corrupted when the system crashes, experiences syncing problems, or undergoes a virus attack. Our tool recovers data from the corrupted OST file and convert into PST." 
                 />
                 <ScenarioCard 
                     icon={Settings} 
-                    title="Switching Systems" 
-                    description="Migrating legacy OST data to a new Windows machine or Outlook version." 
+                    title="Switching System" 
+                    description="When changing email platforms or creating a new Outlook profile, migrating directly from the OST file is impossible. Our converter helps in changing OST into PST, making the migration easy." 
                 />
             </div>
         </div>
@@ -530,38 +528,39 @@ const OstToPstDesktop = () => {
       <section className="py-24 bg-white border-b border-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-                <h2 className="text-3xl font-bold text-slate-900">Trusted by IT Experts</h2>
+                <h2 className="text-3xl font-bold text-slate-900 mb-4">What Our Client Says</h2>
+                <p className="text-slate-500 font-medium">We asked a few of our customers to use our tools and share their honest feedback. Here’s what they say:</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <TestimonialCard 
-                    quote="Recovered 15GB of orphaned OST data in minutes. Absolute lifesaver." 
-                    author="Akash R." 
-                    role="SysAdmin" 
+                    quote="Quick and reliable software- I have converted 20+ OST Files using this tool in easy & minimal steps. Very Efficient and straightforward." 
+                    author="Akash" 
+                    role="IT Admin" 
                 />
                 <TestimonialCard 
-                    quote="The preview feature is incredible. I only exported the folders I needed." 
-                    author="Brinley S." 
-                    role="Corporate IT" 
+                    quote="I am looking for this kind of software, which is easy to use and can convert files easily, maintaining the complete hierarchy." 
+                    author="Brinley Jones" 
+                    role="IT Professional" 
                 />
                 <TestimonialCard 
-                    quote="Fast, clean, and didn't crash once on a corrupted 50GB file." 
-                    author="Ava J." 
-                    role="Software Consultant" 
+                    quote="OST to PST Converter Tool performs flawlessly, offering a smooth, efficient, and high-speed conversion experience." 
+                    author="Ava Richardson" 
+                    role="IT Operations Manager" 
                 />
                 <TestimonialCard 
-                    quote="Highly recommend for enterprise migrations. The batch tool is seamless." 
-                    author="Liam M." 
-                    role="Network Lead" 
+                    quote="The OST to PST Converter turned what could have been a complex email migration into a fast, effortless, and stress-free experience. It maintained the folder hierarchy and recovered all attachments without any loss." 
+                    author="Liam Patterson" 
+                    role="Systems Engineer" 
                 />
                 <TestimonialCard 
-                    quote="Technical support helped me through a tricky encrypted OST scenario instantly." 
-                    author="Chloe W." 
-                    role="Data Specialist" 
+                    quote="I was concerned about the data safety, but OST to PST Converter ensured a smooth and seamless process." 
+                    author="Chloe Bennett" 
+                    role="Office Administrator" 
                 />
                 <TestimonialCard 
-                    quote="The cleanest UI I've seen in a utility tool. No fluff, just performance." 
-                    author="Ethan K." 
-                    role="Tech Support Pro" 
+                    quote="They handled the whole migration process with professionalism and knowledge. It was seamless and smooth throughout the migration." 
+                    author="Ethan Foster" 
+                    role="System Engineer" 
                 />
             </div>
         </div>
@@ -576,16 +575,16 @@ const OstToPstDesktop = () => {
           
           <div className="space-y-3">
             {[
-              { q: "Can I convert corrupted OST files?", a: "Yes, our advanced scanning engine is designed to reconstruct data from severely corrupted OST files and export them to healthy PST format." },
-              { q: "Is MS Outlook required for the conversion?", a: "No, the software works independently. You do not need MS Outlook installed to perform the OST to PST conversion." },
-              { q: "What is the file size limit for conversion?", a: "There is no file size limit. Our tool can easily handle large OST files, including those exceeding 50GB or 100GB." },
-              { q: "Will it maintain the folder hierarchy?", a: "Absolutely. The software ensures that the original folder structure (Inbox, Sent Items, Drafts, etc.) is perfectly preserved in the converted file." },
-              { q: "Does it support encrypted OST files?", a: "Yes, it can decrypt and convert password-protected or encrypted OST files without requiring the original password." },
-              { q: "Can I export to formats other than PST?", a: "Yes, besides PST, you can export to EML, MSG, RTF, HTML, PDF, MBOX, and several other formats." },
-              { q: "Is the free demo limited?", a: "The free demo allows you to scan and preview all mailbox items. To save the converted data, a license key is required." },
-              { q: "Which versions of Windows are supported?", a: "The software is compatible with all modern Windows versions, including Windows 11, 10, 8.1, 8, and 7." },
-              { q: "Is batch conversion possible?", a: "Yes, the technician and enterprise editions support batch conversion, allowing you to process multiple OST files simultaneously." },
-              { q: "How can I get technical support?", a: "We provide 24/7 technical support via email and live chat to help you with any conversion queries or issues." }
+              { q: "Q1) What is the OST to PST Converter?", a: "Our OST to PST Converter is a tool that helps users convert OST files into PST format while safeguarding data integrity." },
+              { q: "Q2) Can I convert OST to PST without MS Outlook?", a: "Yes, you can easily convert OST files into PST format without actually needing MS Outlook." },
+              { q: "Q3) What formats can I export my OST file into?", a: "Our tool, OST to PST Converter, can easily convert OST files into 16+ formats such as PDF, EML, DOC, and MSG, etc." },
+              { q: "Q4) Does the OST to PST Converter tool support large file sizes?", a: "Yes, our tool ensures that users can hold large file sizes and also divide the file size into smaller data as a resultant PST Format." },
+              { q: "Q5) Will my data remain safe and protected during conversion?", a: "Yes, we ensure that during the conversion process, users’ data is safe and secure; we also adhere to all the legal laws and compliance." },
+              { q: "Q6) Can I download your OST to PST Converter?", a: "Yes, you can download our OST to PST Converter from our website. Visit our official website, click on the link to download the software." },
+              { q: "Q7) Can I convert Orphaned OST to PST files?", a: "Yes, you can easily convert Orphaned OST to PST files by recovering all data, such as emails, contacts, and other data from the old account and saving them in PST format." },
+              { q: "Q8) I only have Outlook 16 set up in my system. Will it be connected to the OST to PST converter tool?", a: "Yes, Our Conversion tool is designed to be compatible with all Outlook versions, such as Outlook 2021, 2019, and 2016, and previous versions." },
+              { q: "Q9) What kind of data is converted from OST to PST during the conversion process?", a: "Mailbox data, such as Emails, contacts, notes, tasks, and calendars, is converted from OST to PST." },
+              { q: "Q10) Will there be any duplicate copies of the original data?", a: "No, our tool is designed to convert the original OST data to PST without creating any duplicates." }
             ].map((faq, idx) => (
               <FaqItem key={idx} question={faq.q} answer={faq.a} />
             ))}
@@ -621,7 +620,7 @@ const OstToPstDesktop = () => {
   );
 };
 const EnterpriseFeatureCard = ({ icon: Icon, title, description }) => {
-  const isModern = title === "Modern Interface";
+  const isModern = title === "User-Friendly Interface";
   return (
     <div className="text-left group p-8 border border-slate-100 hover:border-brand-200 transition-all h-full bg-white">
       <div className={`w-12 h-12 flex items-center justify-center mb-6 transition-colors rounded-none ${

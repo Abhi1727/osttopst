@@ -78,6 +78,8 @@ const HowItWorks = () => {
   const isPdf = currentFormat === "PDF";
   const isJson = currentFormat === "JSON";
   const isMsg = currentFormat === "MSG";
+  const isEml = currentFormat === "EML";
+  const isMbox = currentFormat === "MBOX";
 
   return (
     <section
@@ -181,14 +183,25 @@ const HowItWorks = () => {
            
             <DetailStepCard
               number={4}
-              title="Import into Outlook"
-              description={isPdf
-                ? "To use any edition of Microsoft Outlook to open a PDF, do File Menu → Open & Export → Import/Export. Once the PDF is opened, the emails, calendar appointments, and contacts will be available from within it."
-                : isJson
-                ? "To use any edition of Microsoft Outlook to open a JSON, do File Menu → Export → Import/Export. Once the JSON is opened, the emails, calendar appointments, and contacts will be available from within it."
-                : isMsg
-                ? "To use any edition of Microsoft Outlook to open a MSG, do File Menu → Open & Export → Import/Export. Once the MSG is opened, the emails, calendar appointments, and contacts will be available from within it."
-                : `To use any edition of Microsoft Outlook to open ${currentFormat}, do file Menu Open & Export Import/Export. Once the ${currentFormat} is opened the emails, calendar appointments and contacts will be available from within it.`}
+              title={
+                isPdf ? "Open PDF File" :
+                isJson ? "Access JSON Data" :
+                isMbox ? "Import into Email Clients" :
+                "Import into Outlook"
+              }
+              description={
+                isEml
+                  ? "For importing your EML into Outlook, generate a folder, select all, and then click Enter. Once the EML is opened, the emails, calendar appointments, and contacts will be available from within it."
+                  : isJson
+                  ? "To open a JSON file, you can open it with any text editor. The users can also import the organized data directly into applications for upgraded analysis of data."
+                  : isMbox
+                  ? "For access your emails, import the MBOX file into an email client like Mozilla, Thunderbird, Apple Mail, or Eudora. As in Thunderbird, install the free Import/Export Tools NG, click right on your folders, and choose Import MBOX file to see your messages."
+                  : isPdf
+                  ? "To see your PDF file, click twice on the PDF file to open it in any PDF viewer. All the email content, format, and images are protected for reading and sharing."
+                  : isMsg || currentFormat === "PST"
+                  ? "Click twice on the file in which Microsoft Outlook is installed on any Windows. The file will be opened as a native Outlook message showing email body, formatting, and attachments as comes in the original OST file."
+                  : `To use any edition of Microsoft Outlook to open ${currentFormat}, do file Menu Open & Export Import/Export. Once the ${currentFormat} is opened the emails, calendar appointments and contacts will be available from within it.`
+              }
             />
           </div>
         </div>
