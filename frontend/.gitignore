@@ -27,4 +27,6 @@ dist-ssr
 .env.development
 .env.production
 .env.example
-.
+.env.dev
+package-lock.json
+package.json

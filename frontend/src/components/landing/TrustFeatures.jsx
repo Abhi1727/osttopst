@@ -313,7 +313,7 @@ const TrustFeatures = () => {
     },
   ];
 
-   const msgFeatures = [
+  const msgFeatures = [
     {
       icon: ShieldCheck,
       title: "SSL Security",
@@ -404,13 +404,17 @@ const TrustFeatures = () => {
             <span className="text-[#0EA5E9]">Powerful</span>
           </h2>
           <p className="text-slate-600 text-lg font-medium mx-auto leading-relaxed">
-            Advanced features designed to handle even the most complex Outlook data migration scenarios.
+            Advanced features designed to handle even the most complex Outlook
+            data migration scenarios.
           </p>
         </div>
 
         <div className="flex flex-wrap justify-center gap-4 md:gap-6">
           {features.map((feature, index) => (
-            <div key={index} className="w-full sm:w-[calc(50%-1rem)] md:w-[calc(33.33%-1rem)] lg:w-[calc(25%-1.125rem)]">
+            <div
+              key={index}
+              className="w-full sm:w-[calc(50%-1rem)] md:w-[calc(33.33%-1rem)] lg:w-[calc(25%-1.125rem)]"
+            >
               <TrustFeatureCard {...feature} />
             </div>
           ))}

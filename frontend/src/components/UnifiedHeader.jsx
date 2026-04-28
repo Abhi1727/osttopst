@@ -587,7 +587,7 @@ const UnifiedHeader = ({ session, onReset }) => {
 
           {isConverterActive && (
             <Button
-              onClick={() => toast("Coming soon!")}
+              onClick={() => handleNavigation("/ost-to-pst-desktop")}
               className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-2.5 2xl:px-5 h-7 2xl:h-8 rounded-full shadow-lg shadow-brand-500/10 transition-all border-none text-[10px] whitespace-nowrap"
             >
               Get Desktop Tool

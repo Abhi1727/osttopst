@@ -292,7 +292,7 @@ const TechnicalAdvantages = () => {
     },
   ];
 
-   const whyReasonsMsg = [
+  const whyReasonsMsg = [
     {
       icon: Database,
       title: "Preview Data with Attachments",
@@ -355,7 +355,7 @@ const TechnicalAdvantages = () => {
             ? whyReasonsMsg
             : whyReasonsPst;
 
-   const darkSectionSubtitle = isPdf
+  const darkSectionSubtitle = isPdf
     ? "OST to PDF free converter software"
     : isJson
       ? "OST to JSON free converter software"
@@ -421,7 +421,10 @@ const TechnicalAdvantages = () => {
 
           <div className="flex flex-wrap justify-center gap-6 md:gap-8">
             {whyReasons.map((reason, index) => (
-              <div key={index} className="w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.33%-2rem)] xl:w-[calc(25%-2rem)]">
+              <div
+                key={index}
+                className="w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.33%-2rem)] xl:w-[calc(25%-2rem)]"
+              >
                 <AdvantageCard
                   icon={reason.icon}
                   title={reason.title}

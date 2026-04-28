@@ -202,7 +202,6 @@ const Hero = ({ onUploadComplete, onRestore }) => {
           "Conversion",
         );
 
-
         // Backend returns sessionId, not _id
         const sessionId = session.sessionId || session._id;
         setActiveSessionId(sessionId);
@@ -321,7 +320,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
             Online - Fast & Secure
           </h1>
           <p className="mb-2 text-base text-slate-600 font-medium max-w-sm md:max-w-lg leading-relaxed">
-            {currentFormat === "MSG" 
+            {currentFormat === "MSG"
               ? `Our Outlook OST to MSG converter instantly converts OST files to MSG format in your browser. Preview and export the OST mailbox to MSG to safely store your data without any software installation.`
               : `Instantly convert Outlook OST files to ${currentFormat} format in
             your browser. Preview and export your data safely without any
@@ -343,7 +342,12 @@ const Hero = ({ onUploadComplete, onRestore }) => {
             <div className="flex items-center gap-2">
               <Clock size={20} className="text-slate-900 shrink-0" />
               <span className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
-                <a href="https://osttopst.us/contact-us" className="hover:text-brand-500 transition-colors">24/7 expert support</a>
+                <a
+                  href="https://osttopst.us/contact-us"
+                  className="hover:text-brand-500 transition-colors"
+                >
+                  24/7 expert support
+                </a>
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -461,13 +465,29 @@ const Hero = ({ onUploadComplete, onRestore }) => {
                       <p className="text-xs font-bold sm:text-sm  font-bold tracking-tight">
                         Supports .ost files · Max{" "}
                         {isProfessional ? "5GB" : "500MB"} · Unlimited with{" "}
-                        <span className="cursor-pointer text-brand-600 hover:underline inline-block border-b border-transparent" onClick={(e) => { e.preventDefault(); toast("Coming soon!"); }}>desktop app</span>
+                        <span
+                          className="cursor-pointer text-brand-600 hover:underline inline-block border-b border-transparent"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate("/ost-to-pst-desktop");
+                          }}
+                        >
+                          desktop app
+                        </span>
                       </p>
                       <p className="text-xs sm:text-sm md:text-base text-slate-900 font-medium sm:whitespace-nowrap px-2">
                         Agreed to{" "}
                         <span className="font-bold">Privacy Policy</span>. Use{" "}
-                        <span className="font-bold cursor-pointer text-brand-600 hover:underline inline-block border-b border-transparent" onClick={(e) => { e.preventDefault(); toast("Coming soon!"); }}>Desktop Software</span> for
-                        unlimited size
+                        <span
+                          className="font-bold cursor-pointer text-brand-600 hover:underline inline-block border-b border-transparent"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate("/ost-to-pst-desktop");
+                          }}
+                        >
+                          Desktop Software
+                        </span>{" "}
+                        for unlimited size
                       </p>
                     </div>
                   )}

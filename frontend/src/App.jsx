@@ -30,14 +30,14 @@ const BlogPostDetail = lazy(() => import("./components/BlogPostDetail"));
 // Admin Guard Component
 const AdminGuard = ({ children }) => {
   const { user, isLoaded } = useUser();
-  
+
   if (!isLoaded) return null; // Wait for user to load
-  
+
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
     return <Navigate to="/" replace />;
   }
-  
+
   return children;
 };
 const Pricing = lazy(() => import("./components/Pricing"));
@@ -45,7 +45,6 @@ const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./components/TermsConditions"));
 const OstViewer = lazy(() => import("./components/OstViewer"));
 const RefundPolicy = lazy(() => import("./components/RefundPolicy"));
-
 
 function App() {
   const [session, setSession] = useState(() => {
@@ -101,15 +100,15 @@ function App() {
   useEffect(() => {
     const baseUrl = "https://www.osttopst.us";
     let path = location.pathname;
-    
+
     // Remove trailing slash if any (except for root)
-    if (path.length > 1 && path.endsWith('/')) {
-        path = path.slice(0, -1);
+    if (path.length > 1 && path.endsWith("/")) {
+      path = path.slice(0, -1);
     }
 
     // Skip blog posts since BlogPostDetail.jsx manages its own canonical tag
-    if (path.startsWith('/blogs/') && path !== '/blogs') {
-       return; 
+    if (path.startsWith("/blogs/") && path !== "/blogs") {
+      return;
     }
 
     const canonicalUrl = `${baseUrl}${path}`;
@@ -127,8 +126,12 @@ function App() {
     <ErrorBoundary>
       <SchemaMarkup />
       <Toaster position="top-right" />
-      {location.pathname !== "/preview" && (
-        <Suspense fallback={<div className="h-16 md:h-[72px] w-full bg-white border-b border-slate-50" />}>
+      {!["/preview", "/ost-to-pst-desktop"].includes(location.pathname) && (
+        <Suspense
+          fallback={
+            <div className="h-16 md:h-[72px] w-full bg-white border-b border-slate-50" />
+          }
+        >
           <UnifiedHeader session={session} onReset={handleReset} />
         </Suspense>
       )}
@@ -164,7 +167,10 @@ function App() {
               />
               <Route path="/faq" element={<Faq />} />
               <Route path="/contact-us" element={<ContactUs />} />
-              <Route path="/support" element={<Navigate to="/contact-us" replace />} />
+              <Route
+                path="/support"
+                element={<Navigate to="/contact-us" replace />}
+              />
               <Route path="/blogs" element={<Blogs />} />
               <Route
                 path="/admin/blogs"
@@ -180,32 +186,173 @@ function App() {
               <Route path="/our-plans" element={<Pricing />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
-              <Route path="/ost-to-pdf" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-json" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-mbox" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-eml" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-msg" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-html" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-mhtml" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-doc" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-docx" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-txt" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-rtf" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-csv" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-xml" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-vcf" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-ics" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-xps" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
-              <Route path="/ost-to-tiff" element={<LandingPage onUploadComplete={handleUploadComplete} onRestore={handleRestore} />} />
               <Route
-                path="/ost-viewer"
-                element={<OstViewer />}
+                path="/ost-to-pdf"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-json"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-mbox"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-eml"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-msg"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-html"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-mhtml"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-doc"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-docx"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-txt"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-rtf"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-csv"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-xml"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-vcf"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-ics"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-xps"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route
+                path="/ost-to-tiff"
+                element={
+                  <LandingPage
+                    onUploadComplete={handleUploadComplete}
+                    onRestore={handleRestore}
+                  />
+                }
+              />
+              <Route path="/ost-viewer" element={<OstViewer />} />
+              <Route
+                path="/ost-to-pst-desktop"
+                element={
+                  <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
+                    hello it desktop page
+                  </div>
+                }
               />
               <Route path="/refund-policy" element={<RefundPolicy />} />
             </Routes>
           </Suspense>
         </main>
-        {location.pathname !== "/preview" && (
+        {!["/preview", "/ost-to-pst-desktop"].includes(location.pathname) && (
           <Suspense fallback={null}>
             <Footer />
           </Suspense>
