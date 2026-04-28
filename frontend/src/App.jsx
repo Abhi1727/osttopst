@@ -26,6 +26,7 @@ const ContactUs = lazy(() => import("./components/ContactUs"));
 const Blogs = lazy(() => import("./components/Blogs"));
 const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
 const BlogPostDetail = lazy(() => import("./components/BlogPostDetail"));
+const OstToPstDesktop = lazy(() => import("./components/landing/OstToPstDesktop"));
 
 // Admin Guard Component
 const AdminGuard = ({ children }) => {
@@ -126,7 +127,7 @@ function App() {
     <ErrorBoundary>
       <SchemaMarkup />
       <Toaster position="top-right" />
-      {!["/preview", "/ost-to-pst-desktop"].includes(location.pathname) && (
+      {!["/preview"].includes(location.pathname) && (
         <Suspense
           fallback={
             <div className="h-16 md:h-[72px] w-full bg-white border-b border-slate-50" />
@@ -340,19 +341,12 @@ function App() {
                 }
               />
               <Route path="/ost-viewer" element={<OstViewer />} />
-              <Route
-                path="/ost-to-pst-desktop"
-                element={
-                  <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
-                    hello it desktop page
-                  </div>
-                }
-              />
+              <Route path="/ost-to-pst-desktop" element={<OstToPstDesktop />} />
               <Route path="/refund-policy" element={<RefundPolicy />} />
             </Routes>
           </Suspense>
         </main>
-        {!["/preview", "/ost-to-pst-desktop"].includes(location.pathname) && (
+        {!["/preview"].includes(location.pathname) && (
           <Suspense fallback={null}>
             <Footer />
           </Suspense>
