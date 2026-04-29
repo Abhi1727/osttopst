@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, memo } from "react";
 import Hero from "./Hero";
 import { SignedIn } from "@clerk/clerk-react";
 
@@ -15,7 +15,7 @@ const HowItWorks = lazy(() => import("./HowItWorks"));
 const TrustFeatures = lazy(() => import("./TrustFeatures"));
 const LandingFaq = lazy(() => import("./LandingFaq"));
 
-const LandingPage = ({ onUploadComplete, onRestore }) => {
+const LandingPage = memo(({ onUploadComplete, onRestore }) => {
   return (
     <div className="font-sans">
       {/* First Screen Wrapper - Hero & History Block */}
@@ -58,6 +58,6 @@ const LandingPage = ({ onUploadComplete, onRestore }) => {
       </Suspense>
     </div>
   );
-};
+});
 
 export default LandingPage;

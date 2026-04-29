@@ -4,108 +4,23 @@ import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
 import ChevronUp from "lucide-react/dist/esm/icons/chevron-up";
 
 const FORMATS = [
-  {
-    ext: "PST",
-    bg: "bg-brand-700",
-    description:
-      "Convert to PST and access your Outlook data for simple access, import, and backup.",
-  },
-  {
-    ext: <a href='https://osttopst.us/ost-to-msg'>MSG</a>,
-    bg: "bg-brand-900",
-    description:
-      "Import the Emails in their complete Outlook format while preserving formatting, attachments, and metadata.",
-  },
-  {
-    ext: <a href='https://osttopst.us/ost-to-eml'>EML</a>,
-    bg: "bg-green-700",
-    description:
-      "Save the Emails in a widely supported format that works on email clients without any compatibility problems.",
-  },
-  {
-    ext: <a href='https://osttopst.us/ost-to-pdf'>PDF</a>,
-    bg: "bg-red-800",
-    description:
-      "Save your emails in a professional format that's perfect for sharing, printing, and compliance.",
-  },
-  {
-    ext: "DOCX",
-    bg: "bg-brand-800",
-    description:
-      "Convert emails into fully editable Word files, suitable for documentation, editing, and reporting.",
-  },
-  {
-    ext: "HTML",
-    bg: "bg-emerald-600",
-    description:
-      "View and share emails as web pages that open simply in any browser with structured formatting.",
-  },
-  {
-    ext: <a href='https://osttopst.us/ost-to-mbox'>MBox</a>,
-    bg: "bg-brand-700",
-    description:
-      "Easily move your emails to a platform like Apple Mail or Thunderbird with full data cohesion.",
-  },
-  {
-    ext: "CSV",
-    bg: "bg-green-600",
-    description:
-      "Export email data and contacts into a spreadsheet structure for filtering, sorting, and analysis.",
-  },
-  {
-    ext: "XML",
-    bg: "bg-brand-600",
-    description:
-      "Collect email data in a format ideal for system integration and technical work processes.",
-  },
-  {
-    ext: <a href='https://osttopst.us/ost-to-json'>JSON</a>,
-    bg: "bg-brand-500",
-    description:
-      "Get transparent, properly structured data output, which is made for developers and modern application use.",
-  },
-  {
-    ext: "VCF",
-    bg: "bg-brand-600",
-    description:
-      "Transfer your contacts quickly to any device or email application without any issues.",
-  },
-  {
-    ext: "ICS",
-    bg: "bg-brand-600",
-    description:
-      "Save calendar events with full information, making it simple to import into any calendar application.",
-  },
-  {
-    ext: "TXT",
-    bg: "bg-slate-500",
-    description:
-      "Save your emails as normal plain text files for fast access, lightweight storage, and easy readability.",
-  },
-  {
-    ext: "RTF",
-    bg: "bg-pink-600",
-    description:
-      "Save simple formatting while making sure the compatibility across several platforms and applications.",
-  },
-  {
-    ext: "EMLX",
-    bg: "bg-zinc-700",
-    description:
-      "Convert emails for a seamless experience in Apple Mail without overlooking structure and attachments.",
-  },
-  {
-    ext: "OLM",
-    bg: "bg-brand-400",
-    description:
-      "Move mailbox data to the Mac Outlook structure with easy compatibility and simple import.",
-  },
-  {
-    ext: "OFT",
-    bg: "bg-brand-500",
-    description:
-      "Generate Outlook email templates to reuse content and enable fast communication.",
-  },
+  { ext: "PST", bg: "bg-brand-700", description: "Convert to PST and access your Outlook data for simple access, import, and backup." },
+  { ext: "MSG", bg: "bg-brand-900", href: "https://osttopst.us/ost-to-msg", description: "Import the Emails in their complete Outlook format while preserving formatting, attachments, and metadata." },
+  { ext: "EML", bg: "bg-green-700", href: "https://osttopst.us/ost-to-eml", description: "Save the Emails in a widely supported format that works on email clients without any compatibility problems." },
+  { ext: "PDF", bg: "bg-red-800", href: "https://osttopst.us/ost-to-pdf", description: "Save your emails in a professional format that's perfect for sharing, printing, and compliance." },
+  { ext: "DOCX", bg: "bg-brand-800", description: "Convert emails into fully editable Word files, suitable for documentation, editing, and reporting." },
+  { ext: "HTML", bg: "bg-emerald-600", description: "View and share emails as web pages that open simply in any browser with structured formatting." },
+  { ext: "MBox", bg: "bg-brand-700", href: "https://osttopst.us/ost-to-mbox", description: "Easily move your emails to a platform like Apple Mail or Thunderbird with full data cohesion." },
+  { ext: "CSV", bg: "bg-green-600", description: "Export email data and contacts into a spreadsheet structure for filtering, sorting, and analysis." },
+  { ext: "XML", bg: "bg-brand-600", description: "Collect email data in a format ideal for system integration and technical work processes." },
+  { ext: "JSON", bg: "bg-brand-500", href: "https://osttopst.us/ost-to-json", description: "Get transparent, properly structured data output, which is made for developers and modern application use." },
+  { ext: "VCF", bg: "bg-brand-600", description: "Transfer your contacts quickly to any device or email application without any issues." },
+  { ext: "ICS", bg: "bg-brand-600", description: "Save calendar events with full information, making it simple to import into any calendar application." },
+  { ext: "TXT", bg: "bg-slate-500", description: "Save your emails as normal plain text files for fast access, lightweight storage, and easy readability." },
+  { ext: "RTF", bg: "bg-pink-600", description: "Save simple formatting while making sure the compatibility across several platforms and applications." },
+  { ext: "EMLX", bg: "bg-zinc-700", description: "Convert emails for a seamless experience in Apple Mail without overlooking structure and attachments." },
+  { ext: "OLM", bg: "bg-brand-400", description: "Move mailbox data to the Mac Outlook structure with easy compatibility and simple import." },
+  { ext: "OFT", bg: "bg-brand-500", description: "Generate Outlook email templates to reuse content and enable fast communication." },
 ];
 
 const FormatMarquee = () => {
@@ -124,28 +39,31 @@ const FormatMarquee = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10">
-          
-            {displayedFormats.map((item, index) => (
+          {displayedFormats.map((item) => (
+            <div
+              key={item.ext}
+              className="flex items-start gap-4 group cursor-default"
+            >
               <div
-                key={item.ext}
-                className="flex items-start gap-4 group cursor-default"
+                className={`w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-xl ${item.bg} flex items-center justify-center shadow-lg transition-transform group-hover:scale-105`}
               >
-                <div
-                  className={`w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-xl ${item.bg} flex items-center justify-center shadow-lg transition-transform group-hover:scale-105`}
-                >
-                  <span className="text-white text-[10px] md:text-xs font-black tracking-tighter uppercase px-1 text-center">
-                    {item.ext}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-slate-600 text-[13px] md:text-sm leading-relaxed font-normal">
-                   
-                    {item.description}
-                  </p>
-                </div>
+                <span className="text-white text-[10px] md:text-xs font-black tracking-tighter uppercase px-1 text-center">
+                  {item.href ? (
+                    <a href={item.href} className="text-white no-underline">
+                      {item.ext}
+                    </a>
+                  ) : (
+                    item.ext
+                  )}
+                </span>
               </div>
-            ))}
-         
+              <div className="flex flex-col gap-1">
+                <p className="text-slate-600 text-[13px] md:text-sm leading-relaxed font-normal">
+                  {item.description}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
 
         {FORMATS.length > 12 && (

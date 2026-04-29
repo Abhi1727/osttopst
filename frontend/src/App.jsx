@@ -11,7 +11,7 @@ import {
 } from "react-router-dom";
 const UnifiedHeader = lazy(() => import("./components/UnifiedHeader"));
 const Footer = lazy(() => import("./components/landing/Footer"));
-import LandingPage from "./components/landing/LandingPage";
+const LandingPage = lazy(() => import("./components/landing/LandingPage"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import SchemaMarkup from "./components/SchemaMarkup";
 import { Toaster } from "@/components/ui/sonner";

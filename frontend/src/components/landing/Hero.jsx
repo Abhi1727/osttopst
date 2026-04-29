@@ -7,7 +7,7 @@ import React, {
   Suspense,
 } from "react";
 import { useDropzone } from "react-dropzone";
-import { useNavigate, useLocation, Route } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { fileService } from "../../services/fileService";
 import { conversionService } from "../../services/conversionService";
@@ -310,7 +310,7 @@ const Hero = ({ onUploadComplete, onRestore }) => {
     <section className="relative pt-1 md:pt-2 pb-8 md:pb-12 px-3 md:px-5 lg:px-8 w-full flex items-center">
       <div className="max-w-[1440px] mx-auto relative z-10 w-full lg:grid lg:grid-cols-[1fr_1.3fr] lg:gap-10 items-center">
         {/* Left Column: Heading & Benefits */}
-        <div className="text-left flex flex-col md:items-center lg:items-start md:text-center lg:text-left">
+        <div className="text-center flex flex-col md:items-center lg:items-start md:text-center lg:text-left">
           <h1 className="mb-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 tracking-tighter leading-tight">
             Convert{" "}
             <span className="text-brand-500 font-bold uppercase">

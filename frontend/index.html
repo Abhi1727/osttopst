@@ -5,32 +5,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google-site-verification" content="google714b91deb92b0330.html" />
-  <meta title=" OST to PST Converter For Free- OsttoPst.us" />
-  <!-- Fstep<meta name="description" content="Convert OST files to PST format quickly and securely. Professional OST TO PST converter with advanced features and reliable performance." /> -->
   <meta name="description"
     content="Use the best OST to PST Converter to instantly convert OST files into PST format with overall data accuracy, security, and without data loss" />
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
   <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
   <title>OST TO PST Converter - Professional OST to PST File Conversion Tool</title>
-  <!-- Performance Optimization: DNS Prefetch & Preconnect -->
+
+  <!-- Performance: DNS Prefetch & Preconnect -->
   <link rel="dns-prefetch" href="https://clerk.accounts.dev" />
   <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
   <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
   <link rel="preconnect" href="https://clerk.accounts.dev" crossorigin />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  
-  <!-- Optimized Non-Blocking Font Loading -->
+
+  <!-- Non-Blocking Font Loading -->
   <link rel="preload" as="style"
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
-  <link id="font-stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+  <link id="font-stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" media="print" />
   <script>
-    (function() {
+    (function () {
       var el = document.getElementById('font-stylesheet');
-      if (el) {
-        el.addEventListener('load', function() { el.media = 'all'; });
-      }
+      if (el) { el.addEventListener('load', function () { el.media = 'all'; }); }
     })();
   </script>
   <noscript>
@@ -41,165 +39,76 @@
 
 <body>
   <div id="root">
-    <!-- Mission-Critical Loading Shell: Prevents white flash and improves FCP -->
+    <!-- Loading Shell: mirrors actual Hero layout to eliminate CLS -->
     <style>
-      .loading-shell {
-        position: fixed;
-        inset: 0;
-        background: #ffffff;
-        display: flex;
-        flex-direction: column;
-        z-index: 9999;
-        font-family: "Plus Jakarta Sans", -apple-system, system-ui, sans-serif;
-      }
-
-      .shell-header {
-        height: 72px;
-        border-bottom: 1px solid #f8fafc;
-        display: flex;
-        align-items: center;
-        padding: 0 40px;
-        justify-content: space-between;
-      }
-
-      .shell-logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .shell-logo-icon {
-        width: 28px;
-        height: 28px;
-        background: #0078d4;
-        border-radius: 6px;
-      }
-
-      .shell-logo-text {
-        width: 140px;
-        height: 18px;
-        background: #f1f5f9;
-        border-radius: 4px;
-      }
-
-      .shell-nav {
-        display: flex;
-        gap: 24px;
-      }
-
-      .shell-nav-item {
-        width: 60px;
-        height: 12px;
-        background: #f1f5f9;
-        border-radius: 4px;
-      }
-
-      .shell-hero {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 40px;
-        text-align: center;
-        background: linear-gradient(to bottom, #f0f9ff, #ffffff);
-      }
-
-      /* Match exactly the Hero.jsx styles for the LCP h1 */
-      .shell-h1 {
-        font-size: clamp(1.5rem, 5vw, 3rem); /* Matches text-2xl to lg:text-5xl */
-        font-weight: 700;
-        color: #1e293b; /* text-slate-800 */
-        letter-spacing: -0.05em; /* tracking-tighter */
-        line-height: 1.25; /* leading-tight */
-        margin-bottom: 4px; /* mb-1 (4px) */
-        max-width: 900px;
-      }
-
-      .shell-h1 span {
-        color: #0ea5e9; /* text-brand-500 */
-        font-weight: 700;
-        text-transform: uppercase;
-      }
-
-      .shell-p {
-        font-size: 1rem; /* text-base */
-        font-weight: 500; /* font-medium */
-        color: #475569; /* text-slate-600 */
-        max-width: 512px; /* max-w-lg */
-        margin-bottom: 8px; /* mb-2 (8px) */
-        line-height: 1.625; /* leading-relaxed */
-      }
-
-      .shell-uploader {
-        width: 100%;
-        max-width: 650px;
-        height: 380px;
-        background: #ffffff;
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.05);
-        border-radius: 32px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 24px;
-      }
-
-      .shell-up-icon {
-        width: 80px;
-        height: 80px;
-        background: #f8fafc;
-        border-radius: 20px;
-      }
-
-      .shell-btn {
-        width: 240px;
-        height: 56px;
-        background: #0ea5e9;
-        border-radius: 12px;
-      }
-
-      @keyframes pulse {
-
-        0%,
-        100% {
-          opacity: 1;
-        }
-
-        50% {
-          opacity: 0.7;
-        }
-      }
-
-      .animate-pulse {
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      *{box-sizing:border-box;margin:0;padding:0}
+      .ls{position:fixed;inset:0;background:#f0f9ff;display:flex;flex-direction:column;z-index:9999;font-family:"Plus Jakarta Sans",-apple-system,system-ui,sans-serif}
+      .ls-hdr{height:64px;border-bottom:1px solid #f1f5f9;background:#fff;display:flex;align-items:center;padding:0 24px;justify-content:space-between;flex-shrink:0}
+      .ls-logo{display:flex;align-items:center;gap:10px}
+      .ls-logo-icon{width:26px;height:26px;background:#0ea5e9;border-radius:6px}
+      .ls-logo-text{width:120px;height:16px;background:#e2e8f0;border-radius:4px}
+      .ls-nav{display:flex;gap:20px}
+      .ls-nav-item{width:52px;height:11px;background:#e2e8f0;border-radius:4px}
+      .ls-hero{flex:1;background:#f0f9ff;padding:8px 12px 32px;display:flex;align-items:center;overflow:hidden}
+      .ls-grid{width:100%;max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+      .ls-left{display:flex;flex-direction:column;gap:12px}
+      .ls-h1-line{height:28px;background:#cbd5e1;border-radius:6px}
+      .ls-p-line{height:13px;background:#e2e8f0;border-radius:4px}
+      .ls-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+      .ls-badge{height:26px;width:136px;background:#e2e8f0;border-radius:6px}
+      .ls-card{background:#fff;border-radius:24px;border:1px solid #f1f5f9;box-shadow:0 20px 60px -15px rgba(0,0,0,0.05);padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:20px;width:100%}
+      .ls-icon{width:80px;height:80px;background:#f1f5f9;border-radius:16px}
+      .ls-card-title{height:24px;width:200px;background:#e2e8f0;border-radius:6px}
+      .ls-btn{width:100%;max-width:320px;height:56px;background:#0ea5e9;border-radius:12px}
+      .ls-foot{height:13px;width:200px;background:#e2e8f0;border-radius:4px}
+      @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+      .ap{animation:pulse 1.8s cubic-bezier(.4,0,.6,1) infinite}
+      @media(min-width:1024px){
+        .ls-hdr{height:72px;padding:0 40px}
+        .ls-hero{padding:4px 32px 40px}
+        .ls-grid{display:grid;grid-template-columns:1fr 1.3fr;gap:40px;align-items:center}
+        .ls-h1-line{height:36px}
+        .ls-card{padding:40px}
       }
     </style>
-    <div class="loading-shell">
-      <div class="shell-header">
-        <div class="shell-logo">
-          <div class="shell-logo-icon"></div>
-          <div class="shell-logo-text"></div>
+    <div class="ls">
+      <div class="ls-hdr">
+        <div class="ls-logo">
+          <div class="ls-logo-icon ap"></div>
+          <div class="ls-logo-text ap"></div>
         </div>
-        <div class="shell-nav">
-          <div class="shell-nav-item"></div>
-          <div class="shell-nav-item"></div>
-          <div class="shell-nav-item"></div>
+        <div class="ls-nav">
+          <div class="ls-nav-item ap"></div>
+          <div class="ls-nav-item ap"></div>
+          <div class="ls-nav-item ap"></div>
         </div>
       </div>
-      <div class="shell-hero">
-        <h1 class="shell-h1">
-          Convert <span>OST TO PST</span><br />
-          Online - Fast & Secure
-        </h1>
-        <p class="shell-p">
-          Instantly convert Outlook OST files to PST format in your browser.
-          Preview and export your data safely without any software installation.
-        </p>
-        <div class="shell-uploader">
-          <div class="shell-up-icon animate-pulse"></div>
-          <div class="shell-btn animate-pulse"></div>
+      <div class="ls-hero">
+        <div class="ls-grid">
+          <div class="ls-left">
+            <div class="ls-h1-line ap" style="width:68%"></div>
+            <div class="ls-h1-line ap" style="width:55%;background:#0ea5e9;opacity:.7"></div>
+            <div class="ls-h1-line ap" style="width:62%"></div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+              <div class="ls-p-line ap" style="width:90%"></div>
+              <div class="ls-p-line ap" style="width:78%"></div>
+              <div class="ls-p-line ap" style="width:62%"></div>
+            </div>
+            <div class="ls-badges">
+              <div class="ls-badge ap"></div>
+              <div class="ls-badge ap"></div>
+              <div class="ls-badge ap"></div>
+              <div class="ls-badge ap"></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center">
+            <div class="ls-card">
+              <div class="ls-icon ap"></div>
+              <div class="ls-card-title ap"></div>
+              <div class="ls-btn ap"></div>
+              <div class="ls-foot ap"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

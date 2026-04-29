@@ -29,6 +29,7 @@ export default defineConfig({
   },
   build: {
     minify: "terser",
+    chunkSizeWarningLimit: 600,
     terserOptions: {
       compress: {
         drop_console: true,
@@ -47,10 +48,12 @@ export default defineConfig({
               return "vendor-router";
             }
             if (
-              id.includes("react") ||
               id.includes("react-dom") ||
               id.includes("scheduler")
             ) {
+              return "vendor-react-dom";
+            }
+            if (id.includes("/react/") || id.includes("/react-is/")) {
               return "vendor-react-core";
             }
             if (id.includes("@clerk")) {
@@ -62,10 +65,15 @@ export default defineConfig({
             if (id.includes("lucide-react")) {
               return "vendor-icons";
             }
+            if (id.includes("react-dropzone") || id.includes("file-selector") || id.includes("attr-accept")) {
+              return "vendor-dropzone";
+            }
+            if (id.includes("sonner")) {
+              return "vendor-sonner";
+            }
             if (id.includes("date-fns") || id.includes("dompurify")) {
               return "vendor-utils";
             }
-            // Group other stable node_modules together
             return "vendor-others";
           }
         },
