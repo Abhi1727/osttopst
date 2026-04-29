@@ -357,7 +357,7 @@ app.MapFallbackToFile("index.html");
 Console.WriteLine("=================================================");
 Console.WriteLine("   PST CONVERTER API - SYSTEM READY             ");
 Console.WriteLine("=================================================");
-Console.WriteLine($"URL: http://localhost:5000");
+Console.WriteLine($"URL: http://localhost:5050");
 Console.WriteLine($"Time: {DateTime.Now}");
 Console.WriteLine("-------------------------------------------------");
 app.Run();

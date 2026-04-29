@@ -598,11 +598,10 @@ const OstToPstDesktop = () => {
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-500/20 to-transparent opacity-50"></div>
           <div className="relative z-10">
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-              Ready to Migrate Your Data?
+              Ready to convert your OST files to PST format?
             </h2>
             <p className="text-slate-400 text-lg mb-10 max-w-2xl mx-auto">
-              Download the trial version now and preview your converted PST data
-              for free.
+              Download the trial version now and convert your OST files to PST format.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
