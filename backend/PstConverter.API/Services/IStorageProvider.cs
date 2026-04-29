@@ -13,4 +13,5 @@ public interface IStorageProvider
     Task DeleteFileAsync(string key);
     Task<bool> FileExistsAsync(string key);
     Task<string> GetDownloadUrlAsync(string key, int expiresInMinutes);
+    string GetPublicUrl(string key);
 }

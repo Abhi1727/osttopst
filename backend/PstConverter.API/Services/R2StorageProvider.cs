@@ -9,6 +9,7 @@ public class R2StorageProvider : IStorageProvider
 {
     private readonly AmazonS3Client _s3Client;
     private readonly string _bucketName;
+    private readonly string _publicUrlBase;
 
     //public string ProviderName => "CloudflareR2";
 
@@ -18,6 +19,7 @@ public class R2StorageProvider : IStorageProvider
         var secretKey = configuration["CloudflareR2:SecretAccessKey"];
         var accountId = configuration["CloudflareR2:AccountId"];
         _bucketName = configuration["CloudflareR2:BucketName"] ?? "osttopst";
+        _publicUrlBase = configuration["CloudflareR2:PublicUrl"]?.TrimEnd('/') ?? $"https://{accountId}.r2.cloudflarestorage.com";
         
         var serviceUrl = $"https://{accountId}.r2.cloudflarestorage.com";
 
@@ -90,5 +92,12 @@ public class R2StorageProvider : IStorageProvider
             Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes)
         };
         return Task.FromResult(_s3Client.GetPreSignedURL(request));
+    }
+
+    public string GetPublicUrl(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return string.Empty;
+        var cleanKey = key.TrimStart('/');
+        return $"{_publicUrlBase}/{cleanKey}";
     }
 }

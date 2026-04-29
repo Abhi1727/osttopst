@@ -12,16 +12,16 @@ namespace PstConverter.Controllers
     public class BlogsController : ControllerBase
     {
         private readonly IConfiguration _configuration;
-        private readonly IImageKitService _imageKitService;
+        private readonly R2StorageProvider _storage;
         private readonly string _frontendPublicPath;
         private readonly string _blogsDirectory;
         private readonly string _blogsJsonPath;
         private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
-        public BlogsController(IWebHostEnvironment env, IConfiguration configuration, IImageKitService imageKitService)
+        public BlogsController(IWebHostEnvironment env, IConfiguration configuration, R2StorageProvider storage)
         {
             _configuration = configuration;
-            _imageKitService = imageKitService;
+            _storage = storage;
             // Robust path calculation: Find repo root by looking for 'frontend' directory upwards 
             // starting from the content root path.
             var root = env.ContentRootPath;
@@ -163,9 +163,12 @@ namespace PstConverter.Controllers
 
                 if (thumbnailFile != null && thumbnailFile.Length > 0)
                 {
-                    Console.WriteLine($"[BlogsController] Found file upload: {thumbnailFile.FileName}. Uploading to ImageKit...");
-                    var fileName = $"thumb_{id}{Path.GetExtension(thumbnailFile.FileName)}";
-                    thumbnailRelativePath = await _imageKitService.UploadImageAsync(thumbnailFile, fileName) ?? "";
+                    Console.WriteLine($"[BlogsController] Found file upload: {thumbnailFile.FileName}. Uploading to Cloudflare R2...");
+                    var fileName = $"blogs/thumb_{id}{Path.GetExtension(thumbnailFile.FileName)}";
+                    
+                    using var stream = thumbnailFile.OpenReadStream();
+                    await _storage.UploadFileAsync(fileName, stream, thumbnailFile.ContentType);
+                    thumbnailRelativePath = _storage.GetPublicUrl(fileName);
                 }
                 else
                 {
@@ -189,13 +192,16 @@ namespace PstConverter.Controllers
                                 };
 
                                 var bytes = Convert.FromBase64String(base64Data);
-                                var fileName = $"thumb_{id}{extension}";
-                                thumbnailRelativePath = await _imageKitService.UploadImageAsync(bytes, fileName) ?? "";
+                                var fileName = $"blogs/thumb_{id}{extension}";
+                                
+                                using var ms = new MemoryStream(bytes);
+                                await _storage.UploadFileAsync(fileName, ms, contentType);
+                                thumbnailRelativePath = _storage.GetPublicUrl(fileName);
                             }
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[BlogsController] ImageKit Base64 upload failed: {ex.Message}");
+                            Console.WriteLine($"[BlogsController] R2 Base64 upload failed: {ex.Message}");
                         }
                     }
                 }
@@ -216,7 +222,7 @@ namespace PstConverter.Controllers
                     var existingJson = await System.IO.File.ReadAllTextAsync(_blogsJsonPath);
                     if (!string.IsNullOrWhiteSpace(existingJson))
                     {
-                        blogs = JsonSerializer.Deserialize<List<object>>(existingJson) ?? new List<object>();
+                        blogs = JsonSerializer.Deserialize<List<object>>(existingJson) ?? [];
                     }
                 }
 
@@ -308,8 +314,22 @@ namespace PstConverter.Controllers
                     return NotFound(new { message = "Blog with specified ID not found." });
                 }
 
-                // Delete associated media file if it's in the media folder
-                if (!string.IsNullOrEmpty(imagePathToDelete) && imagePathToDelete.StartsWith("/blogs/media/"))
+                // Delete associated media file from R2 if it's an R2 URL
+                if (!string.IsNullOrEmpty(imagePathToDelete) && imagePathToDelete.Contains("r2.dev"))
+                {
+                    try
+                    {
+                        // Extract key from URL
+                        var uri = new Uri(imagePathToDelete);
+                        var key = uri.AbsolutePath.TrimStart('/');
+                        await _storage.DeleteFileAsync(key);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[BlogsController] Failed to delete image from R2: {ex.Message}");
+                    }
+                }
+                else if (!string.IsNullOrEmpty(imagePathToDelete) && imagePathToDelete.StartsWith("/blogs/media/"))
                 {
                     // Convert relative web path back to local filesystem path
                     var fileName = Path.GetFileName(imagePathToDelete);

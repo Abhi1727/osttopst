@@ -60,7 +60,6 @@ builder.Services.AddSingleton<IFileCleanupQueue, FileCleanupQueue>();
 builder.Services.AddSingleton<DownloadCleanup>();
 
 builder.Services.AddScoped<PstService>();
-builder.Services.AddScoped<IImageKitService, ImageKitService>();
 builder.Services.AddHostedService<CleanupBackgroundService>();
 builder.Services.AddSingleton<LicenseAuthService>();
 builder.Services.AddSingleton<LicenseApiClient>();
